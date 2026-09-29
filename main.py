@@ -142,9 +142,11 @@ mc_irec = MonteCarlo(
     flight=vooIrec_estocastico,
 )
 
-mc_irec.simulate(
-    number_of_simulations=10,
-    append=False,
-    parallel=False,
+# mc_irec.simulate(
+#     number_of_simulations=10,
+#     append=False,
+#     parallel=False,
+#
+# )
 
-)
+mc_irec.all_info()
