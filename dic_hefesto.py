@@ -16,7 +16,7 @@ setting = {
     # e preciso checar se os eixos estao invertidos, o inertia devolve em outra ordem
     "inertia": (11.784, 11.784, 0.099), # Calculado
 
-    "center_of_mass_without_motor": 1.35, # m - OpenRocket without motor ##
+    "center_of_mass_without_motor": 1.35, # m - OpenRocket without motorDic ##
 
     # Arrasto
 
@@ -25,7 +25,7 @@ setting = {
 
 }
 
-aletas = {
+aletasDic = {
     # Aletas (Fins)
 
     "n": 4,
@@ -40,7 +40,7 @@ aletas = {
     ]
 }
 
-coifa = {
+coifaDic = {
    # Coifa (Nosecone)
 
     "length": 0.45,  # m - openrocket
@@ -48,7 +48,7 @@ coifa = {
     "kind": "lvhaack"  ## checar
 }
 
-rail_button = {
+rail_buttonDic = {
     # Rail Buttons (Guias)
 
     "upper_button_position": 1.39,  # m
@@ -57,7 +57,7 @@ rail_button = {
     "radius": 0.02,  # m
 }
 
-refeedRec = {
+refeedRecDic = {
 
     "name": "reefed",
     "cd_s": 0.85,  #
@@ -67,7 +67,7 @@ refeedRec = {
 
 }
 
-unrefeedRec = {
+unrefeedRecDic = {
 
     "name": "unreefed",
     "cd_s": 1.5,  #
@@ -75,4 +75,68 @@ unrefeedRec = {
     "trigger": 450,  # openrocket
     "lag": 1  # openrocket
 
+}
+
+##############################################
+
+settingE = {
+
+    "radius": 0.0005, # 0.5 mm: hipótese de incerteza dimensional do diâmetro externo
+
+    "mass": 0.10, # 0.10 kg: hipótese conservadora para massa seca de 21.644 kg
+
+    "inertia_11": 11.784 * 0.05, # 5%: tensor foi calculado a partir de modelo geométrico/massas aproximadas
+
+    "inertia_22": 11.784 * 0.05, # 5%: mesma incerteza de modelagem do outro eixo transversal
+
+    "inertia_33": 0.099 * 0.05, # 5%: incerteza de modelagem da inércia longitudinal
+
+    "center_of_mass_without_motor": 0.010, # 1 cm: hipótese inicial para erro na determinação do CG
+
+
+    # Multiplicadores das curvas do RASAero
+    "power_off_drag_factor": (1.0, 0.10), # 10%: incerteza inicial do modelo aerodinâmico sem empuxo
+
+    "power_on_drag_factor": (1.0, 0.10), # 10%: incerteza inicial do modelo aerodinâmico com motorDic queimando
+}
+
+coifaE = {
+
+    "length": 0.001, # 1 mm: hipótese de tolerância dimensional/comprimento medido
+}
+
+coifa_positionE = 0.001 # 1 mm: incerteza da referência axial de montagem da coifa
+
+# acho que nao tem freeform aletasDic stocastic
+
+aletasE = {
+
+    "shape_points": 0.001, # 1 mm: hipótese de erro de fabricação/medição de cada ponto da aleta
+
+    "cant_angle": 0.5, # 0.5°: hipótese de desalinhamento angular durante a montagem
+}
+
+aletas_positionE = 0.002
+
+railButtonE = {
+
+    "buttons_distance": 0.002, # 2 mm: hipótese de erro na distância entre os dois rail buttons
+
+    "angular_position": 1.0, # 1°: hipótese de desalinhamento angular durante a montagem
+}
+
+lower_button_positionE = 0.002
+
+reefedRecE = {
+
+    "cd_s": 0.085, # 10% de 0.85 m²: hipótese inicial de dispersão aerodinâmica do paraquedas
+
+    "lag": 0.10,  # 0.10 s: hipótese de dispersão no tempo de inflação/acionamento
+}
+
+unreefedRecE = {
+
+    "cd_s": 0.15, # 10% de 1.50 m²: hipótese inicial de dispersão do CdS aberto
+
+    "lag": 0.10, # 0.10 s: hipótese de variação no processo de abertura
 }

@@ -6,3 +6,5 @@ motor.eng obtido diretamente da propulsao
 
 Aqui ainda nao esta presente a analise de monte carlo, portanto, essa e uma simulacao deterministica
 tambem nao se encontra presente as simulacoes de quando o paraquedas falham, apesar de ser facil de fazer
+
+

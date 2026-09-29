@@ -1,4 +1,4 @@
-from rocketpy import Environment
+from rocketpy import Environment, StochasticEnvironment
 
 from pyprojroot import here
 
@@ -53,4 +53,34 @@ envIrec.set_atmospheric_model(
     }
 )
 
+
+##################################################################3
+
+ambienteIrecE = {
+
+    "elevation": 2.0, # 2 m: hipótese de incerteza da altitude exata do ponto de lançamento
+}
+
+envIrecEs = Environment(
+    date=(2026, 6, 15, 12),
+    latitude= 32.94019, longitude= -106.92056,
+    elevation= 1401
+)
+envIrecEs.set_atmospheric_model(
+    type="Ensemble",
+    file=str(caminho_data / "irec" / "data_stream-enda_stepType-instantCerto.nc"),
+    dictionary={
+        "ensemble": "number",
+        "time": "valid_time",
+        "latitude": "latitude",
+        "longitude": "longitude",
+        "level": "pressure_level",
+        "temperature": "t",
+        "surface_geopotential_height": None,
+        "geopotential_height": None,
+        "geopotential": "z",
+        "u_wind": "u",
+        "v_wind": "v",
+    }
+)
 
