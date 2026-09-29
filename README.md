@@ -1,7 +1,7 @@
 Este foguete nao foi lancado, portanto, todas as informacoes estao suscetiveis a alteracoes
 
 power on e power of drag gerados pelo RASAERO II
-nc files obtidos pela copernicus climate
+nc files obtidos pela copernicus climate (cds)
 motor.eng obtido diretamente da propulsao
 
 Aqui ainda nao esta presente a analise de monte carlo, portanto, essa e uma simulacao deterministica

@@ -89,11 +89,16 @@ motor_estocastico = StochasticSolidMotor(
     **motorE,
 )
 
-foguete_estocastico = StochasticRocket(
+foguete_estocastico = StochasticRocketComAletasFixas(
     rocket=foguete,
     **settingE,
     fixed_fins=fins,
     fixed_fins_position=2.57,
+)
+
+foguete_estocastico.add_motor(
+    motor_estocastico,
+    position=motor_positionE,
 )
 
 coifa_estocastica = StochasticNoseCone(
