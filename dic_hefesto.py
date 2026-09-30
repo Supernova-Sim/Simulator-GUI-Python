@@ -107,16 +107,38 @@ coifaE = {
 
 coifa_positionE = 0.001 # 1 mm: incerteza da referência axial de montagem da coifa
 
-# acho que nao tem freeform aletasDic stocastic
+#
 
 aletasE = {
 
-    "shape_points": 0.001, # 1 mm: hipótese de erro de fabricação/medição de cada ponto da aleta
+    "root_chord": 0.0005,
+    # 0.5 mm: hipótese de incerteza equivalente na corda da raiz
 
-    "cant_angle": 0.5, # 0.5°: hipótese de desalinhamento angular durante a montagem
+    "tip_chord": 0.0005,
+    # 0.5 mm: hipótese de incerteza equivalente na corda da ponta
+
+    "span": 0.0005,
+    # 0.5 mm: hipótese de incerteza equivalente na extensão radial
+
+    "sweep_length": 0.0005,
+    # 0.5 mm: hipótese de incerteza equivalente no sweep
+
+    "cant_angle": 0.5,
+    # 0.5°: hipótese de desalinhamento angular na montagem
 }
 
 aletas_positionE = 0.002
+
+aletas_equivalentesTrapezio = {
+    # é equivalente aerodinamicamente, mas nao é equivalente a aleta original freeform (obtido por otimizacao)
+    "n": 4,
+    "root_chord": 0.18,
+    "tip_chord": 0.07458606,
+    "span": 0.13999711,
+    "sweep_length": 0.10051811,
+    "position": 2.57,
+    "cant_angle": 0.0,
+}
 
 railButtonE = {
 
