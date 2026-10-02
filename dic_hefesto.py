@@ -1,4 +1,5 @@
 from pyprojroot import here
+from rocketpy import Function
 
 caminho_raiz = here()
 

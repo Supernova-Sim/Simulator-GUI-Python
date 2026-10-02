@@ -13,6 +13,8 @@ from rocketpy.stochastic import (
     StochasticEnvironment,
 )
 
+from rocketpy import Function
+
 
 #compensa criar um arquivo py só para instanciar essas coisas e o main ficar só para executar comandos relacionados ao voo e etc?
 
@@ -25,25 +27,37 @@ import matplotlib.pyplot as plt
 
 #
 
-foguete = Rocket(**setting)
+
 
 motor = SolidMotor(**motorDic)
 
-nose =foguete.add_nose(**coifaDic)
-fins = foguete.add_free_form_fins(**aletasDic)
-rail_buttons = foguete.set_rail_buttons(**rail_buttonDic)
-unreefed = foguete.add_parachute(**unrefeedRecDic)
-reefed = foguete.add_parachute(**refeedRecDic)
 
-foguete.add_motor(motor, position=2.78)
+for per in range(50, 101):
+    fator = per / 100
 
-vooIrec_obj = Flight(
-    rocket=foguete,
-    environment=envIrec,
-    **vooIrecConfig,
-)
+    motorDic["thrust_source"] = motor.thrust * fator
+    motorFor = SolidMotor(**motorDic)
 
-#---#
+    foguete = Rocket(**setting)
+    nose =foguete.add_nose(**coifaDic)
+    fins = foguete.add_free_form_fins(**aletasDic)
+    rail_buttons = foguete.set_rail_buttons(**rail_buttonDic)
+    unreefed = foguete.add_parachute(**unrefeedRecDic)
+    reefed = foguete.add_parachute(**refeedRecDic)
+
+
+
+    foguete.add_motor(motorFor, position=2.78)
+
+    vooIrec_obj = Flight(
+        rocket=foguete,
+        environment=envIrec,
+        **vooIrecConfig,
+    )
+
+    #---#
+
+    print(vooIrec_obj.apogee - 1401)
 
 
 ############################################################
