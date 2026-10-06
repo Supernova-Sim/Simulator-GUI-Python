@@ -1,10 +1,10 @@
-vooLascConfig = {
+LASC = {
     "inclination": 80,
     "heading": 90,
     "rail_length": 6,
 }
 
-vooLascE = {
+LASC_E = {
     "rail_length": 0.01,
     # 1 cm: incerteza no comprimento efetivamente utilizável do trilho
 
@@ -16,13 +16,13 @@ vooLascE = {
 }
 
 
-vooIrecConfig = {
+IREC = {
     "inclination": 71,
     "heading": 90,
     "rail_length": 6,
 }
 
-vooIrecE = {
+IREC_E = {
     "rail_length": 0.01,
     # 1 cm: incerteza no comprimento efetivamente utilizável do trilho
 

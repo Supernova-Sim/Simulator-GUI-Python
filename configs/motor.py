@@ -1,11 +1,10 @@
-from pyprojroot import here
+from hefesto.paths import MOTORES
 
-caminho_raiz = here()
-caminho_data = caminho_raiz / "data"
 
-motorDic = {
 
-    "thrust_source": str(caminho_data / "jul1semMedidas.eng"),
+MOTOR = {
+
+    "thrust_source": str(MOTORES / "jul1semMedidas.eng"),
 
     "dry_mass": 10,  # 21 - 11 (mA - mP)
     "dry_inertia": (1.47, 1.47, 0.0125),  #
@@ -35,7 +34,7 @@ motorDic = {
 ############# Monte Carlo
 
 
-motorE = {
+MOTOR_E = {
 
     "total_impulse": 0.03 * 12473.99,
 
@@ -81,6 +80,6 @@ motorE = {
     "burn_out_time": 0.05, # 0.05 s: hipótese inicial de dispersão no tempo total de queima
 }
 
-motor_positionE = 0.002 # 2 mm: incerteza de montagem da posição axial do motorDic
+MOTOR_POS_E = 0.002 # 2 mm: incerteza de montagem da posição axial do motorDic
 
 
