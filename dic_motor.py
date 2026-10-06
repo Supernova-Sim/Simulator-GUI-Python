@@ -13,18 +13,18 @@ motorDic = {
 
     "grain_number": 7,  # OpenMotor
 
-    "grain_outer_radius": 0.05,  # OpenMotor
-    "grain_initial_inner_radius": 0.02343,  # media ponderada entre os raios obtidos anteriormente
+    "grain_outer_radius": 0.04933, #0.05,  # OpenMotor
+    "grain_initial_inner_radius": 0.0227, #0.02343,  # media ponderada entre os raios obtidos anteriormente
     "grain_initial_height": 0.15,  # OpenMotor "Length"
     "grain_separation": 0.01,  #
 
-    "grain_density": 1812.44,  #
+    "grain_density": 1842.44,  #
     "grains_center_of_mass_position": 0.67,  #
 
     "nozzle_position": 0.016,  #
     "nozzle_radius": 0.039,  #
 
-    "throat_radius": 0.0173,  # OpenMotor
+    "throat_radius": 0.017, #0.0173,  # OpenMotor
 
     "burn_time": (0, 3.75),
 
