@@ -5,7 +5,7 @@ caminho_data = caminho_raiz / "data"
 
 motorDic = {
 
-    "thrust_source": str(caminho_data / "motor_novo.eng"),
+    "thrust_source": str(caminho_data / "jul1semMedidas.eng"),
 
     "dry_mass": 10,  # 21 - 11 (mA - mP)
     "dry_inertia": (1.47, 1.47, 0.0125),  #
@@ -26,7 +26,7 @@ motorDic = {
 
     "throat_radius": 0.0173,  # OpenMotor
 
-    "burn_time": (0, 3.9),
+    "burn_time": (0, 3.75),
 
     "coordinate_system_orientation": "nozzle_to_combustion_chamber",
 
