@@ -33,6 +33,10 @@ volume_total = 0.0
 momento_total = 0.0  # Usado para calcular o centro de massa
 posicao_atual = 0.0  # Posição Z inicial (base do primeiro grão)
 
+soma_raios_internos = 0.0
+soma_raios_externos = 0.0
+num_graos = len(graos)
+
 print("=" * 60)
 print("CÁLCULO DE PROPRIEDADES DOS GRÃOS")
 print("=" * 60)
@@ -46,6 +50,9 @@ for grao in graos:
 
     # 1. Cálculos de Raio
     r_in, r_out = calcular_raio(core, web)
+
+    soma_raios_internos += r_in
+    soma_raios_externos += r_out
 
     # 2. Cálculo de Volume e Densidade
     vol = calcular_volume(r_in, r_out, L)
@@ -72,6 +79,9 @@ for grao in graos:
 
 #resultados
 
+raio_interno_medio = soma_raios_internos / num_graos
+raio_externo_medio = soma_raios_externos / num_graos
+
 densidade_media = massa_total / volume_total
 cg_total = momento_total / massa_total
 
@@ -83,6 +93,9 @@ print(f"Volume Total: {volume_total:.6f} m³")
 print(f"Densidade Média: {densidade_media:.1f} kg/m³")
 print(f"Comprimento Total: {posicao_atual:.3f} m")
 print(f"Coordenada do Centro de Massa (CG): {cg_total:.4f} m")
+print("MÉDIAS GEOMÉTRICAS DOS GRÃOS:")
+print(f"  Raio Interno Médio: {raio_interno_medio:.5f} m")
+print(f"  Raio Externo Médio: {raio_externo_medio:.5f} m")
 print("=" * 60)
 
 # Dica sobre o sistema de coordenadas

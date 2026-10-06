@@ -14,7 +14,7 @@ motorDic = {
     "grain_number": 6, #7 # OpenMotor
 
     "grain_outer_radius": 0.04933, #0.05,  # OpenMotor
-    "grain_initial_inner_radius": 0.0227, #0.02343,  # media ponderada entre os raios obtidos anteriormente
+    "grain_initial_inner_radius": 0.02267, #0.02343,  # media ponderada entre os raios obtidos anteriormente
     "grain_initial_height": 0.15,  # OpenMotor "Length"
     "grain_separation": 0.01,  #
 
