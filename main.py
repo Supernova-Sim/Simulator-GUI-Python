@@ -30,7 +30,9 @@ import matplotlib.pyplot as plt
 motor = SolidMotor(**motorDic)
 foguete = Rocket(**setting)
 
-for per in range(100, 101):
+
+
+for per in range(100, 110):
     fator = per / 100
 
     motorDic["thrust_source"] = motor.thrust * fator
@@ -58,7 +60,10 @@ for per in range(100, 101):
 
     #---#
 
-    print(vooIrec_obj.apogee - 1401 )
+    print(vooIrec_obj.apogee - 1401 , " Thrust:  " , motorFor.total_impulse )
+
+
+
 
 
 ############################################################
@@ -68,11 +73,7 @@ for per in range(100, 101):
 
 
 
-fogueteTest = Rocket(**setting)
 
-setting["power_off_drag"] = fogueteTest.power_off_drag * 0.90
-setting["power_on_drag"] = fogueteTest.power_on_drag * 0.90
-foguete = Rocket(**setting)
 
 
 
