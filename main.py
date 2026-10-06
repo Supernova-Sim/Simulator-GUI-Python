@@ -27,43 +27,44 @@ import matplotlib.pyplot as plt
 
 #
 
-
-
 motor = SolidMotor(**motorDic)
+foguete = Rocket(**setting)
+
+for per in range(100, 101):
+    fator = per / 100
+
+    motorDic["thrust_source"] = motor.thrust * fator
+    setting["power_off_drag"] = foguete.power_off_drag * 0.90
+    setting["power_on_drag"] = foguete.power_on_drag * 0.90
+
+    motorFor = SolidMotor(**motorDic)
+    fogueteFor = Rocket(**setting)
+
+    nose =fogueteFor.add_nose(**coifaDic)
+    fins = fogueteFor.add_free_form_fins(**aletasDic)
+    rail_buttons = fogueteFor.set_rail_buttons(**rail_buttonDic)
+    unreefed = fogueteFor.add_parachute(**unrefeedRecDic)
+    reefed = fogueteFor.add_parachute(**refeedRecDic)
 
 
-# for per in range(80, 101):
-#     fator = per / 100
-#
-#     motorDic["thrust_source"] = motor.thrust * fator
-#     motorFor = SolidMotor(**motorDic)
-#
-#     foguete = Rocket(**setting)
-#     nose =foguete.add_nose(**coifaDic)
-#     fins = foguete.add_free_form_fins(**aletasDic)
-#     rail_buttons = foguete.set_rail_buttons(**rail_buttonDic)
-#     unreefed = foguete.add_parachute(**unrefeedRecDic)
-#     reefed = foguete.add_parachute(**refeedRecDic)
-#
-#
-#
-#     foguete.add_motor(motorFor, position=2.78)
-#
-#     vooIrec_obj = Flight(
-#         rocket=foguete,
-#         environment=envIrec,
-#         **vooIrecConfig,
-#     )
-#
-#     #---#
-#
-#     print(vooIrec_obj.apogee - 1401 , " " , fator * 12600)
+
+    fogueteFor.add_motor(motorFor, position=2.78)
+
+    vooIrec_obj = Flight(
+        rocket=fogueteFor,
+        environment=envIrec,
+        **vooIrecConfig,
+    )
+
+    #---#
+
+    print(vooIrec_obj.apogee - 1401 )
 
 
 ############################################################
 
 
-motor = SolidMotor(**motorDic)
+
 
 
 
@@ -75,25 +76,17 @@ foguete = Rocket(**setting)
 
 
 
-nose =foguete.add_nose(**coifaDic)
-fins = foguete.add_free_form_fins(**aletasDic)
-rail_buttons = foguete.set_rail_buttons(**rail_buttonDic)
-unreefed = foguete.add_parachute(**unrefeedRecDic)
-reefed = foguete.add_parachute(**refeedRecDic)
 
 
-
-foguete.add_motor(motor, position=2.78)
-
-vooIrec_obj = Flight(
-    rocket=foguete,
-    environment=envIrec,
-    **vooIrecConfig,
-)
-
-#---#
-
-print(vooIrec_obj.apogee - 1401 , " " )
+# vooIrec_obj = Flight(
+#     rocket=foguete,
+#     environment=envIrec,
+#     **vooIrecConfig,
+# )
+#
+# #---#
+#
+# print(vooIrec_obj.apogee - 1401 , " " )
 
 
 
