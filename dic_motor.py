@@ -19,7 +19,7 @@ motorDic = {
     "grain_separation": 0.01,  #
 
     "grain_density": 1842.44,  #
-    "grains_center_of_mass_position": 0.67,  #
+    "grains_center_of_mass_position": 0.4338, #0.67,  #
 
     "nozzle_position": 0.016,  #
     "nozzle_radius": 0.039,  #

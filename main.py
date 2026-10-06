@@ -60,11 +60,11 @@ for per in range(100, 101):
 
     #---#
 
-    print(round(vooIrec_obj.apogee - 1401, 1),
+    print(round(vooIrec_obj.apogee - 1401, 1), "m",
           "Thrust:" , round(motorFor.total_impulse, 3),
           round(motorFor.propellant_initial_mass, 3), "kg" ,
           round(vooIrec_obj.min_stability_margin, 3), "estabilidade" )
-    print( -2307.31 + vooIrec_obj.apogee - 1401 , "metros de diferenca")
+    print( round(-2386.31 + vooIrec_obj.apogee - 1401, 2 ), "metros de diferenca")
 
 
 
