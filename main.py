@@ -32,35 +32,77 @@ import matplotlib.pyplot as plt
 motor = SolidMotor(**motorDic)
 
 
-for per in range(50, 101):
-    fator = per / 100
-
-    motorDic["thrust_source"] = motor.thrust * fator
-    motorFor = SolidMotor(**motorDic)
-
-    foguete = Rocket(**setting)
-    nose =foguete.add_nose(**coifaDic)
-    fins = foguete.add_free_form_fins(**aletasDic)
-    rail_buttons = foguete.set_rail_buttons(**rail_buttonDic)
-    unreefed = foguete.add_parachute(**unrefeedRecDic)
-    reefed = foguete.add_parachute(**refeedRecDic)
-
-
-
-    foguete.add_motor(motorFor, position=2.78)
-
-    vooIrec_obj = Flight(
-        rocket=foguete,
-        environment=envIrec,
-        **vooIrecConfig,
-    )
-
-    #---#
-
-    print(vooIrec_obj.apogee - 1401)
+# for per in range(80, 101):
+#     fator = per / 100
+#
+#     motorDic["thrust_source"] = motor.thrust * fator
+#     motorFor = SolidMotor(**motorDic)
+#
+#     foguete = Rocket(**setting)
+#     nose =foguete.add_nose(**coifaDic)
+#     fins = foguete.add_free_form_fins(**aletasDic)
+#     rail_buttons = foguete.set_rail_buttons(**rail_buttonDic)
+#     unreefed = foguete.add_parachute(**unrefeedRecDic)
+#     reefed = foguete.add_parachute(**refeedRecDic)
+#
+#
+#
+#     foguete.add_motor(motorFor, position=2.78)
+#
+#     vooIrec_obj = Flight(
+#         rocket=foguete,
+#         environment=envIrec,
+#         **vooIrecConfig,
+#     )
+#
+#     #---#
+#
+#     print(vooIrec_obj.apogee - 1401 , " " , fator * 12600)
 
 
 ############################################################
+
+
+motor = SolidMotor(**motorDic)
+
+
+
+fogueteTest = Rocket(**setting)
+
+setting["power_off_drag"] = fogueteTest.power_off_drag * 0.90
+setting["power_on_drag"] = fogueteTest.power_on_drag * 0.90
+foguete = Rocket(**setting)
+
+
+
+nose =foguete.add_nose(**coifaDic)
+fins = foguete.add_free_form_fins(**aletasDic)
+rail_buttons = foguete.set_rail_buttons(**rail_buttonDic)
+unreefed = foguete.add_parachute(**unrefeedRecDic)
+reefed = foguete.add_parachute(**refeedRecDic)
+
+
+
+foguete.add_motor(motor, position=2.78)
+
+vooIrec_obj = Flight(
+    rocket=foguete,
+    environment=envIrec,
+    **vooIrecConfig,
+)
+
+#---#
+
+print(vooIrec_obj.apogee - 1401 , " " )
+
+
+
+
+
+
+
+
+#####
 
 # monte carlo nao tem a classe FreeFormFins, entao atualmente é preciso substituir por uma aleta trapezoidal bem semelhante
 
