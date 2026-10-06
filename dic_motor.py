@@ -11,7 +11,7 @@ motorDic = {
     "dry_inertia": (1.47, 1.47, 0.0125),  #
     "center_of_dry_mass_position": 0.499,  # m
 
-    "grain_number": 7,  # OpenMotor
+    "grain_number": 6, #7 # OpenMotor
 
     "grain_outer_radius": 0.04933, #0.05,  # OpenMotor
     "grain_initial_inner_radius": 0.0227, #0.02343,  # media ponderada entre os raios obtidos anteriormente
