@@ -60,7 +60,8 @@ for per in range(100, 101):
 
     #---#
 
-    print(vooIrec_obj.apogee - 1401 , "Thrust:" , motorFor.total_impulse, motorFor.propellant_initial_mass, "kg" )
+    print(vooIrec_obj.apogee - 1401 , "Thrust:" , motorFor.total_impulse, motorFor.propellant_initial_mass, "kg" , vooIrec_obj.min_stability_margin, "estabilidade" )
+    print(2339.35 - vooIrec_obj.apogee + 1401)
 
 
 
