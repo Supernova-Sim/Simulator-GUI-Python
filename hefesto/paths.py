@@ -1,4 +1,3 @@
-"""Caminhos canônicos do projeto. Importe daqui, não faça here()/data por aí."""
 from pyprojroot import here
 
 RAIZ = here()
