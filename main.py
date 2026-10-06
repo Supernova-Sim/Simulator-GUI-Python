@@ -32,7 +32,7 @@ foguete = Rocket(**setting)
 
 
 
-for per in range(100, 110):
+for per in range(100, 101):
     fator = per / 100
 
     motorDic["thrust_source"] = motor.thrust * fator
@@ -60,7 +60,7 @@ for per in range(100, 110):
 
     #---#
 
-    print(vooIrec_obj.apogee - 1401 , " Thrust:  " , motorFor.total_impulse )
+    print(vooIrec_obj.apogee - 1401 , "Thrust:" , motorFor.total_impulse, motorFor.propellant_initial_mass, "kg" )
 
 
 
