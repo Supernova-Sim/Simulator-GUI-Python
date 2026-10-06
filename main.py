@@ -36,8 +36,8 @@ for per in range(100, 101):
     fator = per / 100
 
     motorDic["thrust_source"] = motor.thrust * fator
-    setting["power_off_drag"] = foguete.power_off_drag * 0.90
-    setting["power_on_drag"] = foguete.power_on_drag * 0.90
+    setting["power_off_drag"] = foguete.power_off_drag * 1
+    setting["power_on_drag"] = foguete.power_on_drag * 1
 
     motorFor = SolidMotor(**motorDic)
     fogueteFor = Rocket(**setting)
@@ -61,7 +61,7 @@ for per in range(100, 101):
     #---#
 
     print(vooIrec_obj.apogee - 1401 , "Thrust:" , motorFor.total_impulse, motorFor.propellant_initial_mass, "kg" , vooIrec_obj.min_stability_margin, "estabilidade" )
-    print(abs(2367.31 - vooIrec_obj.apogee + 1401) , "metros de diferenca")
+    print( -2307.31 + vooIrec_obj.apogee - 1401 , "metros de diferenca")
 
 
 
