@@ -1,11 +1,15 @@
 from pyprojroot import here
 
-RAIZ = here()
-DATA = RAIZ / "data"
-RESULTADOS = RAIZ / "resultados"
+RAIZ      = here()
+DATA      = RAIZ / "data"
+ENTRADA   = DATA / "entrada"
+SAIDA     = DATA / "saida"           # ← era RESULTADOS
+RESULTADOS = SAIDA                   # alias temporário pra não quebrar imports
 
-ATMOSFERA = DATA / "atmosfera"
-MOTORES   = DATA / "motores"
-ARRASTO   = DATA / "arrasto"
+ATMOSFERA = ENTRADA / "atmosfera"
+MOTORES   = ENTRADA / "motores"
+ARRASTO   = ENTRADA / "arrasto"
+OPENMOTOR = ENTRADA / "openmotor"
+OPENROCKET= ENTRADA / "openrocket"
 
-RESULTADOS.mkdir(exist_ok=True)
+SAIDA.mkdir(parents=True, exist_ok=True)

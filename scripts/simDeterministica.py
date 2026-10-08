@@ -1,16 +1,21 @@
 """Teste único: ajuste os fatores no topo e rode."""
+import json
+from datetime import datetime
+
 from rocketpy import Flight
 
 from hefesto.ambiente import build_irec
 from hefesto.modelos import build_rocket
+from hefesto.paths import RESULTADOS
 from configs.voo import IREC
 from configs.especificacao import ALETA_IREC
+from configs.motor_medusa import MOTOR_IREC
 
 USAR_SPEC_ALETA = True
-TIPO_ALETAS   = "freeform"   # "freeform" ou "trapezio"
-FATOR_EMPUXO  = 1.00         # 1.00 = nominal
-FATOR_ARRASTO = 1.00         # 1.00 = nominal
-
+TIPO_ALETAS     = "freeform"
+FATOR_EMPUXO    = 1.00
+FATOR_ARRASTO   = 1.00
+SALVAR_JSON     = True
 
 
 def main() -> None:
@@ -29,13 +34,38 @@ def main() -> None:
     print()
     print("=" * 50)
     print(f"Tipo de aletas:   {TIPO_ALETAS}")
-    print(f"Fator empuxo:     {FATOR_EMPUXO:.3f} ")
-    print(f"Empuxo: {foguete.motor.total_impulse:.3f}")
+    print(f"Fator empuxo:     {FATOR_EMPUXO:.3f}")
+    print(f"Empuxo:           {foguete.motor.total_impulse:.3f} N.s")
     print(f"Fator arrasto:    {FATOR_ARRASTO:.3f}")
     print("-" * 50)
     print(f"Apogeu AGL:       {apogee_agl:.1f} m")
     print(f"Margem mínima:    {voo.min_stability_margin:.3f} cal")
     print("=" * 50)
+
+    if SALVAR_JSON:
+        resultado = {
+            "timestamp": datetime.now().isoformat(timespec="seconds"),
+            "configuracao": {
+                "tipo_aletas": TIPO_ALETAS,
+                "usar_spec_aleta": USAR_SPEC_ALETA,
+                "fator_empuxo": FATOR_EMPUXO,
+                "fator_arrasto": FATOR_ARRASTO,
+            },
+            "motor_spec": MOTOR_IREC.to_dict(),
+            "motor_derivado": foguete.motor_derivado.to_dict(),
+            "resultado": {
+                "apogee_agl_m": apogee_agl,
+                "apogee_msl_m": voo.apogee,
+                "min_stability_margin_cal": voo.min_stability_margin,
+                "total_impulse_Ns": foguete.motor.total_impulse,
+            },
+        }
+        RESULTADOS.mkdir(parents=True, exist_ok=True)
+        nome = f"sim_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        destino = RESULTADOS / nome
+        with destino.open("w", encoding="utf-8") as fp:
+            json.dump(resultado, fp, indent=2, ensure_ascii=False)
+        print(f"\nJSON salvo em: {destino}")
 
 
 if __name__ == "__main__":

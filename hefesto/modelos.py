@@ -8,7 +8,8 @@ from configs.foguete import (
 )
 from configs.componentes import COMPONENTES
 from configs.especificacao import AletaSpec, COIFA_IREC, CoifaSpec
-from configs.motor_spec import MotorSpec, MOTOR_IREC
+from configs.motor_spec import MotorSpec
+from configs.motor_medusa import MOTOR_IREC
 from hefesto.modelo import resolver
 from hefesto.calculos.motor import MotorDerivado, derivar_motor
 

@@ -113,6 +113,27 @@ class MotorDerivado:
     # ---------- Agregados ----------
     mass_loaded: float                  # kg — dry_mass + propellant_mass
 
+    def to_dict(self) -> dict:
+        """Dict serializável com todos os derivados."""
+        return {
+            "nome": self.nome,
+            "burn_time": list(self.burn_time),
+            "total_impulse": self.total_impulse,
+            "max_thrust": self.max_thrust,
+            "eng_propellant_mass": self.eng_propellant_mass,
+            "propellant_mass": self.propellant_mass,
+            "propellant_length": self.propellant_length,
+            "stack_length": self.stack_length,
+            "cg_propellant": self.cg_propellant,
+            "grain_inner_radius_effective": self.grain_inner_radius_effective,
+            "case_length": self.case_length,
+            "case_outer_radius": self.case_outer_radius,
+            "dry_mass": self.dry_mass,
+            "cg_dry": self.cg_dry,
+            "dry_inertia": list(self.dry_inertia),
+            "mass_loaded": self.mass_loaded,
+        }
+
 
 # ============================================================
 #  Derivações
@@ -253,7 +274,7 @@ def derivar_motor(spec: MotorSpec) -> MotorDerivado:
 # ============================================================
 
 def main() -> None:
-    from configs.motor_spec import MOTOR_IREC
+    from configs.motor_medusa import MOTOR_IREC
 
     d = derivar_motor(MOTOR_IREC)
 

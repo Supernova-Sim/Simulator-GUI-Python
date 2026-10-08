@@ -1,5 +1,7 @@
 """Varredura de apogeu em função de (fator_empuxo × fator_arrasto)."""
 import csv
+import json
+from datetime import datetime
 
 import numpy as np
 from rocketpy import Flight
@@ -7,16 +9,18 @@ from rocketpy import Flight
 from hefesto.ambiente import build_irec
 from hefesto.modelos import build_rocket
 from hefesto.paths import RESULTADOS
+from hefesto.calculos.motor import derivar_motor
 from configs.voo import IREC
+from configs.especificacao import ALETA_IREC
+from configs.motor_medusa import MOTOR_IREC
 
 
 # ============================================================
 #  AQUI VOCÊ AJUSTA
 # ============================================================
-TIPO_ALETAS = "trapezio"
+TIPO_ALETAS     = "trapezio"
+USAR_SPEC_ALETA = False
 
-# Se uma lista tiver 1 elemento, a varredura é 1D na outra.
-# Se as duas tiverem vários, é grade 2D.
 FATORES_EMPUXO  = list(np.arange(0.90, 1.11, 0.01))   # 21 valores
 FATORES_ARRASTO = [1.00]                              # só nominal → 1D
 
@@ -27,6 +31,7 @@ ARQUIVO_SAIDA = "varredura.csv"
 def simular(fator_empuxo: float, fator_arrasto: float) -> dict:
     foguete = build_rocket(
         tipo_aletas=TIPO_ALETAS,
+        spec_aleta=ALETA_IREC if USAR_SPEC_ALETA else None,
         fator_empuxo=fator_empuxo,
         fator_arrasto=fator_arrasto,
     )
@@ -60,13 +65,31 @@ def main() -> None:
                 f"margem={linha['margem_min']:.3f} cal"
             )
 
+    # --- CSV principal (uma linha por simulação) ---
     destino = RESULTADOS / ARQUIVO_SAIDA
     with destino.open("w", newline="") as fp:
         writer = csv.DictWriter(fp, fieldnames=list(linhas[0].keys()))
         writer.writeheader()
         writer.writerows(linhas)
 
-    print(f"\nSalvo em {destino}  ({len(linhas)} linhas)")
+    # --- Metadata fixa do run (spec + derivado) ---
+    meta = {
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "configuracao": {
+            "tipo_aletas": TIPO_ALETAS,
+            "usar_spec_aleta": USAR_SPEC_ALETA,
+            "n_fatores_empuxo": len(FATORES_EMPUXO),
+            "n_fatores_arrasto": len(FATORES_ARRASTO),
+        },
+        "motor_spec": MOTOR_IREC.to_dict(),
+        "motor_derivado": derivar_motor(MOTOR_IREC).to_dict(),
+    }
+    meta_path = RESULTADOS / ARQUIVO_SAIDA.replace(".csv", "_meta.json")
+    with meta_path.open("w", encoding="utf-8") as fp:
+        json.dump(meta, fp, indent=2, ensure_ascii=False)
+
+    print(f"\nCSV:  {destino}  ({len(linhas)} linhas)")
+    print(f"Meta: {meta_path}")
 
 
 if __name__ == "__main__":
