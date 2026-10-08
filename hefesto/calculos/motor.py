@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from configs.motor.spec import MotorSpec, GrainSpec
-from hefesto.motorlib_wrapper import MotorResultado, simular_ric
+from hefesto.calculos.motorlib_wrapper import MotorResultado, simular_ric
 
 
 # ============================================================

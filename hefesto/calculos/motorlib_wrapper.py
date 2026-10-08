@@ -211,7 +211,7 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 2:
-        print("Uso: python -m hefesto.motorlib_wrapper <arquivo.ric>")
+        print("Uso: python -m hefesto.calculos.motorlib_wrapper <arquivo.ric>")
         sys.exit(1)
 
     r = simular_ric(sys.argv[1])
