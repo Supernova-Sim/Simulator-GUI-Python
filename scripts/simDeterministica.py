@@ -4,8 +4,9 @@ from rocketpy import Flight
 from hefesto.ambiente import build_irec
 from hefesto.modelos import build_rocket
 from configs.voo import IREC
+from configs.especificacao import ALETA_IREC
 
-
+USAR_SPEC_ALETA = True
 TIPO_ALETAS   = "freeform"   # "freeform" ou "trapezio"
 FATOR_EMPUXO  = 1.00         # 1.00 = nominal
 FATOR_ARRASTO = 1.00         # 1.00 = nominal
@@ -15,6 +16,7 @@ FATOR_ARRASTO = 1.00         # 1.00 = nominal
 def main() -> None:
     foguete = build_rocket(
         tipo_aletas=TIPO_ALETAS,
+        spec_aleta=ALETA_IREC if USAR_SPEC_ALETA else None,
         fator_empuxo=FATOR_EMPUXO,
         fator_arrasto=FATOR_ARRASTO,
     )

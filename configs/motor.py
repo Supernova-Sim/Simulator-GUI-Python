@@ -6,7 +6,7 @@ MOTOR = {
 
     "thrust_source": str(MOTORES / "jul1semMedidas.eng"),
 
-    "dry_mass": 10,  # 21 - 11 (mA - mP)
+    "dry_mass": 7.5, #atualizado # 21 - 11 (mA - mP)
     "dry_inertia": (1.47, 1.47, 0.0125),  #
     "center_of_dry_mass_position": 0.499,  # m
 

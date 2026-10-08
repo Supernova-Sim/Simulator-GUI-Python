@@ -36,10 +36,10 @@ COMPONENTES = [
     Componente("Satélite", 1.4000, 1.2020, 0.071, 0.000, 0.300),
     Componente("Complemento de massa", 2.6000, 1.3680, 0.076, 0.000, 0.020),
     Componente("Rail Button (conjunto)", 0.0476, 1.8450, 0.020, 0.0065, 0.027),
-    Componente("Aletas (aprox. cilíndrica)", 0.8769, 2.6855, 0.158, 0.079, 0.210),
+#    Componente("Aletas (aprox. cilíndrica)", 0.8769, 2.6855, 0.158, 0.079, 0.210),
 ]
 
-CG_GLOBAL = 1.35069 #Analisar se isso nao deve receber o CG que está em configs/foguete
+CG_GLOBAL = 1.294 #Analisar se isso nao deve receber o CG que está em configs/foguete
 
 def calcular_inercia(
     componentes: list[Componente],
