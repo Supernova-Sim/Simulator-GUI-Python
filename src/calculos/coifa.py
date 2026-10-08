@@ -6,7 +6,7 @@ sobre o perfil `r(x)` do formato escolhido. `x=0` é o bico, `x=L` é a base.
 import math
 from dataclasses import dataclass
 
-from configs.especificacao import CoifaSpec
+from configs import CoifaSpec
 
 
 # ============================================================
@@ -141,13 +141,21 @@ def calcular_coifa(spec: CoifaSpec, raio_base: float, n: int = 200) -> CoifaDeri
 # ============================================================
 
 def main() -> None:
-    from configs.especificacao import COIFA_IREC
+    from configs import COIFA_IREC
 
     d = calcular_coifa(COIFA_IREC, raio_base=0.079)
     print(f"massa:      {d.massa:.4f} kg")
     print(f"CG:         {d.cg:.4f} m")
     print(f"I_xx_local: {d.I_xx_local:.6f} kg·m²")
     print(f"I_yy_local: {d.I_yy_local:.6f} kg·m²")
+
+    # --- Validações ---
+    assert 1.0 < d.massa < 1.6, f"massa suspeita: {d.massa}"
+    assert 0.1 < d.cg < 0.25, f"CG suspeito: {d.cg}"
+    assert d.I_xx_local > 0, "I_xx_local ≤ 0"
+    assert d.I_yy_local > 0, "I_yy_local ≤ 0"
+
+    print("\n✓ coifa OK")
 
 
 if __name__ == "__main__":

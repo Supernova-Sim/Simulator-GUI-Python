@@ -1,11 +1,11 @@
+# src/modelo.py — bloco de imports no topo (linhas 1-9)
 """Combina specs e derivados num 'foguete resolvido' pronto para o RocketPy."""
 from dataclasses import dataclass
 
-from configs.especificacao import AletaSpec, CoifaSpec
-from configs.componentes import TuboSpec, MassaPontualSpec
-from hefesto.calculos.aletas import AletaDerivada, calcular_aleta
-from hefesto.calculos.componentes import ComponenteDerivado, derivar_todos
-from hefesto.calculos.coifa import CoifaDerivada, calcular_coifa
+from configs import AletaSpec, CoifaSpec, TuboSpec, MassaPontualSpec
+from src.calculos.aletas import AletaDerivada, calcular_aleta
+from src.calculos.componentes import ComponenteDerivado, derivar_todos
+from src.calculos.coifa import CoifaDerivada, calcular_coifa
 
 
 @dataclass(frozen=True)
@@ -113,3 +113,30 @@ def resolver(
         coifa=coifa,
         raio=raio,
     )
+
+def main() -> None:
+    """Smoke test: resolve o foguete Hefesto."""
+    from configs import COMPONENTES, ALETA_IREC, COIFA_IREC, FOGUETE
+
+    r = resolver(
+        componentes=COMPONENTES,
+        spec_aleta=ALETA_IREC,
+        spec_coifa=COIFA_IREC,
+        raio=FOGUETE["radius"],
+    )
+
+    print(f"massa seca:  {r.massa_seca:.4f} kg")
+    print(f"CG:          {r.cg_sem_motor:.4f} m")
+    print(f"I_xx:        {r.inercia_longitudinal:.4f} kg·m²")
+    print(f"I_yy:        {r.inercia_transversal:.4f} kg·m²")
+
+    # Sanidade — faixas calibradas contra o Hefesto real
+    assert 22.0 < r.massa_seca < 27.0, f"massa suspeita: {r.massa_seca}"
+    assert 1.0 < r.cg_sem_motor < 2.0, f"CG suspeito: {r.cg_sem_motor}"
+    assert 0.10 < r.inercia_longitudinal < 0.25, f"I_xx suspeito: {r.inercia_longitudinal}"
+    assert 12.0 < r.inercia_transversal < 15.0, f"I_yy suspeito: {r.inercia_transversal}"
+    print("\n✓ modelo OK")
+
+
+if __name__ == "__main__":
+    main()

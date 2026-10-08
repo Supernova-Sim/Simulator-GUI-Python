@@ -1,4 +1,4 @@
-# hefesto/calculos/seguranca.py
+# src/calculos/seguranca.py
 """Fatores de segurança e verificação de limites.
 
 Cada função devolve um `DiagnosticoFS` com valor, limite, OK/não-OK e
@@ -96,3 +96,29 @@ def check_mass_flux(mass_flux_pico: float) -> DiagnosticoFS:
         ok=mass_flux_pico <= limites.MASS_FLUX_MAX,
         detalhe="2 lb/(in²·s) é o limite típico do KNSB",
     )
+
+def main() -> None:
+    """Smoke test com valores conhecidos do Medusa."""
+    # Referência: relatório do Medusa + cálculo manual
+    #   P0 = 2.912 MPa, r = 0.05395 m, t = 0.003175 m, σ_lim = 145 MPa
+    #   FS esperado = 2.93
+    from configs import SIGMA_LIM_AL6063_T5
+
+    diags = [
+        fs_carcaca(2.9122e6, 0.05395, 0.003175, SIGMA_LIM_AL6063_T5),
+        check_p0(2.9122e6),
+        check_kn(232.7390),
+        check_mass_flux(1249.4661),
+    ]
+
+    for d in diags:
+        print(d.linha())
+
+    # Validações
+    assert abs(diags[0].valor - 2.93) < 0.01, f"FS esperado 2.93, obtido {diags[0].valor}"
+    assert all(d.ok for d in diags), "Algum check falhou"
+    print("\n✓ seguranca OK")
+
+
+if __name__ == "__main__":
+    main()

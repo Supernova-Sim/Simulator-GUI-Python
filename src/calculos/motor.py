@@ -15,10 +15,9 @@ import math
 from dataclasses import dataclass
 from pathlib import Path
 
-from configs.motor.spec import MotorSpec, GrainSpec
-from configs.materiais import SIGMA_LIM_AL6063_T5
-from hefesto.calculos.motorlib_wrapper import MotorResultado, simular_ric
-from hefesto.calculos.seguranca import (
+from configs import MotorSpec, SIGMA_LIM_AL6063_T5
+from src.calculos.motorlib_wrapper import simular_ric
+from src.calculos.seguranca import (
     DiagnosticoFS,
     fs_carcaca,
     check_p0,
@@ -387,7 +386,7 @@ def derivar_motor(spec: MotorSpec) -> MotorDerivado:
 # ============================================================
 
 def main() -> None:
-    from configs.motor.medusa import MOTOR_IREC
+    from configs.foguetes.hefesto.motor import MOTOR_IREC
 
     d = derivar_motor(MOTOR_IREC)
 
@@ -414,8 +413,8 @@ def main() -> None:
     print(f"  cg_dry (local):         {d.cg_dry:.4f} m")
     print()
     print("Inércia seca (aproximação cilíndrica):")
-    print(f"  I_xx (roll):            {d.dry_inertia[0]:.6f} kg·m²")
-    print(f"  I_yy (pitch/yaw):       {d.dry_inertia[1]:.6f} kg·m²")
+    print(f"  I_xx (roll):            {d.dry_inertia[2]:.6f} kg·m²")
+    print(f"  I_yy (pitch/yaw):       {d.dry_inertia[0]:.6f} kg·m²")
     print()
     print(f"  mass_loaded:            {d.mass_loaded:.4f} kg")
 
@@ -432,6 +431,16 @@ def main() -> None:
         print("Diagnósticos de segurança:")
         for diag in d.diagnosticos:
             print(diag.linha())
+
+    # --- Validações ---
+    assert d.fonte == "ric", f"esperava fonte=ric, obtive {d.fonte}"
+    assert abs(d.total_impulse - 10555.4) < 5.0, f"impulse: {d.total_impulse}"
+    assert abs(d.p0_pico / 1e6 - 2.912) < 0.01, f"P0: {d.p0_pico/1e6}"
+    assert abs(d.kn_pico - 232.7) < 0.5, f"Kn: {d.kn_pico}"
+    assert len(d.curva_empuxo) == 126, f"curva: {len(d.curva_empuxo)} pontos"
+    assert all(x.ok for x in d.diagnosticos), "diagnóstico falhou"
+
+    print("\n✓ motor OK")
 
 
 if __name__ == "__main__":

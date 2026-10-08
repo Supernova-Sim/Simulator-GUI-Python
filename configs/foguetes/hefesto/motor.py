@@ -5,8 +5,8 @@ Geometria do motor (grãos, tubeira, propelente) vem do .ric do OpenMotor.
 Aqui ficam os complementos que o OpenMotor não carrega: carcaça, curva de
 empuxo, posição da tubeira e separação entre grãos.
 """
-from hefesto.parsers.openmotor import motor_spec_do_ric
-from hefesto.paths import MOTORES, OPENMOTOR
+from src.parsers.openmotor import motor_spec_do_ric
+from src.paths import MOTORES, OPENMOTOR
 from configs.motor.spec import MotorSpec
 
 

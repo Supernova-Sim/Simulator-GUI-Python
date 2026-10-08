@@ -21,8 +21,8 @@ def cmd_sim(args):
 
 
 def cmd_motor(args):
-    from configs.motor.medusa import MOTOR_IREC
-    from hefesto.calculos.motor import derivar_motor
+    from configs.foguetes.hefesto.motor import MOTOR_IREC
+    from src.calculos.motor import derivar_motor
 
     d = derivar_motor(MOTOR_IREC)
     print(f"--- {d.nome} (fonte: {d.fonte}) ---")
@@ -38,8 +38,8 @@ def cmd_motor(args):
 
 
 def cmd_fs(args):
-    from configs.motor.medusa import MOTOR_IREC
-    from hefesto.calculos.motor import derivar_motor
+    from configs import MOTOR_IREC
+    from src.calculos.motor import derivar_motor
 
     d = derivar_motor(MOTOR_IREC)
     if not d.diagnosticos:
@@ -56,6 +56,15 @@ def cmd_varrer(args):
     import scripts.varredura as v
     v.main()
 
+def cmd_dump(args):
+    from src.dump import dump_tudo
+    print(dump_tudo())
+
+
+def cmd_smoke(args):
+    from src.smoke import main as smoke_main
+    smoke_main()
+
 
 def main():
     p = argparse.ArgumentParser(description="Central de controle do projeto")
@@ -65,6 +74,8 @@ def main():
     sub.add_parser("motor",  help="Só o motor (sem voo)").set_defaults(func=cmd_motor)
     sub.add_parser("fs",     help="Diagnósticos de segurança").set_defaults(func=cmd_fs)
     sub.add_parser("varrer", help="Varredura paramétrica").set_defaults(func=cmd_varrer)
+    sub.add_parser("dump", help="Imprime toda a configuração").set_defaults(func=cmd_dump)
+    sub.add_parser("smoke", help="Smoke test dos módulos").set_defaults(func=cmd_smoke)
 
     args = p.parse_args()
     args.func(args)

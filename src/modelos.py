@@ -1,24 +1,31 @@
-# hefesto/modelos.py
+# src/modelos.py
+"""Monta o foguete pronto para o RocketPy.
+
+Padrão de injeção: todos os parâmetros concretos (motor, componentes,
+aleta, coifa) chegam por argumento. Os defaults apontam para o Hefesto,
+mas qualquer um pode ser sobrescrito.
+"""
 from dataclasses import dataclass
 from rocketpy import Rocket, SolidMotor
 
-from configs.foguete.geometria import (
+from configs import (
+    # defaults do Hefesto
+    MOTOR_IREC, COMPONENTES, COIFA_IREC,
     FOGUETE, ALETAS, COIFA, RAIL_BUTTONS,
     REEFED, UNREEFED, ALETAS_TRAPEZIO_EQUIV, MOTOR_POSITION,
+    # tipos
+    AletaSpec, CoifaSpec, MotorSpec,
+    TuboSpec, MassaPontualSpec,
 )
-from configs.componentes import COMPONENTES
-from configs.especificacao import AletaSpec, COIFA_IREC, CoifaSpec
-from configs.motor.spec import MotorSpec
-from configs.motor.medusa import MOTOR_IREC
-from hefesto.modelo import resolver
-from hefesto.calculos.motor import MotorDerivado, derivar_motor
+from src.modelo import resolver
+from src.calculos.motor import MotorDerivado, derivar_motor
 
 
 @dataclass
 class FogueteMontado:
     rocket: Rocket
     motor: SolidMotor
-    motor_derivado: MotorDerivado       # ← novo
+    motor_derivado: MotorDerivado
     nosecone: object
     fins: object
     rail_buttons: object
@@ -26,13 +33,14 @@ class FogueteMontado:
     reefed: object
 
 
-def _motor_kwargs(spec, d, thrust_source=None) -> dict:
+def _motor_kwargs(spec: MotorSpec, d: MotorDerivado, thrust_source=None) -> dict:
+    """Traduz MotorSpec + MotorDerivado para kwargs do SolidMotor."""
     if thrust_source is not None:
         ts = thrust_source
     elif d.curva_empuxo is not None:
-        ts = list(d.curva_empuxo)          # .ric via motorlib
+        ts = list(d.curva_empuxo)
     else:
-        ts = spec.thrust_curve_path        # fallback .eng
+        ts = spec.thrust_curve_path
 
     return {
         "thrust_source": ts,
@@ -49,18 +57,25 @@ def _motor_kwargs(spec, d, thrust_source=None) -> dict:
         "nozzle_position": spec.nozzle_position,
         "nozzle_radius": spec.nozzle_exit_radius,
         "throat_radius": spec.throat_radius,
-        # burn_time começando em 0 (RocketPy pré-pend (0,0) na integração)
         "burn_time": (0.0, d.burn_time[1]),
         "coordinate_system_orientation": "nozzle_to_combustion_chamber",
     }
 
 
 def build_motor(
+    motor_spec: MotorSpec | None = None,
     fator_empuxo: float = 1.0,
 ) -> tuple[SolidMotor, MotorDerivado]:
-    """Constrói o motor e devolve o derivado junto (para reuso)."""
-    d = derivar_motor(MOTOR_IREC)
-    kwargs = _motor_kwargs(MOTOR_IREC, d)
+    """Constrói o SolidMotor a partir de um MotorSpec.
+
+    Parameters
+    ----------
+    motor_spec : MotorSpec | None
+        Default = MOTOR_IREC (Hefesto).
+    """
+    spec = motor_spec if motor_spec is not None else MOTOR_IREC
+    d = derivar_motor(spec)
+    kwargs = _motor_kwargs(spec, d)
 
     if fator_empuxo != 1.0:
         base = SolidMotor(**kwargs)
@@ -71,24 +86,36 @@ def build_motor(
 
 def build_rocket(
     *,
-    tipo_aletas: str = "freeform",
+    # --- Identidade do foguete ---
+    motor_spec: MotorSpec | None = None,
+    componentes: list[TuboSpec | MassaPontualSpec] | None = None,
+    spec_coifa: CoifaSpec | None = None,
     spec_aleta: AletaSpec | None = None,
+
+    # --- Aletas (quando spec_aleta é None) ---
+    tipo_aletas: str = "freeform",
+
+    # --- Fatores de varredura ---
     fator_empuxo: float = 1.0,
     fator_arrasto: float = 1.0,
 ) -> FogueteMontado:
-    """Constrói o foguete.
+    """Constrói o foguete injetando as dependências.
 
-    Se `spec_aleta` for passada, massa/CG/inércia são RECALCULADOS a partir
-    dos COMPONENTES + COIFA_IREC + aleta. Caso contrário, usa FOGUETE hardcoded.
+    Defaults = Hefesto (IREC 2026). Para outro foguete, passe todos.
     """
-    motor, motor_d = build_motor(fator_empuxo=fator_empuxo)
+    # --- Defaults do Hefesto ---
+    motor_spec = motor_spec if motor_spec is not None else MOTOR_IREC
+    componentes = componentes if componentes is not None else COMPONENTES
+    spec_coifa = spec_coifa if spec_coifa is not None else COIFA_IREC
+
+    motor, motor_d = build_motor(motor_spec=motor_spec, fator_empuxo=fator_empuxo)
     resolvido = None
 
     if spec_aleta is not None:
         resolvido = resolver(
-            componentes=COMPONENTES,
+            componentes=componentes,
             spec_aleta=spec_aleta,
-            spec_coifa=COIFA_IREC,
+            spec_coifa=spec_coifa,
             raio=FOGUETE["radius"],
         )
         parametros_rocket = resolvido.dict_rocket(
@@ -132,3 +159,25 @@ def build_rocket(
         nosecone=nosecone, fins=fins, rail_buttons=rail_buttons,
         unreefed=unreefed, reefed=reefed,
     )
+
+def main() -> None:
+    """Smoke test: monta o foguete e roda um voo curto."""
+    from configs import IREC, ALETA_IREC
+    from src.ambiente import build_irec
+    from rocketpy import Flight
+
+    # Configuração oficial do Hefesto (spec_aleta resolvida)
+    foguete = build_rocket(spec_aleta=ALETA_IREC, tipo_aletas="freeform")
+    voo = Flight(rocket=foguete.rocket, environment=build_irec(), **IREC)
+    apogee_agl = voo.apogee - 1401
+
+    print(f"apogee AGL:    {apogee_agl:.1f} m")
+    print(f"min stability: {voo.min_stability_margin:.3f} cal")
+
+    assert 2300 < apogee_agl < 2500, f"apogee fora da faixa: {apogee_agl}"
+    assert voo.min_stability_margin > 1.0, "margem < 1 cal"
+    print("\n✓ modelos OK")
+
+
+if __name__ == "__main__":
+    main()

@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 
-from configs.especificacao import AletaSpec
+from configs import AletaSpec
 
 
 @dataclass(frozen=True)
@@ -109,8 +109,7 @@ def calcular_aleta(spec: AletaSpec, r_rocket: float) -> AletaDerivada:
 
 
 def main() -> None:
-    from configs.especificacao import ALETA_IREC
-    from configs.foguete.geometria import FOGUETE
+    from configs import ALETA_IREC, FOGUETE
     d = calcular_aleta(ALETA_IREC, r_rocket=FOGUETE["radius"])
     print(f"Massa total: {d.massa_total:.4f} kg")
     print(f"Área:        {d.area_planform:.6f} m²")
@@ -118,6 +117,14 @@ def main() -> None:
     print(f"r_cg:        {d.r_cg:.4f} m")
     print(f"I_xx:        {d.I_xx:.6f} kg·m²")
     print(f"I_yy_local:  {d.I_yy_local:.6f} kg·m²")
+
+    # --- Validações ---
+    assert 3.0 < d.massa_total < 4.0, f"massa suspeita: {d.massa_total}"
+    assert 0.02 < d.area_planform < 0.03, f"área suspeita: {d.area_planform}"
+    assert 2.2 < d.X_cg_absoluto < 2.5, f"CG suspeito: {d.X_cg_absoluto}"
+    assert 0.05 < d.I_xx < 0.10, f"I_xx suspeito: {d.I_xx}"
+
+    print("\n✓ aletas OK")
 
 
 if __name__ == '__main__':

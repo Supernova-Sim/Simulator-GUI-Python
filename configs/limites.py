@@ -9,7 +9,7 @@ Referências:
 - Relatório Medusa: alumínio 6063-T5 σ_lim = 145 MPa
 - OpenMotor .ric: maxPressure=8 MPa, maxMassFlux=1406 kg/(m²·s), minPortThroat=2.0
 """
-from dataclasses import dataclass
+
 
 
 # ============================================================

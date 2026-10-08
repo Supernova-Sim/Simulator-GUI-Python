@@ -1,15 +1,6 @@
-# hefesto/motorlib_wrapper.py
+# src/calculos/motorlib_wrapper.py
 """Wrapper do motorlib (OpenMotor) — roda simulação a partir de .ric.
-
-Encapsula a API do OpenMotor para expor uma interface limpa:
-    resultado = simular_ric("caminho/Motor.ric")
-    print(resultado.resumo())
-    curva = resultado.curva_empuxo  # [(t, F), ...]
-
-Nota sobre os canais:
-    Alguns canais do motorlib são 2D — [instante][grão]. São:
-        mass, massFlow, massFlux, regression, web, machNumber
-    Os demais são 1D — [instante]. O dataclass reflete essa separação.
+...
 """
 from __future__ import annotations
 
@@ -18,6 +9,19 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
+# --- 1. Força Agg ---
+import matplotlib
+matplotlib.use("Agg")
+
+# --- 2. Impede que uilib force Qt5Agg (que não temos instalado) ---
+_orig_use = matplotlib.use
+def _safe_use(backend=None, *args, **kwargs):
+    if backend and "qt" in str(backend).lower():
+        return  # ignora pedidos de backend Qt
+    return _orig_use(backend, *args, **kwargs)
+matplotlib.use = _safe_use
+
+# --- 3. Agora o uilib pode importar sem estourar ---
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 logging.getLogger("uilib").setLevel(logging.ERROR)
 
@@ -207,12 +211,20 @@ def simular_ric(ric_path: str | Path) -> MotorResultado:
 # ======================================================================
 # CLI rápida
 # ======================================================================
-if __name__ == "__main__":
-    import sys
-
-    if len(sys.argv) < 2:
-        print("Uso: python -m hefesto.calculos.motorlib_wrapper <arquivo.ric>")
-        sys.exit(1)
-
-    r = simular_ric(sys.argv[1])
+def main() -> None:
+    """Smoke test: roda o .ric e valida contra o relatório do Medusa."""
+    from src.paths import OPENMOTOR
+    ric_path = OPENMOTOR / "MotorNovo.ric"
+    r = simular_ric(ric_path)
     print(r.resumo())
+
+    # Cross-check com o relatório do Medusa
+    assert r.success
+    assert abs(r.impulso_total - 10555.4) < 5.0, f"impulse: {r.impulso_total}"
+    assert abs(r.p0_pico / 1e6 - 2.912) < 0.01, f"P0: {r.p0_pico/1e6}"
+    assert abs(r.kn_pico - 232.7) < 0.5, f"Kn: {r.kn_pico}"
+    print("\n✓ motorlib_wrapper OK")
+
+
+if __name__ == "__main__":
+    main()

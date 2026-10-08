@@ -6,11 +6,7 @@ com massa, posição axial e inércias locais (roll + transversal).
 import math
 from dataclasses import dataclass
 
-from configs.componentes import (
-    TuboSpec,
-    MassaPontualSpec,
-    COMPONENTES,
-)
+from configs import TuboSpec, MassaPontualSpec, COMPONENTES
 
 
 # ============================================================
@@ -121,6 +117,15 @@ def main() -> None:
     print(f"CG (x=0 no nariz):  {cg:.4f} m")
     print(f"I_xx (roll):        {I_xx:.6f} kg·m²")
     print(f"I_yy (pitch/yaw):   {I_yy:.4f} kg·m²")
+
+    # --- Validações ---
+    assert len(derivados) == 24, f"esperava 24 componentes, obtive {len(derivados)}"
+    assert 18.0 < massa_total < 21.0, f"massa suspeita: {massa_total}"
+    assert 1.3 < cg < 1.45, f"CG suspeito: {cg}"
+    assert 0.05 < I_xx < 0.10, f"I_xx suspeito: {I_xx}"
+    assert 8.0 < I_yy < 9.5, f"I_yy suspeito: {I_yy}"
+
+    print("\n✓ componentes OK")
 
 
 if __name__ == "__main__":

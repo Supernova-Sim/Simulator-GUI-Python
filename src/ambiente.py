@@ -1,6 +1,6 @@
 """Fábricas de Environment. Nenhum objeto global é criado aqui."""
 from rocketpy import Environment
-from hefesto.paths import ATMOSFERA
+from src.paths import ATMOSFERA
 
 _DIC_NC = {                       # dicionário comum aos arquivos ERA5
     "time": "valid_time",
@@ -42,3 +42,19 @@ def build_irec_ensemble() -> Environment:
 
 # def build_lasc() -> Environment:
 #     ...
+
+
+def main() -> None:
+    """Smoke test: monta o Environment do IREC."""
+    env = build_irec()
+    print(f"data:     {env.date}")
+    print(f"lat/lon:  {env.latitude}, {env.longitude}")
+    print(f"elev:     {env.elevation} m")
+
+    assert env.elevation == 1401
+    assert env.latitude == 32.94019
+    print("\n✓ ambiente OK")
+
+
+if __name__ == "__main__":
+    main()

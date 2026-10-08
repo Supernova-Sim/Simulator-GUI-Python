@@ -11,9 +11,9 @@ from rocketpy.stochastic import (
     StochasticTrapezoidalFins,
 )
 
-from hefesto.ambiente import build_irec, build_irec_ensemble
-from hefesto.modelos import build_rocket
-from hefesto.paths import RESULTADOS
+from src.ambiente import build_irec, build_irec_ensemble
+from src.modelos import build_rocket
+from src.paths import RESULTADOS
 
 from configs.foguete.geometria import (
     FOGUETE_E, COIFA_E, ALETAS_E, RAIL_BUTTONS_E,

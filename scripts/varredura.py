@@ -6,13 +6,11 @@ from datetime import datetime
 import numpy as np
 from rocketpy import Flight
 
-from hefesto.ambiente import build_irec
-from hefesto.modelos import build_rocket
-from hefesto.paths import RESULTADOS
-from hefesto.calculos.motor import derivar_motor
-from configs.voo import IREC
-from configs.especificacao import ALETA_IREC
-from configs.motor.medusa import MOTOR_IREC
+from src.ambiente import build_irec
+from src.modelos import build_rocket
+from src.paths import RESULTADOS
+from src.calculos.motor import derivar_motor
+from configs import IREC, ALETA_IREC, MOTOR_IREC
 
 
 # ============================================================

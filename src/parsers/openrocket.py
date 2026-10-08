@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from configs.componentes import TuboSpec, MassaPontualSpec
 from configs.especificacao import CoifaSpec, AletaSpec, ALETA_IREC
-from configs.materiais import ALUMINIO_6061, COMPOSITO_EFETIVO
+from configs.material import ALUMINIO_6061, COMPOSITO_EFETIVO
 
 # Dicionário auxiliar para mapear densidades do XML para as nossas constantes
 # (Isso pode ser extraído dinamicamente do XML também, mas é bom ter um fallback)

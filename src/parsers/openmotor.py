@@ -1,4 +1,4 @@
-# hefesto/parsers/openmotor.py
+# src/parsers/openmotor.py
 """Parser para arquivos .ric do OpenMotor.
 
 Lê o YAML e converte para dataclasses de especificação de motor.
@@ -250,7 +250,7 @@ def carregar_ric(caminho: str | Path) -> RicMotorSpec:
     )
 
 # ======================================================================
-# Conversor: RicMotorSpec → hefesto.MotorSpec
+# Conversor: RicMotorSpec → src.MotorSpec
 # ======================================================================
 # Adicione no topo do arquivo, junto aos outros imports:
 #
@@ -280,7 +280,7 @@ def motor_spec_do_ric(
     dry_inertia_override: tuple[float, float, float] | None = None,
     nome: str | None = None,
 ):
-    """Converte um .ric do OpenMotor em MotorSpec do hefesto.
+    """Converte um .ric do OpenMotor em MotorSpec do src.
 
     Parâmetros do .ric (grãos, tubeira, propelente) são lidos automaticamente.
     O que o .ric não carrega — carcaça, separação entre grãos, posição da
@@ -290,8 +290,8 @@ def motor_spec_do_ric(
     -------
     MotorSpec (de configs.motor_spec)
     """
-    from configs.motor.spec import GrainSpec as HefGrainSpec
-    from configs.motor.spec import MotorSpec as HefMotorSpec
+    from configs import GrainSpec as HefGrainSpec
+    from configs import MotorSpec as HefMotorSpec
 
     ric = carregar_ric(ric_path)
 
@@ -339,12 +339,18 @@ def motor_spec_do_ric(
 # ----------------------------------------------------------------------
 # Teste rápido
 # ----------------------------------------------------------------------
-if __name__ == "__main__":
-    import sys
-
-    if len(sys.argv) < 2:
-        print("Uso: python -m hefesto.parsers.openmotor <arquivo.ric>")
-        sys.exit(1)
-
-    spec = carregar_ric(sys.argv[1])
+def main() -> None:
+    """Smoke test: carrega o .ric e mostra resumo."""
+    from src.paths import OPENMOTOR
+    ric_path = OPENMOTOR / "MotorNovo.ric"
+    spec = carregar_ric(ric_path)
     print(spec.resumo())
+
+    # Sanidade
+    assert len(spec.grains) == 6, f"esperava 6 grãos, obtive {len(spec.grains)}"
+    assert abs(spec.propellant.density - 1841.0) < 1.0
+    print("\n✓ openmotor (parser) OK")
+
+
+if __name__ == "__main__":
+    main()

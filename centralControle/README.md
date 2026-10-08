@@ -1,107 +1,91 @@
-# centralControle — painel do projeto
+# centralControle — painel operacional
 
-Este é o lugar onde você mexe. Todo o resto (`hefesto/`, `configs/`,
-`scripts/`) é biblioteca ou configuração avançada — **não edite sem saber
-o que faz**.
+Este é o lugar onde você mexe no dia a dia. Todo o resto (`src/`, `configs/`)
+é biblioteca ou configuração — só edite se souber o que está fazendo.
 
-## Como simular
+## Comandos
 
-### Simulação determinística
-    python centralControle/rodar.py sim
+Todos rodam pela CLI unificada:
 
-### Varredura (empuxo × arrasto)
-    python centralControle/rodar.py varrer --empuxo 0.9..1.1 --arrasto 1.0
+```bash
+python centralControle/rodar.py <comando>
+```
 
-### Verificar motor sem voar
-    python centralControle/rodar.py motor
+| Comando | O que faz | Quando usar |
+|---|---|---|
+| `sim` | Simulação determinística completa | Antes de commitar mudanças |
+| `motor` | Só o motor (sem voo) | Ajustando o `.ric` |
+| `fs` | Diagnósticos de segurança | Sempre, antes de simular oficial |
+| `dump` | Imprime toda a configuração formatada | "Será que está tudo certo?" |
+| `varrer` | Varredura empuxo × arrasto | Análises paramétricas |
+| `smoke` | Smoke test dos módulos de `src/` | Depois de refatorar |
 
-### Diagnóstico de segurança (FS, P0, Kn, mass flux)
-    python centralControle/rodar.py fs
+## Fluxo típico
 
-## O que o código atual permite
+### Ajustar o motor
 
-- ✅ Simular voo completo (RocketPy) com atmosfera real (ERA5)
-- ✅ Varredura paramétrica de empuxo/arrasto
-- ✅ Rodar OpenMotor headless a partir do `.ric` e obter curva de empuxo
-- ✅ Calcular FS da carcaça, P0 pico, Kn, mass flux
-- ✅ Salvar JSON de cada simulação em `data/saida/`
-- ⏳ Monte Carlo (reformulação pendente)
-- ⏳ Parser `.ork` (OpenRocket)
-- ⏳ Drag via RASAero (.CDX)
-- ⏳ Análise de sensibilidade (Sobol, Morris)
+1. Abra o `.ric` no OpenMotor GUI, mude os grãos, salve.
+2. `python centralControle/rodar.py fs` → checar FS, P0, Kn, mass flux.
+3. `python centralControle/rodar.py sim` → ver impacto no apogeu.
 
-## Mapa mental
+### Verificar a configuração do foguete
 
-    data/entrada/                 ← INPUT (não commitar grandes)
-      openmotor/MotorNovo.ric     → OpenMotor: geometria do motor
-      motores/jul1semMedidas.eng  → curvas de referência (cross-check)
-      openrocket/rocket.ork       → geometria aérea (a integrar)
-      arrasto/*.csv               → coeficientes de arrasto
-      atmosfera/*.nc              → ERA5 ensemble
+```bash
+python centralControle/rodar.py dump
+```
 
-        ↓ (parsers)
+Imprime: massa seca, CG, inércia, tabela de componentes, geometria das
+aletas, massa e CG da coifa, curva do motor, FS. Útil antes de apresentação
+ou para comparar com medições físicas.
 
-    hefesto/parsers/              ← lê .ric, .eng, .ork
-    hefesto/calculos/             ← derivações (motor, aletas, coifa, segurança)
-    hefesto/modelo.py             ← agrega derivados no "foguete resolvido"
-    hefesto/modelos.py            ← monta o Rocket() do RocketPy
-    hefesto/ambiente.py           ← monta o Environment do RocketPy
+### Antes de submeter para a IREC
 
-        ↓ (execução)
+1. `python centralControle/rodar.py fs` → todos OK?
+2. `python centralControle/rodar.py sim` → apogeu na faixa alvo?
+3. `centralControle/checklists.md` → todos os itens checados?
 
-    centralControle/rodar.py      ← PONTO DE ENTRADA
+## Estrutura do `rodar.py`
 
-        ↓ (saída)
+```
+rodar.py <comando>
+    │
+    ├── sim      → scripts.simDeterministica.main()
+    ├── motor    → derivar_motor(MOTOR_IREC)
+    ├── fs       → derivar_motor + imprimir diagnosticos
+    ├── dump     → src.dump.dump_tudo()
+    ├── varrer   → scripts.varredura.main()
+    └── smoke    → src.smoke_test()
+```
 
-    data/saida/                   ← JSON de cada simulação, CSV de varredura
+## Parâmetros de execução
 
+`parametros.yaml` — edite aqui sem tocar em Python:
 
-## Configuração do Medusa
+```yaml
+simulacao:
+  tipo_aletas: freeform
+  usar_spec_aleta: true
+  fator_empuxo: 1.00
+  fator_arrasto: 1.00
 
-Fluxo interno (motor)
+varredura:
+  empuxo: { inicio: 0.90, fim: 1.10, passo: 0.01 }
+  arrasto: { inicio: 1.00, fim: 1.00, passo: 0.10 }
+```
 
-.ric ─→ loadFile (OpenMotor) ─→ Motor ─→ runSimulation()
-↓
-curva_empuxo, P0_pico, Kn_pico, mass_flux_pico
-↓
-derivar_motor() ─→ MotorDerivado
-↓
-┌────────────────────────┴────────────────────────┐
-↓ ↓
-_motor_kwargs() diagnosticos
-↓ ↓
-SolidMotor (RocketPy) FS, P0, Kn, flux
+(Integração com o `rodar.py` ainda pendente — por ora os valores estão
+hardcoded nos scripts.)
 
-**Arquivo:** `configs/motor/medusa.py`
+## Diagnósticos — como ler
 
-    RIC_MEDUSA  = data/entrada/openmotor/MotorNovo.ric    ← geometria
-    ENG_MEDUSA  = data/entrada/motores/jul1semMedidas.eng ← cross-check
-    _CARCAÇA_MEDUSA = {
-        case_inner_radius:   0.05395
-        case_wall_thickness: 0.003175
-        case_density:        2700     # Al 6063-T5
-        grain_separation:    0.010
-        nozzle_position:     0.016
-        case_length:         1.100
-        dry_mass:            7.5
-    }
+```
+[OK ] FS carcaça              2.9302 —            >= 2.000   σ_circ=49.48 MPa (σ_lim=145 MPa)
+[OK ] P0 pico                 2.9122 MPa          <= 8.000
+[OK ] Kn pico                232.7390 —            <= 250.000
+[OK ] mass flux pico        1249.4661 kg/(m²·s)   <= 1406.000
+```
 
-**Limites:** `configs/limites.py`
+- `[OK ]` → passou
+- `[!! ]` → falhou, revisar antes de simular
 
-    FS_MIN_CARCACA     = 2.0
-    P0_MAX             = 8.0e6
-    KN_MAX             = 250
-    MASS_FLUX_MAX      = 1406
-
-## Checklist antes de simular oficial
-
-- [ ] `.ric` do motor é a versão mais recente?
-- [ ] `FS carcaça ≥ 2.0`?
-- [ ] `P0 ≤ 8 MPa`?
-- [ ] `Kn ≤ 250`?
-- [ ] `mass flux ≤ 1406 kg/(m²·s)`?
-- [ ] Atmosfera do dia corresponde (lat/lon/data)?
-
-## Estrutura detalhada
-
-(expandir conforme o projeto crescer)
+Limites em `configs/limites.py`.

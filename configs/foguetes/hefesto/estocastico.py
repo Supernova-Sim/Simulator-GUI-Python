@@ -1,38 +1,37 @@
-from hefesto.paths import MOTORES
+# configs/foguetes/hefesto/estocastico.py
+"""Parâmetros estocásticos (Monte Carlo) do Hefesto."""
 
-
-
-MOTOR = {
-
-    "thrust_source": str(MOTORES / "jul1semMedidas.eng"),
-
-    "dry_mass": 7.5, #atualizado # 21 - 11 (mA - mP)
-    "dry_inertia": (1.47, 1.47, 0.0125),  #
-    "center_of_dry_mass_position": 0.499,  # m
-
-    "grain_number": 6, #7 # OpenMotor
-
-    "grain_outer_radius": 0.04933, #0.05,  # OpenMotor
-    "grain_initial_inner_radius": 0.02267, #0.02343,  # media ponderada entre os raios obtidos anteriormente
-    "grain_initial_height": 0.15,  # OpenMotor "Length"
-    "grain_separation": 0.01,  #
-
-    "grain_density": 1842.44,  #
-    "grains_center_of_mass_position": 0.4338, #0.67,  #
-
-    "nozzle_position": 0.016,  #
-    "nozzle_radius": 0.039,  #
-
-    "throat_radius": 0.017, #0.0173,  # OpenMotor
-
-    "burn_time": (0, 3.75),
-
-    "coordinate_system_orientation": "nozzle_to_combustion_chamber",
-
+FOGUETE_E = {
+    "radius": 0.0005,
+    "mass": 0.10,
+    "inertia_11": 11.784 * 0.05,
+    "inertia_22": 11.784 * 0.05,
+    "inertia_33": 0.099 * 0.05,
+    "center_of_mass_without_motor": 0.010,
+    "power_off_drag_factor": (1.0, 0.10),
+    "power_on_drag_factor":  (1.0, 0.10),
 }
 
-############# Monte Carlo
+COIFA_E       = {"length": 0.001}
+COIFA_POS_E   = 0.001
 
+ALETAS_E = {
+    "root_chord":   0.0005,
+    "tip_chord":    0.0005,
+    "span":         0.0005,
+    "sweep_length": 0.0005,
+    "cant_angle":   0.5,
+}
+ALETAS_POS_E = 0.002
+
+RAIL_BUTTONS_E = {
+    "buttons_distance":  0.002,
+    "angular_position":  1.0,
+}
+LOWER_BUTTON_POSITION_E = 0.002
+
+REEFED_E   = {"cd_s": 0.085, "lag": 0.10}
+UNREEFED_E = {"cd_s": 0.15,  "lag": 0.10}
 
 MOTOR_E = {
 
@@ -81,5 +80,3 @@ MOTOR_E = {
 }
 
 MOTOR_POS_E = 0.002 # 2 mm: incerteza de montagem da posição axial do motorDic
-
-
