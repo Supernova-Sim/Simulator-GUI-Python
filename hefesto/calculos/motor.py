@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from configs.motor.spec import MotorSpec, GrainSpec
+from hefesto.motorlib_wrapper import MotorResultado, simular_ric
 
 
 # ============================================================
@@ -83,44 +84,54 @@ def _integrar_trapezio(tempos: list[float], empuxos: list[float]) -> float:
 @dataclass(frozen=True)
 class MotorDerivado:
     nome: str
+    fonte: str                          # "ric" ou "eng"
 
-    # ---------- Do .eng ----------
-    burn_time: tuple[float, float]      # (t_inicio, t_fim) em s
-    total_impulse: float                # N·s
-    max_thrust: float                   # N
-    eng_propellant_mass: float          # kg — cross-check do header
+    # ---------- Cinemática (de .ric ou .eng) ----------
+    burn_time: tuple[float, float]
+    total_impulse: float
+    max_thrust: float
+    eng_propellant_mass: float          # massa declarada pela fonte (cross-check)
+
+    # ---------- Curva (só se fonte=ric) ----------
+    curva_empuxo: tuple[tuple[float, float], ...] | None
+
+    # ---------- Balística interna (só se fonte=ric) ----------
+    p0_pico: float | None
+    kn_pico: float | None
+    mass_flux_pico: float | None
+    isp_entregue: float | None
 
     # ---------- Geometria dos grãos ----------
-    propellant_mass: float              # kg
-    propellant_length: float            # m — soma só dos grãos
-    stack_length: float                 # m — grãos + separações
-    cg_propellant: float                # m — local, x=0 no topo do motor
-
-    # Raio interno efetivo (média ponderada por volume).
-    # O RocketPy só aceita UM `grain_initial_inner_radius`, então
-    # grãos com cores diferentes precisam ser homogeneizados.
+    propellant_mass: float
+    propellant_length: float
+    stack_length: float
+    cg_propellant: float
     grain_inner_radius_effective: float
 
     # ---------- Carcaça ----------
-    case_length: float                  # m
-    case_outer_radius: float            # m
-    dry_mass: float                     # kg
-    cg_dry: float                       # m — local
+    case_length: float
+    case_outer_radius: float
+    dry_mass: float
+    cg_dry: float
 
     # ---------- Inércia ----------
-    dry_inertia: tuple[float, float, float]   # (I_trans, I_trans, I_long) kg·m²
+    dry_inertia: tuple[float, float, float]
 
     # ---------- Agregados ----------
-    mass_loaded: float                  # kg — dry_mass + propellant_mass
+    mass_loaded: float          # kg — dry_mass + propellant_mass
 
     def to_dict(self) -> dict:
-        """Dict serializável com todos os derivados."""
         return {
             "nome": self.nome,
+            "fonte": self.fonte,
             "burn_time": list(self.burn_time),
             "total_impulse": self.total_impulse,
             "max_thrust": self.max_thrust,
             "eng_propellant_mass": self.eng_propellant_mass,
+            "p0_pico": self.p0_pico,
+            "kn_pico": self.kn_pico,
+            "mass_flux_pico": self.mass_flux_pico,
+            "isp_entregue": self.isp_entregue,
             "propellant_mass": self.propellant_mass,
             "propellant_length": self.propellant_length,
             "stack_length": self.stack_length,
@@ -132,12 +143,47 @@ class MotorDerivado:
             "cg_dry": self.cg_dry,
             "dry_inertia": list(self.dry_inertia),
             "mass_loaded": self.mass_loaded,
+            # curva_empuxo é grande — omitida de propósito
         }
 
 
 # ============================================================
 #  Derivações
 # ============================================================
+
+def _derivar_do_motor(spec: MotorSpec) -> dict:
+    """Retorna tudo que vem da fonte de verdade (.ric > .eng)."""
+    if spec.ric_path is not None:
+        r = simular_ric(spec.ric_path)
+        return {
+            "fonte": "ric",
+            "burn_time": (r.tempo[0], r.tempo[-1]),
+            "total_impulse": r.impulso_total,
+            "max_thrust": r.empuxo_max,
+            "eng_propellant_mass": r.massa_propelente_inicial,
+            "curva_empuxo": tuple(r.curva_empuxo),
+            "p0_pico": r.p0_pico,
+            "kn_pico": r.kn_pico,
+            "mass_flux_pico": r.mass_flux_pico,
+            "isp_entregue": r.isp_entregue,
+        }
+    if spec.thrust_curve_path is not None:
+        burn, imp, mx, ep = _derivar_do_eng(spec)
+        return {
+            "fonte": "eng",
+            "burn_time": burn,
+            "total_impulse": imp,
+            "max_thrust": mx,
+            "eng_propellant_mass": ep,
+            "curva_empuxo": None,
+            "p0_pico": None,
+            "kn_pico": None,
+            "mass_flux_pico": None,
+            "isp_entregue": None,
+        }
+    raise ValueError(
+        f"MotorSpec '{spec.nome}' precisa de ric_path ou thrust_curve_path."
+    )
 
 def _derivar_do_eng(spec: MotorSpec) -> tuple:
     tempos, empuxos, header = _ler_eng(spec.thrust_curve_path)
@@ -230,8 +276,8 @@ def _derivar_inercia_seca(
 # ============================================================
 
 def derivar_motor(spec: MotorSpec) -> MotorDerivado:
-    # --- Do .eng ---
-    burn_time, total_impulse, max_thrust, eng_prop = _derivar_do_eng(spec)
+    # --- Da fonte de verdade ---
+    info = _derivar_do_motor(spec)
 
     # --- Dos grãos ---
     prop_mass, prop_len, stack_len, cg_prop, inner_eff = _derivar_dos_graos(spec)
@@ -251,10 +297,16 @@ def derivar_motor(spec: MotorSpec) -> MotorDerivado:
 
     return MotorDerivado(
         nome=spec.nome,
-        burn_time=burn_time,
-        total_impulse=total_impulse,
-        max_thrust=max_thrust,
-        eng_propellant_mass=eng_prop,
+        fonte=info["fonte"],
+        burn_time=info["burn_time"],
+        total_impulse=info["total_impulse"],
+        max_thrust=info["max_thrust"],
+        eng_propellant_mass=info["eng_propellant_mass"],
+        curva_empuxo=info["curva_empuxo"],
+        p0_pico=info["p0_pico"],
+        kn_pico=info["kn_pico"],
+        mass_flux_pico=info["mass_flux_pico"],
+        isp_entregue=info["isp_entregue"],
         propellant_mass=prop_mass,
         propellant_length=prop_len,
         stack_length=stack_len,
@@ -304,6 +356,12 @@ def main() -> None:
     print(f"  I_yy (pitch/yaw):       {d.dry_inertia[1]:.6f} kg·m²")
     print()
     print(f"  mass_loaded:            {d.mass_loaded:.4f} kg")
+    print(f"Fonte:                  {d.fonte}")
+    if d.p0_pico is not None:
+        print(f"P0_pico:                {d.p0_pico / 1e6:.3f} MPa")
+        print(f"Kn_pico:                {d.kn_pico:.1f}")
+        print(f"Mass flux pico:         {d.mass_flux_pico:.3f} kg/(m²·s)")
+        print(f"ISP entregue:           {d.isp_entregue:.2f} s")
 
 
 if __name__ == "__main__":

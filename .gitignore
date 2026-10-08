@@ -21,4 +21,4 @@ dist/
 build/
 *.egg-info/
 .DS_Store
-Thumbs.db
+Thumbs.dbvendor/

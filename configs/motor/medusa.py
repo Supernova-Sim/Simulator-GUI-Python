@@ -42,7 +42,7 @@ _CARCAÇA_MEDUSA = dict(
 # ============================================================
 MOTOR_IREC: MotorSpec = motor_spec_do_ric(
     RIC_MEDUSA,
-    thrust_curve_path = str(ENG_MEDUSA),
+    thrust_curve_path = str(ENG_MEDUSA),   # cross-check mantido
     nome              = "Medusa KNSB",
     **_CARCAÇA_MEDUSA,
 )

@@ -311,7 +311,8 @@ def motor_spec_do_ric(
 
     return HefMotorSpec(
         nome=nome_final,
-        thrust_curve_path=str(thrust_curve_path),
+        ric_path=str(ric_path),  # ← NOVO
+        thrust_curve_path=str(thrust_curve_path) if thrust_curve_path else None,
 
         case_inner_radius=case_inner_radius,
         case_wall_thickness=case_wall_thickness,

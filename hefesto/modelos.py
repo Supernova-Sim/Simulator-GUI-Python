@@ -26,21 +26,16 @@ class FogueteMontado:
     reefed: object
 
 
-def _motor_kwargs(
-    spec: MotorSpec,
-    d: MotorDerivado,
-    thrust_source=None,
-) -> dict:
-    """Traduz MotorSpec + MotorDerivado para kwargs do SolidMotor.
+def _motor_kwargs(spec, d, thrust_source=None) -> dict:
+    if thrust_source is not None:
+        ts = thrust_source
+    elif d.curva_empuxo is not None:
+        ts = list(d.curva_empuxo)          # .ric via motorlib
+    else:
+        ts = spec.thrust_curve_path        # fallback .eng
 
-    Convenção de coordenadas:
-      - Derivação usa x=0 no TOPO do motor.
-      - RocketPy usa 'nozzle_to_combustion_chamber' → x=0 na TUBEIRA.
-      - Conversão: pos_nozzle = case_length − pos_topo.
-    """
     return {
-        "thrust_source": thrust_source if thrust_source is not None
-                         else spec.thrust_curve_path,
+        "thrust_source": ts,
         "dry_mass": d.dry_mass,
         "dry_inertia": d.dry_inertia,
         "center_of_dry_mass_position": d.case_length - d.cg_dry,

@@ -23,9 +23,8 @@ class GrainSpec:
 
 @dataclass(frozen=True)
 class MotorSpec:
-    # ---------- Identificação ----------
+    # ---------- Obrigatórios ----------
     nome: str
-    thrust_curve_path: str
 
     # ---------- Carcaça ----------
     case_inner_radius: float
@@ -41,6 +40,10 @@ class MotorSpec:
     nozzle_position: float
     nozzle_exit_radius: float
     throat_radius: float
+
+    # ---------- Fontes de dados (pelo menos uma) ----------
+    ric_path: str | None = None          # .ric — fonte de verdade
+    thrust_curve_path: str | None = None # .eng — fallback / cross-check
 
     # ---------- Opcionais ----------
     case_length: float | None = None
