@@ -5,3 +5,4 @@ FIBRA_CARBONO = 1600
 COMPOSITO_G10 = 1800
 COMPOSITO_EFETIVO = 1850   # kg/m³ — módulos do corpo
 COIFA_EFETIVA     = 1977   # kg/m³ — coifa
+SIGMA_LIM_AL6063_T5 = 145e6

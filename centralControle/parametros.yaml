@@ -1,0 +1,21 @@
+# Parâmetros de execução — edite aqui, sem mexer em código Python.
+
+simulacao:
+  tipo_aletas: freeform      # freeform | trapezio
+  usar_spec_aleta: true
+  fator_empuxo: 1.00
+  fator_arrasto: 1.00
+
+varredura:
+  empuxo:
+    inicio: 0.90
+    fim: 1.10
+    passo: 0.01
+  arrasto:
+    inicio: 1.00
+    fim: 1.00
+    passo: 0.10
+
+saida:
+  salvar_json: true
+  prefixo: sim

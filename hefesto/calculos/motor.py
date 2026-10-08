@@ -1,8 +1,12 @@
-"""Deriva propriedades do motor a partir de MotorSpec + arquivo .eng.
+"""Deriva propriedades do motor a partir de MotorSpec (.ric > .eng).
 
-Dois tipos de informação:
-  1. Curva de empuxo (do .eng) → burn_time, total_impulse, max_thrust
-  2. Geometria (dos grãos + carcaça) → propellant_mass, cg, dry_inertia
+Três tipos de informação:
+  1. Curva de empuxo (do .ric via motorlib, ou do .eng como fallback)
+       → burn_time, total_impulse, max_thrust, curva completa
+  2. Geometria (dos grãos + carcaça)
+       → propellant_mass, cg, dry_inertia
+  3. Fatores de segurança (após balística interna)
+       → FS carcaça, P0, Kn, mass flux
 
 Coordenadas locais: x=0 no TOPO do motor (extremidade forward),
 x=case_length na base. O `resolver` soma a posição absoluta do motor no foguete.
@@ -12,7 +16,15 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from configs.motor.spec import MotorSpec, GrainSpec
+from configs.materiais import SIGMA_LIM_AL6063_T5
 from hefesto.calculos.motorlib_wrapper import MotorResultado, simular_ric
+from hefesto.calculos.seguranca import (
+    DiagnosticoFS,
+    fs_carcaca,
+    check_p0,
+    check_kn,
+    check_mass_flux,
+)
 
 
 # ============================================================
@@ -118,7 +130,10 @@ class MotorDerivado:
     dry_inertia: tuple[float, float, float]
 
     # ---------- Agregados ----------
-    mass_loaded: float          # kg — dry_mass + propellant_mass
+    mass_loaded: float                  # kg — dry_mass + propellant_mass
+
+    # ---------- Fatores de segurança ----------
+    diagnosticos: tuple[DiagnosticoFS, ...]
 
     def to_dict(self) -> dict:
         return {
@@ -143,6 +158,18 @@ class MotorDerivado:
             "cg_dry": self.cg_dry,
             "dry_inertia": list(self.dry_inertia),
             "mass_loaded": self.mass_loaded,
+            "diagnosticos": [
+                {
+                    "nome": x.nome,
+                    "valor": x.valor,
+                    "limite_min": x.limite_min,
+                    "limite_max": x.limite_max,
+                    "unidade": x.unidade,
+                    "ok": x.ok,
+                    "detalhe": x.detalhe,
+                }
+                for x in self.diagnosticos
+            ],
             # curva_empuxo é grande — omitida de propósito
         }
 
@@ -184,6 +211,7 @@ def _derivar_do_motor(spec: MotorSpec) -> dict:
     raise ValueError(
         f"MotorSpec '{spec.nome}' precisa de ric_path ou thrust_curve_path."
     )
+
 
 def _derivar_do_eng(spec: MotorSpec) -> tuple:
     tempos, empuxos, header = _ler_eng(spec.thrust_curve_path)
@@ -272,6 +300,35 @@ def _derivar_inercia_seca(
 
 
 # ============================================================
+#  Diagnósticos de segurança
+# ============================================================
+
+def _diagnosticar(
+    info: dict,
+    spec: MotorSpec,
+) -> tuple[DiagnosticoFS, ...]:
+    """Roda todos os checks de segurança aplicáveis.
+
+    Retorna tupla vazia se a fonte for .eng (falta balística interna).
+    """
+    if info["p0_pico"] is None:
+        return ()
+
+    diags: list[DiagnosticoFS] = [
+        fs_carcaca(
+            p0_pico=info["p0_pico"],
+            case_inner_radius=spec.case_inner_radius,
+            case_wall_thickness=spec.case_wall_thickness,
+            sigma_lim=SIGMA_LIM_AL6063_T5,
+        ),
+        check_p0(info["p0_pico"]),
+        check_kn(info["kn_pico"]),
+        check_mass_flux(info["mass_flux_pico"]),
+    ]
+    return tuple(diags)
+
+
+# ============================================================
 #  Agregador
 # ============================================================
 
@@ -294,6 +351,9 @@ def derivar_motor(spec: MotorSpec) -> MotorDerivado:
             dry_mass, case_r_o, spec.case_inner_radius, case_len,
         )
         dry_inertia = (I_yy_dry, I_yy_dry, I_xx_dry)
+
+    # --- Diagnósticos de segurança ---
+    diagnosticos = _diagnosticar(info, spec)
 
     return MotorDerivado(
         nome=spec.nome,
@@ -318,6 +378,7 @@ def derivar_motor(spec: MotorSpec) -> MotorDerivado:
         cg_dry=cg_dry,
         dry_inertia=dry_inertia,
         mass_loaded=dry_mass + prop_mass,
+        diagnosticos=diagnosticos,
     )
 
 
@@ -331,12 +392,13 @@ def main() -> None:
     d = derivar_motor(MOTOR_IREC)
 
     print(f"--- {d.nome} ---")
+    print(f"  fonte: {d.fonte}")
     print()
-    print("Do .eng:")
+    print("Cinemática:")
     print(f"  burn_time:              {d.burn_time}")
     print(f"  total_impulse:          {d.total_impulse:.2f} N·s")
     print(f"  max_thrust:             {d.max_thrust:.1f} N")
-    print(f"  eng_propellant_mass:    {d.eng_propellant_mass:.4f} kg (header)")
+    print(f"  eng_propellant_mass:    {d.eng_propellant_mass:.4f} kg")
     print()
     print("Geometria dos grãos:")
     print(f"  propellant_mass:        {d.propellant_mass:.4f} kg")
@@ -356,12 +418,20 @@ def main() -> None:
     print(f"  I_yy (pitch/yaw):       {d.dry_inertia[1]:.6f} kg·m²")
     print()
     print(f"  mass_loaded:            {d.mass_loaded:.4f} kg")
-    print(f"Fonte:                  {d.fonte}")
+
     if d.p0_pico is not None:
-        print(f"P0_pico:                {d.p0_pico / 1e6:.3f} MPa")
-        print(f"Kn_pico:                {d.kn_pico:.1f}")
-        print(f"Mass flux pico:         {d.mass_flux_pico:.3f} kg/(m²·s)")
-        print(f"ISP entregue:           {d.isp_entregue:.2f} s")
+        print()
+        print("Balística interna:")
+        print(f"  P0_pico:                {d.p0_pico / 1e6:.3f} MPa")
+        print(f"  Kn_pico:                {d.kn_pico:.1f}")
+        print(f"  mass_flux_pico:         {d.mass_flux_pico:.3f} kg/(m²·s)")
+        print(f"  ISP_entregue:           {d.isp_entregue:.2f} s")
+
+    if d.diagnosticos:
+        print()
+        print("Diagnósticos de segurança:")
+        for diag in d.diagnosticos:
+            print(diag.linha())
 
 
 if __name__ == "__main__":
