@@ -20,12 +20,12 @@ ALETA_IREC = AletaSpec(
 
 
 # Aletas trapezoidais equivalentes (aproximação da freeform via osweep)
-ALETAS_TRAPEZIO_EQUIV = {
-    "n": 4,
-    "root_chord": 0.18,
-    "tip_chord": 0.07458606,
-    "span": 0.13999711,
-    "sweep_length": 0.10051811,
-    "position": 2.57,
-    "cant_angle": 0.0,
-}
+# ALETAS_TRAPEZIO_EQUIV = {
+#     "n": 4,
+#     "root_chord": 0.18,
+#     "tip_chord": 0.07458606,
+#     "span": 0.13999711,
+#     "sweep_length": 0.10051811,
+#     "position": 2.57,
+#     "cant_angle": 0.0,
+# }

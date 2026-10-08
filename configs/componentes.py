@@ -14,14 +14,18 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class TuboSpec:
-    """Cilindro oco. Se r_i = 0, é um disco maciço."""
+    """Cilindro oco. Se espessura = raio_externo, é maciço."""
     nome: str
     raio_externo: float
-    raio_interno: float
+    espessura: float           # ← era raio_interno
     comprimento: float
     posicao: float
     densidade: float
     massa_extra: float = 0.0
+
+    @property
+    def raio_interno(self) -> float:
+        return self.raio_externo - self.espessura
 
 
 @dataclass(frozen=True)

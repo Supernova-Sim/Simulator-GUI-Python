@@ -12,7 +12,7 @@ from configs import (
     # defaults do Hefesto
     MOTOR_IREC, COMPONENTES, COIFA_IREC,
     FOGUETE, ALETAS, COIFA, RAIL_BUTTONS,
-    REEFED, UNREEFED, ALETAS_TRAPEZIO_EQUIV, MOTOR_POSITION,
+    REEFED, UNREEFED,  MOTOR_POSITION,
     # tipos
     AletaSpec, CoifaSpec, MotorSpec,
     TuboSpec, MassaPontualSpec,
@@ -144,8 +144,8 @@ def build_rocket(
         )
     elif tipo_aletas == "freeform":
         fins = rkt.add_free_form_fins(**ALETAS)
-    elif tipo_aletas == "trapezio":
-        fins = rkt.add_trapezoidal_fins(**ALETAS_TRAPEZIO_EQUIV)
+    # elif tipo_aletas == "trapezio":
+    #     fins = rkt.add_trapezoidal_fins(**ALETAS_TRAPEZIO_EQUIV)
     else:
         raise ValueError(f"tipo_aletas inválido: {tipo_aletas!r}")
 
