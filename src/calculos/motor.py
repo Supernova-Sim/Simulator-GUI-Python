@@ -126,6 +126,8 @@ class MotorDerivado:
     cg_dry: float
 
     # ---------- Inércia ----------
+    # Ordem: (I_11, I_22, I_33) = (longitudinal, transversal, transversal)
+    # Confere com a convenção do RocketPy (Rocket.__init__ → inertia[0] = I_11)
     dry_inertia: tuple[float, float, float]
 
     # ---------- Agregados ----------
@@ -292,6 +294,10 @@ def _derivar_inercia_seca(
 
     Estimativa: 7.5 kg nesse tamanho, I_xx ~40% acima do valor real
     (tubeira ocupa raio menor). Refinar quando CAD/medição existir.
+
+    Returns
+    -------
+    (I_xx, I_yy) : I_xx = longitudinal (roll), I_yy = transversal (pitch/yaw).
     """
     I_xx = 0.5 * dry_mass * (r_o**2 + r_i**2)
     I_yy = (dry_mass / 12.0) * (3.0 * (r_o**2 + r_i**2) + L**2)
@@ -343,13 +349,15 @@ def derivar_motor(spec: MotorSpec) -> MotorDerivado:
     cg_dry = case_len / 2.0
 
     # --- Inércias da carcaça ---
+    # Ordem do tensor: (I_11, I_22, I_33) = (longitudinal, transv, transv)
+    # Confere com RocketPy (Rocket.__init__ → inertia[0] = I_11 = roll)
     if spec.dry_inertia_override is not None:
         dry_inertia = spec.dry_inertia_override
     else:
         I_xx_dry, I_yy_dry = _derivar_inercia_seca(
             dry_mass, case_r_o, spec.case_inner_radius, case_len,
         )
-        dry_inertia = (I_yy_dry, I_yy_dry, I_xx_dry)
+        dry_inertia = (I_xx_dry, I_yy_dry, I_yy_dry)   # ← FIX
 
     # --- Diagnósticos de segurança ---
     diagnosticos = _diagnosticar(info, spec)
@@ -413,8 +421,8 @@ def main() -> None:
     print(f"  cg_dry (local):         {d.cg_dry:.4f} m")
     print()
     print("Inércia seca (aproximação cilíndrica):")
-    print(f"  I_xx (roll):            {d.dry_inertia[2]:.6f} kg·m²")
-    print(f"  I_yy (pitch/yaw):       {d.dry_inertia[0]:.6f} kg·m²")
+    print(f"  I_11 (roll):            {d.dry_inertia[0]:.6f} kg·m²")   # ← FIX
+    print(f"  I_22 (pitch/yaw):       {d.dry_inertia[1]:.6f} kg·m²")   # ← FIX
     print()
     print(f"  mass_loaded:            {d.mass_loaded:.4f} kg")
 

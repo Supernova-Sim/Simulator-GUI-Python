@@ -71,7 +71,7 @@ class FogueteResolvido:
         return {
             "radius": self.raio,
             "mass": self.massa_seca,
-            "inertia": (I_t, I_t, I_l),
+            "inertia": (I_l, I_t, I_t),
             "center_of_mass_without_motor": self.cg_sem_motor,
             "coordinate_system_orientation": "nose_to_tail",
             "power_off_drag": power_off_drag,
