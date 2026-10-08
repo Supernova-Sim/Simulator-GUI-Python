@@ -9,7 +9,7 @@ from hefesto.modelos import build_rocket
 from hefesto.paths import RESULTADOS
 from configs.voo import IREC
 from configs.especificacao import ALETA_IREC
-from configs.motor_medusa import MOTOR_IREC
+from configs.motor.medusa import MOTOR_IREC
 
 USAR_SPEC_ALETA = True
 TIPO_ALETAS     = "freeform"

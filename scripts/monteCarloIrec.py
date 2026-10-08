@@ -15,7 +15,7 @@ from hefesto.ambiente import build_irec, build_irec_ensemble
 from hefesto.modelos import build_rocket
 from hefesto.paths import RESULTADOS
 
-from configs.foguete import (
+from configs.foguete.geometria import (
     FOGUETE_E, COIFA_E, ALETAS_E, RAIL_BUTTONS_E,
     REEFED_E, UNREEFED_E,
     COIFA_POS_E, ALETAS_POS_E, LOWER_BUTTON_POSITION_E,

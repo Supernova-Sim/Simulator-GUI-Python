@@ -7,7 +7,7 @@ empuxo, posição da tubeira e separação entre grãos.
 """
 from hefesto.parsers.openmotor import motor_spec_do_ric
 from hefesto.paths import MOTORES, OPENMOTOR
-from configs.motor_spec import MotorSpec
+from configs.motor.spec import MotorSpec
 
 
 # ============================================================

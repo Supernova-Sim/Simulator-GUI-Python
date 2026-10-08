@@ -110,7 +110,7 @@ def calcular_aleta(spec: AletaSpec, r_rocket: float) -> AletaDerivada:
 
 def main() -> None:
     from configs.especificacao import ALETA_IREC
-    from configs.foguete import FOGUETE
+    from configs.foguete.geometria import FOGUETE
     d = calcular_aleta(ALETA_IREC, r_rocket=FOGUETE["radius"])
     print(f"Massa total: {d.massa_total:.4f} kg")
     print(f"Área:        {d.area_planform:.6f} m²")

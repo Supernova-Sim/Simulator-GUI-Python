@@ -12,14 +12,14 @@ from hefesto.paths import RESULTADOS
 from hefesto.calculos.motor import derivar_motor
 from configs.voo import IREC
 from configs.especificacao import ALETA_IREC
-from configs.motor_medusa import MOTOR_IREC
+from configs.motor.medusa import MOTOR_IREC
 
 
 # ============================================================
 #  AQUI VOCÊ AJUSTA
 # ============================================================
-TIPO_ALETAS     = "trapezio"
-USAR_SPEC_ALETA = False
+TIPO_ALETAS     = "freeform"
+USAR_SPEC_ALETA = True
 
 FATORES_EMPUXO  = list(np.arange(0.90, 1.11, 0.01))   # 21 valores
 FATORES_ARRASTO = [1.00]                              # só nominal → 1D

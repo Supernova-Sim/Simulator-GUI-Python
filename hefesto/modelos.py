@@ -2,14 +2,14 @@
 from dataclasses import dataclass
 from rocketpy import Rocket, SolidMotor
 
-from configs.foguete import (
+from configs.foguete.geometria import (
     FOGUETE, ALETAS, COIFA, RAIL_BUTTONS,
     REEFED, UNREEFED, ALETAS_TRAPEZIO_EQUIV, MOTOR_POSITION,
 )
 from configs.componentes import COMPONENTES
 from configs.especificacao import AletaSpec, COIFA_IREC, CoifaSpec
-from configs.motor_spec import MotorSpec
-from configs.motor_medusa import MOTOR_IREC
+from configs.motor.spec import MotorSpec
+from configs.motor.medusa import MOTOR_IREC
 from hefesto.modelo import resolver
 from hefesto.calculos.motor import MotorDerivado, derivar_motor
 

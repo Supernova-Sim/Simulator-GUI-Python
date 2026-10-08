@@ -290,8 +290,8 @@ def motor_spec_do_ric(
     -------
     MotorSpec (de configs.motor_spec)
     """
-    from configs.motor_spec import GrainSpec as HefGrainSpec
-    from configs.motor_spec import MotorSpec as HefMotorSpec
+    from configs.motor.spec import GrainSpec as HefGrainSpec
+    from configs.motor.spec import MotorSpec as HefMotorSpec
 
     ric = carregar_ric(ric_path)
 

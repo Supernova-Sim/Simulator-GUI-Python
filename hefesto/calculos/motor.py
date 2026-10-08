@@ -11,7 +11,7 @@ import math
 from dataclasses import dataclass
 from pathlib import Path
 
-from configs.motor_spec import MotorSpec, GrainSpec
+from configs.motor.spec import MotorSpec, GrainSpec
 
 
 # ============================================================
@@ -274,7 +274,7 @@ def derivar_motor(spec: MotorSpec) -> MotorDerivado:
 # ============================================================
 
 def main() -> None:
-    from configs.motor_medusa import MOTOR_IREC
+    from configs.motor.medusa import MOTOR_IREC
 
     d = derivar_motor(MOTOR_IREC)
 
