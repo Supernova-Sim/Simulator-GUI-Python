@@ -1,4 +1,5 @@
 """Teste único: ajuste os fatores no topo e rode."""
+import src.viz   # noqa: F401  — configura backend antes de qualquer plot
 import json
 from datetime import datetime
 
@@ -9,6 +10,7 @@ from src.modelos import build_rocket
 from src.paths import RESULTADOS
 
 from configs import IREC, ALETA_IREC, MOTOR_IREC
+
 
 USAR_SPEC_ALETA = True
 TIPO_ALETAS     = "freeform"
@@ -40,6 +42,7 @@ def main() -> None:
     print(f"Apogeu AGL:       {apogee_agl:.1f} m")
     print(f"Margem mínima:    {voo.min_stability_margin:.3f} cal")
     print("=" * 50)
+    foguete.rocket.draw()
 
     if SALVAR_JSON:
         resultado = {

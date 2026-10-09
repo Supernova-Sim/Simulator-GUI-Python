@@ -9,21 +9,39 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
-# --- 1. Força Agg ---
+# --- Protege contra uilib forçar Qt5Agg (que não temos) ---
+# Estratégia: bloqueia Qt APENAS durante o import do uilib.
+# Depois, restaura o matplotlib.use para o usuário poder usar backends interativos.
 import matplotlib
-matplotlib.use("Agg")
 
-# --- 2. Impede que uilib force Qt5Agg (que não temos instalado) ---
 _orig_use = matplotlib.use
+
 def _safe_use(backend=None, *args, **kwargs):
     if backend and "qt" in str(backend).lower():
-        return  # ignora pedidos de backend Qt
+        return  # ignora silenciosamente
     return _orig_use(backend, *args, **kwargs)
+
 matplotlib.use = _safe_use
 
-# --- 3. Agora o uilib pode importar sem estourar ---
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 logging.getLogger("uilib").setLevel(logging.ERROR)
+
+try:
+    from uilib.fileIO import loadFile, fileTypes
+    from motorlib.motor import Motor
+finally:
+    # Restaura matplotlib.use original
+    matplotlib.use = _orig_use
+
+    # Se o uilib deixou no default (Agg), força um backend interativo.
+    # Tenta na ordem de preferência; se todos falharem, mantém Agg (headless).
+    if matplotlib.get_backend().lower() == "agg":
+        for _b in ("QtAgg", "TkAgg"):
+            try:
+                _orig_use(_b)
+                break
+            except Exception:
+                continue
 
 from uilib.fileIO import loadFile, fileTypes   # noqa: E402
 from motorlib.motor import Motor                # noqa: E402

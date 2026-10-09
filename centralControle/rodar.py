@@ -20,21 +20,21 @@ def cmd_sim(args):
     sd.main()
 
 
-def cmd_motor(args):
-    from configs.foguetes.hefesto.motor import MOTOR_IREC
-    from src.calculos.motor import derivar_motor
-
-    d = derivar_motor(MOTOR_IREC)
-    print(f"--- {d.nome} (fonte: {d.fonte}) ---")
-    print(f"  burn_time:    {d.burn_time}")
-    print(f"  impulse:      {d.total_impulse:.1f} N·s")
-    print(f"  max_thrust:   {d.max_thrust:.1f} N")
-    print(f"  propellant:   {d.propellant_mass:.4f} kg")
-    print(f"  mass_loaded:  {d.mass_loaded:.4f} kg")
-    if d.p0_pico is not None:
-        print(f"  P0_pico:      {d.p0_pico/1e6:.3f} MPa")
-        print(f"  Kn_pico:      {d.kn_pico:.1f}")
-        print(f"  ISP:          {d.isp_entregue:.2f} s")
+# def cmd_motor(args):
+#     from configs.foguetes.hefesto.motor import MOTOR_IREC
+#     from src.calculos.motor import derivar_motor
+#
+#     d = derivar_motor(MOTOR_IREC)
+#     print(f"--- {d.nome} (fonte: {d.fonte}) ---")
+#     print(f"  burn_time:    {d.burn_time}")
+#     print(f"  impulse:      {d.total_impulse:.1f} N·s")
+#     print(f"  max_thrust:   {d.max_thrust:.1f} N")
+#     print(f"  propellant:   {d.propellant_mass:.4f} kg")
+#     print(f"  mass_loaded:  {d.mass_loaded:.4f} kg")
+#     if d.p0_pico is not None:
+#         print(f"  P0_pico:      {d.p0_pico/1e6:.3f} MPa")
+#         print(f"  Kn_pico:      {d.kn_pico:.1f}")
+#         print(f"  ISP:          {d.isp_entregue:.2f} s")
 
 
 def cmd_fs(args):
@@ -57,8 +57,17 @@ def cmd_varrer(args):
     v.main()
 
 def cmd_dump(args):
-    from src.dump import dump_tudo
-    print(dump_tudo())
+    from centralControle.inspecionar import inspecionar_tudo
+    inspecionar_tudo()
+
+def cmd_motor(args):
+    from centralControle.inspecionar import inspecionar_motor
+    inspecionar_motor()
+
+
+def cmd_estrutura(args):
+    from centralControle.inspecionar import inspecionar_estrutura
+    inspecionar_estrutura()
 
 
 def cmd_smoke(args):
@@ -76,6 +85,9 @@ def main():
     sub.add_parser("varrer", help="Varredura paramétrica").set_defaults(func=cmd_varrer)
     sub.add_parser("dump", help="Imprime toda a configuração").set_defaults(func=cmd_dump)
     sub.add_parser("smoke", help="Smoke test dos módulos").set_defaults(func=cmd_smoke)
+    sub.add_parser("motor", help="...").set_defaults(func=cmd_motor)
+    sub.add_parser("estrutura", help="...").set_defaults(func=cmd_estrutura)
+    sub.add_parser("dump", help="...").set_defaults(func=cmd_dump)
 
     args = p.parse_args()
     args.func(args)
