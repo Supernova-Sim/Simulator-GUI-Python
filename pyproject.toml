@@ -2,7 +2,16 @@
 name = "hefesto"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["rocketpy", "pyprojroot", "numpy", "scipy", "matplotlib"]
+dependencies = [
+    "rocketpy",
+    "pyprojroot",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "pyyaml>=6.0.3",
+    "joblib>=1.6.0",
+    "openmotor",
+]
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -10,3 +19,14 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["hefesto*", "configs*"]
+
+# openMotor (motorlib/uilib) vem direto do GitHub, fixado num commit, para o
+# projeto ser reproduzível em qualquer máquina sem depender de vendor/.
+[tool.uv.sources]
+openmotor = { git = "https://github.com/reilleya/openMotor.git", rev = "dcc7fd62045d55036451b833f60e16a786f4685d" }
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.17.3",
+]
