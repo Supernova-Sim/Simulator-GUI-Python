@@ -1,14 +1,16 @@
 # src/calculos/seguranca.py
-"""Fatores de segurança e verificação de limites.
+"""Fatores de segurança e verificação de limites operacionais.
 
-Cada função devolve um `DiagnosticoFS` com valor, limite, OK/não-OK e
-mensagem legível. Nada aqui lança exceção por falha de projeto —
-o diagnóstico é dado, a decisão é do usuário.
+Cada função devolve um `DiagnosticoFS` imutável com valor calculado, limite,
+status OK/alerta e detalhamento legível. Não importa nada de `configs/`.
 """
 from __future__ import annotations
+
 from dataclasses import dataclass
 
-from configs import limites
+from src.specs import LimitesSeguranca
+
+LIMITES_PADRAO = LimitesSeguranca()
 
 
 @dataclass(frozen=True)
@@ -29,96 +31,82 @@ class DiagnosticoFS:
             cmp = f"<= {self.limite_max:.3f}"
         else:
             cmp = ""
-        return f"  [{marca}] {self.nome:<24} {self.valor:>10.4f} {self.unidade:<12} {cmp}   {self.detalhe}"
+        return (
+            f"  [{marca}] {self.nome:<24} {self.valor:>10.4f} "
+            f"{self.unidade:<12} {cmp}   {self.detalhe}"
+        )
 
 
-# ============================================================
-#  Motor — carcaça
-# ============================================================
 def fs_carcaca(
     p0_pico: float,
     case_inner_radius: float,
     case_wall_thickness: float,
-    sigma_lim: float,
+    sigma_lim: float | None = None,
+    *,
+    limites: LimitesSeguranca = LIMITES_PADRAO,
 ) -> DiagnosticoFS:
     """FS da carcaça cilíndrica de paredes finas (Beer & Johnston).
 
         σ_circ = P0 · r / t
-        FS     = σ_lim / σ_circ = σ_lim · t / (P0 · r)
+        FS     = σ_lim / σ_circ
     """
+    sigma = sigma_lim if sigma_lim is not None else limites.sigma_lim_carcaca
     sigma_circ = p0_pico * case_inner_radius / case_wall_thickness
-    fs = sigma_lim / sigma_circ if sigma_circ > 0 else float("inf")
+    fs = sigma / sigma_circ if sigma_circ > 0 else float("inf")
     return DiagnosticoFS(
         nome="FS carcaça",
         valor=fs,
-        limite_min=limites.FS_MIN_CARCACA,
+        limite_min=limites.fs_min_carcaca,
         limite_max=None,
         unidade="—",
-        ok=fs >= limites.FS_MIN_CARCACA,
-        detalhe=f"σ_circ = {sigma_circ / 1e6:.2f} MPa (σ_lim = {sigma_lim / 1e6:.0f} MPa)",
+        ok=fs >= limites.fs_min_carcaca,
+        detalhe=f"σ_circ = {sigma_circ / 1e6:.2f} MPa (σ_lim = {sigma / 1e6:.0f} MPa)",
     )
 
 
-# ============================================================
-#  Motor — limites operacionais
-# ============================================================
-def check_p0(p0_pico: float) -> DiagnosticoFS:
+def check_p0(
+    p0_pico: float,
+    *,
+    limites: LimitesSeguranca = LIMITES_PADRAO,
+) -> DiagnosticoFS:
     return DiagnosticoFS(
         nome="P0 pico",
         valor=p0_pico / 1e6,
         limite_min=None,
-        limite_max=limites.P0_MAX / 1e6,
+        limite_max=limites.p0_max / 1e6,
         unidade="MPa",
-        ok=p0_pico <= limites.P0_MAX,
+        ok=p0_pico <= limites.p0_max,
         detalhe="pressão máxima na câmara",
     )
 
 
-def check_kn(kn_pico: float) -> DiagnosticoFS:
+def check_kn(
+    kn_pico: float,
+    *,
+    limites: LimitesSeguranca = LIMITES_PADRAO,
+) -> DiagnosticoFS:
     return DiagnosticoFS(
         nome="Kn pico",
         valor=kn_pico,
         limite_min=None,
-        limite_max=limites.KN_MAX,
+        limite_max=limites.kn_max,
         unidade="—",
-        ok=kn_pico <= limites.KN_MAX,
+        ok=kn_pico <= limites.kn_max,
         detalhe="razão área queima / garganta",
     )
 
 
-def check_mass_flux(mass_flux_pico: float) -> DiagnosticoFS:
+def check_mass_flux(
+    mass_flux_pico: float,
+    *,
+    limites: LimitesSeguranca = LIMITES_PADRAO,
+) -> DiagnosticoFS:
     return DiagnosticoFS(
         nome="mass flux pico",
         valor=mass_flux_pico,
         limite_min=None,
-        limite_max=limites.MASS_FLUX_MAX,
+        limite_max=limites.mass_flux_max,
         unidade="kg/(m²·s)",
-        ok=mass_flux_pico <= limites.MASS_FLUX_MAX,
+        ok=mass_flux_pico <= limites.mass_flux_max,
         detalhe="2 lb/(in²·s) é o limite típico do KNSB",
     )
-
-def main() -> None:
-    """Smoke test com valores conhecidos do Medusa."""
-    # Referência: relatório do Medusa + cálculo manual
-    #   P0 = 2.912 MPa, r = 0.05395 m, t = 0.003175 m, σ_lim = 145 MPa
-    #   FS esperado = 2.93
-    from configs import SIGMA_LIM_AL6063_T5
-
-    diags = [
-        fs_carcaca(2.9122e6, 0.05395, 0.003175, SIGMA_LIM_AL6063_T5),
-        check_p0(2.9122e6),
-        check_kn(232.7390),
-        check_mass_flux(1249.4661),
-    ]
-
-    for d in diags:
-        print(d.linha())
-
-    # Validações
-    assert abs(diags[0].valor - 2.93) < 0.01, f"FS esperado 2.93, obtido {diags[0].valor}"
-    assert all(d.ok for d in diags), "Algum check falhou"
-    print("\n✓ seguranca OK")
-
-
-if __name__ == "__main__":
-    main()

@@ -1,4 +1,6 @@
 """Varredura de apogeu em função de (fator_empuxo × fator_arrasto)."""
+from __future__ import annotations
+
 import csv
 import json
 from datetime import datetime
@@ -6,49 +8,49 @@ from datetime import datetime
 import numpy as np
 from rocketpy import Flight
 
+from configs import HEFESTO, IREC, MOTOR_IREC
 from src.ambiente import build_irec
-from src.modelos import build_rocket
-from src.paths import RESULTADOS
 from src.calculos.motor import derivar_motor
-from configs import IREC, ALETA_IREC, MOTOR_IREC
-
+from src.modelos import ModoFoguete, build_rocket
+from src.paths import RESULTADOS
 
 # ============================================================
 #  AQUI VOCÊ AJUSTA
 # ============================================================
-TIPO_ALETAS     = "freeform"
-USAR_SPEC_ALETA = True
+MODO_FOGUETE: ModoFoguete = "calculado"   # "calculado" | "medido"
+TIPO_ALETAS: str = "freeform"
 
-FATORES_EMPUXO  = list(np.arange(0.90, 1.11, 0.01))   # 21 valores
-FATORES_ARRASTO = [1.00]                              # só nominal → 1D
+FATORES_EMPUXO = list(np.arange(0.90, 1.11, 0.01))   # 21 valores
+FATORES_ARRASTO = [1.00]                             # só nominal → 1D
 
 ARQUIVO_SAIDA = "varredura.csv"
 # ============================================================
 
 
-def simular(fator_empuxo: float, fator_arrasto: float) -> dict:
+def simular(fator_empuxo: float, fator_arrasto: float) -> dict[str, float]:
     foguete = build_rocket(
+        HEFESTO,
+        modo=MODO_FOGUETE,
         tipo_aletas=TIPO_ALETAS,
-        spec_aleta=ALETA_IREC if USAR_SPEC_ALETA else None,
         fator_empuxo=fator_empuxo,
         fator_arrasto=fator_arrasto,
     )
     voo = Flight(rocket=foguete.rocket, environment=build_irec(), **IREC)
     return {
-        "fator_empuxo":  round(fator_empuxo, 6),
+        "fator_empuxo": round(fator_empuxo, 6),
         "fator_arrasto": round(fator_arrasto, 6),
-        "apogee_agl":    round(voo.apogee - voo.env.elevation, 3),
-        "margem_min":    round(voo.min_stability_margin, 6),
+        "apogee_agl": round(voo.apogee - voo.env.elevation, 3),
+        "margem_min": round(voo.min_stability_margin, 6),
     }
 
 
 def main() -> None:
     total = len(FATORES_EMPUXO) * len(FATORES_ARRASTO)
-    print(f"Total de simulações: {total}")
+    print(f"Total de simulações: {total} (modo={MODO_FOGUETE})")
     if total == 0:
         raise SystemExit("Nenhum fator definido.")
 
-    linhas: list[dict] = []
+    linhas: list[dict[str, float]] = []
     i = 0
     for fe in FATORES_EMPUXO:
         for fa in FATORES_ARRASTO:
@@ -63,19 +65,17 @@ def main() -> None:
                 f"margem={linha['margem_min']:.3f} cal"
             )
 
-    # --- CSV principal (uma linha por simulação) ---
     destino = RESULTADOS / ARQUIVO_SAIDA
-    with destino.open("w", newline="") as fp:
+    with destino.open("w", newline="", encoding="utf-8") as fp:
         writer = csv.DictWriter(fp, fieldnames=list(linhas[0].keys()))
         writer.writeheader()
         writer.writerows(linhas)
 
-    # --- Metadata fixa do run (spec + derivado) ---
     meta = {
         "timestamp": datetime.now().isoformat(timespec="seconds"),
         "configuracao": {
+            "modo_foguete": MODO_FOGUETE,
             "tipo_aletas": TIPO_ALETAS,
-            "usar_spec_aleta": USAR_SPEC_ALETA,
             "n_fatores_empuxo": len(FATORES_EMPUXO),
             "n_fatores_arrasto": len(FATORES_ARRASTO),
         },

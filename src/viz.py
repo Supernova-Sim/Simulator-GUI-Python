@@ -15,7 +15,7 @@ def _set_backend():
                 import matplotlib.pyplot as plt
                 plt.switch_backend(_b)
             break
-        except Exception as e:
+        except (ImportError, RuntimeError, ValueError) as e:
             print(f"[viz] falhou {_b}: {e}")
             continue
 

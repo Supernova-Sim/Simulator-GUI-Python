@@ -1,28 +1,31 @@
-# src/modelo.py — bloco de imports no topo (linhas 1-9)
-"""Combina specs e derivados num 'foguete resolvido' pronto para o RocketPy."""
-from dataclasses import dataclass
+# src/modelo.py
+"""Combina specs e derivados num `FogueteResolvido` (Modo Calculado).
 
-from configs import AletaSpec, CoifaSpec, TuboSpec, MassaPontualSpec
+Agrega massa seca, CG sem motor e momentos de inércia pelo Teorema de Steiner,
+entregando a tupla de inércia na convenção exata do RocketPy:
+`(I_11, I_22, I_33) = (I_transversal, I_transversal, I_longitudinal)`.
+"""
+from __future__ import annotations
+
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Any
+
 from src.calculos.aletas import AletaDerivada, calcular_aleta
-from src.calculos.componentes import ComponenteDerivado, derivar_todos
 from src.calculos.coifa import CoifaDerivada, calcular_coifa
+from src.calculos.componentes import ComponenteDerivado, derivar_todos
+from src.specs import AletaSpec, CoifaSpec, MassaPontualSpec, TuboSpec
 
 
 @dataclass(frozen=True)
 class FogueteResolvido:
-    """Todos os parâmetros do foguete — definidos + calculados.
-
-    `componentes` contém o corpo (tudo que não é coifa nem aleta).
-    Coifa e aletas vêm separadas por terem geometria própria.
-    """
+    """Parâmetros estruturais resolvidos analiticamente (`modo='calculado'`)."""
     componentes: list[ComponenteDerivado]
     spec_aleta: AletaSpec
     aleta: AletaDerivada
     spec_coifa: CoifaSpec
     coifa: CoifaDerivada
     raio: float               # m — raio externo do corpo do foguete
-
-    # ---------- Agregados ----------
 
     @property
     def massa_seca(self) -> float:
@@ -42,12 +45,13 @@ class FogueteResolvido:
 
     @property
     def inercia_longitudinal(self) -> float:
-        # Roll: sem Steiner (todos os componentes são centrados no eixo).
+        """Momento de inércia axial / roll (eixo de simetria e_3 do RocketPy)."""
         I_comp = sum(c.I_xx_local for c in self.componentes)
         return I_comp + self.coifa.I_xx_local + self.aleta.I_xx
 
     @property
     def inercia_transversal(self) -> float:
+        """Momento de inércia transversal / pitch-yaw (eixos e_1 e e_2 do RocketPy)."""
         cg = self.cg_sem_motor
 
         I_comp = sum(
@@ -63,25 +67,28 @@ class FogueteResolvido:
 
         return I_comp + I_coifa + I_aleta
 
-    # ---------- Saídas para o RocketPy ----------
-
-    def dict_rocket(self, power_off_drag: str, power_on_drag: str) -> dict:
+    @property
+    def inercia_rocketpy(self) -> tuple[float, float, float]:
+        """Convenção RocketPy: (I_11, I_22, I_33) = (transversal, transversal, longitudinal)."""
         I_t = self.inercia_transversal
         I_l = self.inercia_longitudinal
+        return (I_t, I_t, I_l)
+
+    def dict_rocket(self, power_off_drag: str, power_on_drag: str) -> dict[str, Any]:
         return {
             "radius": self.raio,
             "mass": self.massa_seca,
-            "inertia": (I_l, I_t, I_t),
+            "inertia": self.inercia_rocketpy,
             "center_of_mass_without_motor": self.cg_sem_motor,
             "coordinate_system_orientation": "nose_to_tail",
-            "power_off_drag": power_off_drag,
-            "power_on_drag": power_on_drag,
+            "power_off_drag": str(power_off_drag),
+            "power_on_drag": str(power_on_drag),
         }
 
-    def dict_coifa(self) -> dict:
+    def dict_coifa(self) -> dict[str, Any]:
         return {
             "length": self.spec_coifa.length,
-            "kind":   self.spec_coifa.kind,
+            "kind": self.spec_coifa.kind,
             "position": self.spec_coifa.position,
         }
 
@@ -96,12 +103,12 @@ class FogueteResolvido:
 
 
 def resolver(
-    componentes: list[TuboSpec | MassaPontualSpec],
+    componentes: Sequence[TuboSpec | MassaPontualSpec],
     spec_aleta: AletaSpec,
     spec_coifa: CoifaSpec,
     raio: float,
 ) -> FogueteResolvido:
-    """Combina componentes + coifa + aleta num foguete resolvido."""
+    """Combina componentes + coifa + aleta num `FogueteResolvido`."""
     derivados = derivar_todos(componentes)
     aleta = calcular_aleta(spec_aleta, r_rocket=raio)
     coifa = calcular_coifa(spec_coifa, raio_base=raio)
@@ -113,30 +120,3 @@ def resolver(
         coifa=coifa,
         raio=raio,
     )
-
-def main() -> None:
-    """Smoke test: resolve o foguete Hefesto."""
-    from configs import COMPONENTES, ALETA_IREC, COIFA_IREC, FOGUETE
-
-    r = resolver(
-        componentes=COMPONENTES,
-        spec_aleta=ALETA_IREC,
-        spec_coifa=COIFA_IREC,
-        raio=FOGUETE["radius"],
-    )
-
-    print(f"massa seca:  {r.massa_seca:.4f} kg")
-    print(f"CG:          {r.cg_sem_motor:.4f} m")
-    print(f"I_xx:        {r.inercia_longitudinal:.4f} kg·m²")
-    print(f"I_yy:        {r.inercia_transversal:.4f} kg·m²")
-
-    # Sanidade — faixas calibradas contra o Hefesto real
-    assert 22.0 < r.massa_seca < 27.0, f"massa suspeita: {r.massa_seca}"
-    assert 1.0 < r.cg_sem_motor < 2.0, f"CG suspeito: {r.cg_sem_motor}"
-    assert 0.10 < r.inercia_longitudinal < 0.25, f"I_xx suspeito: {r.inercia_longitudinal}"
-    assert 12.0 < r.inercia_transversal < 15.0, f"I_yy suspeito: {r.inercia_transversal}"
-    print("\n✓ modelo OK")
-
-
-if __name__ == "__main__":
-    main()

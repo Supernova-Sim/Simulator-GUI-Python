@@ -1,11 +1,8 @@
-# centralControle — painel operacional
+# centralControle — Painel Operacional
 
-Este é o lugar onde você mexe no dia a dia. Todo o resto (`src/`, `configs/`)
-é biblioteca ou configuração — só edite se souber o que está fazendo.
+Este diretório concentra os comandos operacionais do dia a dia.
 
-## Comandos
-
-Todos rodam pela CLI unificada:
+## Comandos (`rodar.py`)
 
 ```bash
 python centralControle/rodar.py <comando>
@@ -13,79 +10,26 @@ python centralControle/rodar.py <comando>
 
 | Comando | O que faz | Quando usar |
 |---|---|---|
-| `sim` | Simulação determinística completa | Antes de commitar mudanças |
-| `motor` | Só o motor (sem voo) | Ajustando o `.ric` |
-| `fs` | Diagnósticos de segurança | Sempre, antes de simular oficial |
-| `dump` | Imprime toda a configuração formatada | "Será que está tudo certo?" |
-| `varrer` | Varredura empuxo × arrasto | Análises paramétricas |
-| `smoke` | Smoke test dos módulos de `src/` | Depois de refatorar |
+| `smoke` | Roda a suíte `pytest` (contratos, física, arquitetura) | Sempre após editar código ou configs |
+| `fs` | Diagnósticos de segurança do motor ($FS$, $P_0$, $K_n$, fluxo de massa) | Antes de simular um motor novo |
+| `motor` | Relatório detalhado do motor (grãos efetivos, balística, inércia) | Ajustando o `.ric` ou testando variações |
+| `estrutura` | Compara `modo="calculado"` vs `modo="medido"` e lista componentes | Conferindo massa seca, CG e inércia |
+| `dump` | Relatório completo (motor + variações + estrutura + segurança + voo) | Auditoria geral antes de reuniões/submissão |
+| `sim` | Simulação determinística de voo (`--modo`, `--motor`, `--fator-empuxo`) | Avaliar apogeu e margem de estabilidade |
+| `varrer` | Varredura de apogeu (`fator_empuxo × fator_arrasto`) | Sensibilidade de voo |
+| `varrer-motor` | Varredura paramétrica multidimensional do `.ric` | Otimização de grãos e garganta |
+| `analisar-motor` | Filtra, ranqueia e plota resultados da varredura do motor | Pós-processamento de `varrer-motor` |
 
-## Fluxo típico
-
-### Ajustar o motor
-
-1. Abra o `.ric` no OpenMotor GUI, mude os grãos, salve.
-2. `python centralControle/rodar.py fs` → checar FS, P0, Kn, mass flux.
-3. `python centralControle/rodar.py sim` → ver impacto no apogeu.
-
-### Verificar a configuração do foguete
+## Exemplos Rápidos
 
 ```bash
-python centralControle/rodar.py dump
+# Comparar apogeu no modo calculado (por componentes) vs modo medido (bancada)
+python centralControle/rodar.py sim --modo calculado --sem-salvar
+python centralControle/rodar.py sim --modo medido --sem-salvar
+
+# Simular voo com uma variação de motor do motor_variacoes.py
+python centralControle/rodar.py sim --motor throat_largo --sem-salvar
+
+# Inspecionar apenas uma seção específica
+python centralControle/inspecionar.py variacoes
 ```
-
-Imprime: massa seca, CG, inércia, tabela de componentes, geometria das
-aletas, massa e CG da coifa, curva do motor, FS. Útil antes de apresentação
-ou para comparar com medições físicas.
-
-### Antes de submeter para a IREC
-
-1. `python centralControle/rodar.py fs` → todos OK?
-2. `python centralControle/rodar.py sim` → apogeu na faixa alvo?
-3. `centralControle/checklists.md` → todos os itens checados?
-
-## Estrutura do `rodar.py`
-
-```
-rodar.py <comando>
-    │
-    ├── sim      → scripts.simDeterministica.main()
-    ├── motor    → derivar_motor(MOTOR_IREC)
-    ├── fs       → derivar_motor + imprimir diagnosticos
-    ├── dump     → src.dump.dump_tudo()
-    ├── varrer   → scripts.varredura.main()
-    └── smoke    → src.smoke_test()
-```
-
-## Parâmetros de execução
-
-`parametros.yaml` — edite aqui sem tocar em Python:
-
-```yaml
-simulacao:
-  tipo_aletas: freeform
-  usar_spec_aleta: true
-  fator_empuxo: 1.00
-  fator_arrasto: 1.00
-
-varredura:
-  empuxo: { inicio: 0.90, fim: 1.10, passo: 0.01 }
-  arrasto: { inicio: 1.00, fim: 1.00, passo: 0.10 }
-```
-
-(Integração com o `rodar.py` ainda pendente — por ora os valores estão
-hardcoded nos scripts.)
-
-## Diagnósticos — como ler
-
-```
-[OK ] FS carcaça              2.9302 —            >= 2.000   σ_circ=49.48 MPa (σ_lim=145 MPa)
-[OK ] P0 pico                 2.9122 MPa          <= 8.000
-[OK ] Kn pico                232.7390 —            <= 250.000
-[OK ] mass flux pico        1249.4661 kg/(m²·s)   <= 1406.000
-```
-
-- `[OK ]` → passou
-- `[!! ]` → falhou, revisar antes de simular
-
-Limites em `configs/limites.py`.

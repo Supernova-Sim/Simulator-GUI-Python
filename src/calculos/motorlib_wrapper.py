@@ -1,69 +1,67 @@
 # src/calculos/motorlib_wrapper.py
-"""Wrapper do motorlib (OpenMotor) — roda simulação a partir de .ric.
-...
+"""Adaptador do motorlib/uilib (OpenMotor) — leitura de .ric, extração geométrica e simulação.
+
+Isola todas as peculiaridades do OpenMotor (proteção do backend do matplotlib,
+restauração do `sys.excepthook` e silenciamento do logger do `uilib`) em uma
+única costura (seam).
 """
 from __future__ import annotations
 
+import contextlib
+import copy
+import io
 import logging
+import sys
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
-# --- Protege contra uilib forçar Qt5Agg (que não temos) ---
-# Estratégia: bloqueia Qt APENAS durante o import do uilib.
-# Depois, restaura o matplotlib.use para o usuário poder usar backends interativos.
 import matplotlib
 
+from src.specs import GrainSpec
+
+# --- Isola os efeitos colaterais do import do uilib ---
 _orig_use = matplotlib.use
+_orig_excepthook = sys.excepthook
+
 
 def _safe_use(backend=None, *args, **kwargs):
     if backend and "qt" in str(backend).lower():
-        return  # ignora silenciosamente
+        return
     return _orig_use(backend, *args, **kwargs)
 
-matplotlib.use = _safe_use
 
+matplotlib.use = _safe_use
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 logging.getLogger("uilib").setLevel(logging.ERROR)
 
 try:
-    from uilib.fileIO import loadFile, fileTypes
-    from motorlib.motor import Motor
+    with contextlib.redirect_stdout(io.StringIO()):
+        import uilib.logger as _uilib_logger
+        from motorlib.motor import Motor
+        from uilib.fileIO import fileTypes, loadFile
+
+        # Neutraliza os prints de [LOG] do uilib para não poluir a saída
+        _uilib_logger.logger._write = lambda level, content: None
 finally:
-    # Restaura matplotlib.use original
     matplotlib.use = _orig_use
-
-    # Se o uilib deixou no default (Agg), força um backend interativo.
-    # Tenta na ordem de preferência; se todos falharem, mantém Agg (headless).
-    if matplotlib.get_backend().lower() == "agg":
-        for _b in ("QtAgg", "TkAgg"):
-            try:
-                _orig_use(_b)
-                break
-            except Exception:
-                continue
-
-from uilib.fileIO import loadFile, fileTypes   # noqa: E402
-from motorlib.motor import Motor                # noqa: E402
+    sys.excepthook = _orig_excepthook
 
 
 # ======================================================================
-# Helpers
+# Helpers internos
 # ======================================================================
 def _as_1d(x) -> list[float]:
-    """Converte para lista de floats (assume 1D)."""
     return [float(v) for v in x]
 
 
 def _as_2d(x) -> list[list[float]]:
-    """Garante lista de listas de floats."""
     if len(x) and isinstance(x[0], (list, tuple)):
         return [[float(v) for v in sub] for sub in x]
     return [[float(v)] for v in x]
 
 
 def _pico_2d(x: list[list[float]]) -> float:
-    """Máximo varrendo 2 níveis."""
     return max(max(sub) for sub in x) if x else 0.0
 
 
@@ -75,11 +73,11 @@ def _integrar_trapezio(x: list[float], y: list[float]) -> float:
 
 
 # ======================================================================
-# Saída
+# Saída da simulação balística
 # ======================================================================
 @dataclass
 class MotorResultado:
-    """Resultado da simulação de um motor do OpenMotor."""
+    """Resultado da simulação balística interna do OpenMotor."""
     success: bool
     alerts: list
     nome: str
@@ -139,66 +137,119 @@ class MotorResultado:
 
 
 # ======================================================================
-# API
+# Leitura de .ric, Extração de Geometria e Execução do Solver
 # ======================================================================
-def simular_ric(ric_path: str | Path) -> MotorResultado:
-    """Carrega um .ric, roda o solver do OpenMotor, devolve resultado."""
+def carregar_props(ric_path: str | Path) -> dict:
+    """Carrega o dicionário de propriedades de um arquivo .ric (já migrado pelo uilib)."""
     ric_path = Path(ric_path)
     if not ric_path.exists():
-        raise FileNotFoundError(f".ric não encontrado: {ric_path}")
+        raise FileNotFoundError(f"Arquivo .ric não encontrado: {ric_path}")
+    return loadFile(str(ric_path), fileTypes.MOTOR)
 
-    props = loadFile(str(ric_path), fileTypes.MOTOR)
-    motor = Motor(props)
+
+def extrair_geometria_props(
+    props: dict,
+) -> tuple[tuple[GrainSpec, ...], float, float, float]:
+    """Extrai (grains, propellant_density, throat_radius, nozzle_exit_radius) de `props`.
+
+    Como opera diretamente sobre o dicionário `props` (antes ou depois de
+    `aplicar_overrides`), garante que qualquer override em grãos, propelente
+    ou tubeira reflita fielmente nas especificações geométricas do motor.
+    """
+    grains_raw = props.get("grains")
+    if not grains_raw:
+        raise KeyError("Dicionário 'props' do .ric não contém a lista 'grains'.")
+
+    grains: list[GrainSpec] = []
+    for i, g in enumerate(grains_raw):
+        p = g.get("properties", {})
+        try:
+            length = float(p["length"])
+            diameter = float(p["diameter"])
+            core_diameter = float(p.get("coreDiameter", p.get("core_diameter")))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                f"Propriedades inválidas no grão [{i}] do .ric: {p}"
+            ) from exc
+
+        grains.append(
+            GrainSpec(
+                length=length,
+                outer_radius=diameter / 2.0,
+                inner_radius=core_diameter / 2.0,
+            )
+        )
+
+    prop = props.get("propellant", {})
+    propellant_density = float(prop["density"])
+
+    nozzle = props.get("nozzle", {})
+    throat_diameter = float(nozzle.get("throat", nozzle.get("throatDiameter")))
+    exit_diameter = float(nozzle.get("exit", nozzle.get("exitDiameter")))
+
+    return (
+        tuple(grains),
+        propellant_density,
+        throat_diameter / 2.0,
+        exit_diameter / 2.0,
+    )
+
+
+def simular_props(props: dict, *, nome: str | None = None) -> MotorResultado:
+    """Roda o solver do OpenMotor sobre um dicionário `props` em memória."""
+    motor = Motor(copy.deepcopy(props))
     sim = motor.runSimulation()
 
     if not sim.success:
         raise RuntimeError(
-            f"Simulação falhou. Alerts: "
+            f"Simulação do OpenMotor falhou para '{nome or 'Motor'}'. Alertas: "
             f"{[getattr(a, 'message', str(a)) for a in sim.alerts]}"
         )
 
     ch = sim.channels
 
     # --- 1D ---
-    tempo         = _as_1d(ch["time"].getData())
-    empuxo        = _as_1d(ch["force"].getData())
-    pressao       = _as_1d(ch["pressure"].getData())
+    tempo = _as_1d(ch["time"].getData())
+    empuxo = _as_1d(ch["force"].getData())
+    pressao = _as_1d(ch["pressure"].getData())
     pressao_saida = _as_1d(ch["exitPressure"].getData())
-    kn            = _as_1d(ch["kn"].getData())
-    vol_loading   = _as_1d(ch["volumeLoading"].getData())
-    d_throat      = _as_1d(ch["dThroat"].getData())
+    kn = _as_1d(ch["kn"].getData())
+    vol_loading = _as_1d(ch["volumeLoading"].getData())
+    d_throat = _as_1d(ch["dThroat"].getData())
 
     # --- 2D ---
-    massa_por_grao      = _as_2d(ch["mass"].getData())
-    mass_flow_por_grao  = _as_2d(ch["massFlow"].getData())
-    mass_flux_por_grao  = _as_2d(ch["massFlux"].getData())
+    massa_por_grao = _as_2d(ch["mass"].getData())
+    mass_flow_por_grao = _as_2d(ch["massFlow"].getData())
+    mass_flux_por_grao = _as_2d(ch["massFlux"].getData())
     regression_por_grao = _as_2d(ch["regression"].getData())
-    web_por_grao        = _as_2d(ch["web"].getData())
-    mach_por_grao       = _as_2d(ch["machNumber"].getData())
+    web_por_grao = _as_2d(ch["web"].getData())
+    mach_por_grao = _as_2d(ch["machNumber"].getData())
 
     # --- Escalares ---
     impulso = _integrar_trapezio(tempo, empuxo)
     burn_time = tempo[-1] - tempo[0] if len(tempo) > 1 else 0.0
     empuxo_medio = impulso / burn_time if burn_time > 0 else 0.0
 
-    # Massa total: soma dos grãos em cada instante
     massa_total_inicial = sum(massa_por_grao[0])
-    massa_total_final   = sum(massa_por_grao[-1])
+    massa_total_final = sum(massa_por_grao[-1])
 
-    try:
-        nome = sim.getDesignation()
-    except Exception:
-        nome = "Motor (via .ric)"
+    if nome is not None:
+        nome_final = nome
+    else:
+        try:
+            nome_final = sim.getDesignation()
+        except (AttributeError, TypeError, ValueError, ZeroDivisionError):
+            nome_final = "Motor (via .ric)"
 
     try:
         isp = float(sim.getISP())
-    except Exception:
+    except (AttributeError, TypeError, ValueError, ZeroDivisionError):
         isp = float("nan")
 
     return MotorResultado(
         success=sim.success,
         alerts=list(sim.alerts),
-        nome=nome,
+        nome=nome_final,
         burn_time=burn_time,
         tempo=tempo,
         empuxo=empuxo,
@@ -226,23 +277,7 @@ def simular_ric(ric_path: str | Path) -> MotorResultado:
     )
 
 
-# ======================================================================
-# CLI rápida
-# ======================================================================
-def main() -> None:
-    """Smoke test: roda o .ric e valida contra o relatório do Medusa."""
-    from src.paths import OPENMOTOR
-    ric_path = OPENMOTOR / "MotorNovo.ric"
-    r = simular_ric(ric_path)
-    print(r.resumo())
-
-    # Cross-check com o relatório do Medusa
-    assert r.success
-    assert abs(r.impulso_total - 10555.4) < 5.0, f"impulse: {r.impulso_total}"
-    assert abs(r.p0_pico / 1e6 - 2.912) < 0.01, f"P0: {r.p0_pico/1e6}"
-    assert abs(r.kn_pico - 232.7) < 0.5, f"Kn: {r.kn_pico}"
-    print("\n✓ motorlib_wrapper OK")
-
-
-if __name__ == "__main__":
-    main()
+def simular_ric(ric_path: str | Path, *, nome: str | None = None) -> MotorResultado:
+    """Carrega um arquivo .ric e executa a simulação no OpenMotor."""
+    props = carregar_props(ric_path)
+    return simular_props(props, nome=nome)

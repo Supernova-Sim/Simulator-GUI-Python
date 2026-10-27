@@ -1,49 +1,55 @@
-"""Deriva propriedades do motor a partir de MotorSpec (.ric > .eng).
+# src/calculos/motor.py
+"""Deriva propriedades completas do motor a partir de um `MotorSpec` (.ric > .eng).
 
-Três tipos de informação:
-  1. Curva de empuxo (do .ric via motorlib, ou do .eng como fallback)
-       → burn_time, total_impulse, max_thrust, curva completa
-  2. Geometria (dos grãos + carcaça)
-       → propellant_mass, cg, dry_inertia
-  3. Fatores de segurança (após balística interna)
-       → FS carcaça, P0, Kn, mass flux
-
-Coordenadas locais: x=0 no TOPO do motor (extremidade forward),
-x=case_length na base. O `resolver` soma a posição absoluta do motor no foguete.
+Este é um módulo profundo:
+  1. Se `spec.ric_path` está definido, carrega o `.ric`, aplica `spec.overrides`
+     em memória UMA única vez e extrai do mesmo dicionário `props` tanto a
+     geometria real dos grãos/tubeira/propelente quanto a simulação balística
+     interna do OpenMotor.
+  2. Se apenas `spec.thrust_curve_path` (.eng) está definido, integra a curva
+     RASP e usa os grãos declarados em `spec.grains`.
+  3. Calcula massa, CG, raio interno efetivo e inércia seca na convenção do
+     RocketPy: `(I_11, I_22, I_33) = (I_transversal, I_transversal, I_longitudinal)`.
+  4. Avalia todos os diagnósticos de segurança frente a `LimitesSeguranca`.
 """
+from __future__ import annotations
+
 import math
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
-from configs import MotorSpec, SIGMA_LIM_AL6063_T5
-from src.calculos.motorlib_wrapper import simular_ric
+from src.calculos.motorlib_variacoes import aplicar_overrides
+from src.calculos.motorlib_wrapper import (
+    carregar_props,
+    extrair_geometria_props,
+    simular_props,
+)
 from src.calculos.seguranca import (
+    LIMITES_PADRAO,
     DiagnosticoFS,
-    fs_carcaca,
-    check_p0,
     check_kn,
     check_mass_flux,
+    check_p0,
+    fs_carcaca,
 )
+from src.specs import GrainSpec, LimitesSeguranca, MotorSpec
 
 
 # ============================================================
 #  Parser do arquivo .eng (formato RASP)
 # ============================================================
+def _ler_eng(path: str | Path) -> tuple[list[float], list[float], dict[str, Any]]:
+    """Lê um arquivo RASP `.eng` e devolve `(tempos, empuxos, header)`."""
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(f"Arquivo .eng não encontrado: {path}")
 
-def _ler_eng(path: str | Path) -> tuple[list[float], list[float], dict]:
-    """Parser RASP .eng.
-
-    Returns
-    -------
-    (tempos, empuxos, header)
-        header: dict com designation, diameter_mm, length_mm, delay,
-                propellant_mass, total_mass.
-    """
     tempos: list[float] = []
     empuxos: list[float] = []
     header_line: str | None = None
 
-    with open(path) as f:
+    with path.open(encoding="utf-8") as f:
         for raw in f:
             line = raw.strip()
             if not line or line.startswith(";"):
@@ -63,24 +69,23 @@ def _ler_eng(path: str | Path) -> tuple[list[float], list[float], dict]:
             empuxos.append(ft)
 
     if header_line is None:
-        raise ValueError(f"arquivo .eng sem header: {path}")
+        raise ValueError(f"Arquivo .eng sem cabeçalho: {path}")
     if len(tempos) < 2:
-        raise ValueError(f"arquivo .eng sem dados suficientes: {path}")
+        raise ValueError(f"Arquivo .eng sem pontos suficientes: {path}")
 
     hp = header_line.split()
     header = {
-        "designation":     hp[0] if len(hp) > 0 else "",
-        "diameter_mm":     float(hp[1]) if len(hp) > 1 else 0.0,
-        "length_mm":       float(hp[2]) if len(hp) > 2 else 0.0,
-        "delay":           hp[3] if len(hp) > 3 else "",
+        "designation": hp[0] if len(hp) > 0 else "",
+        "diameter_mm": float(hp[1]) if len(hp) > 1 else 0.0,
+        "length_mm": float(hp[2]) if len(hp) > 2 else 0.0,
+        "delay": hp[3] if len(hp) > 3 else "",
         "propellant_mass": float(hp[4]) if len(hp) > 4 else 0.0,
-        "total_mass":      float(hp[5]) if len(hp) > 5 else 0.0,
+        "total_mass": float(hp[5]) if len(hp) > 5 else 0.0,
     }
     return tempos, empuxos, header
 
 
 def _integrar_trapezio(tempos: list[float], empuxos: list[float]) -> float:
-    """∫ F(t) dt por regra do trapézio."""
     total = 0.0
     for i in range(1, len(tempos)):
         dt = tempos[i] - tempos[i - 1]
@@ -89,9 +94,8 @@ def _integrar_trapezio(tempos: list[float], empuxos: list[float]) -> float:
 
 
 # ============================================================
-#  Saída
+#  Saída resolvida do motor
 # ============================================================
-
 @dataclass(frozen=True)
 class MotorDerivado:
     nome: str
@@ -112,7 +116,13 @@ class MotorDerivado:
     mass_flux_pico: float | None
     isp_entregue: float | None
 
-    # ---------- Geometria dos grãos ----------
+    # ---------- Geometria efetiva resolvida (já pós-overrides) ----------
+    grains: tuple[GrainSpec, ...]
+    propellant_density: float
+    throat_radius: float
+    nozzle_exit_radius: float
+
+    # ---------- Propriedades derivadas dos grãos ----------
     propellant_mass: float
     propellant_length: float
     stack_length: float
@@ -125,9 +135,8 @@ class MotorDerivado:
     dry_mass: float
     cg_dry: float
 
-    # ---------- Inércia ----------
-    # Ordem: (I_11, I_22, I_33) = (longitudinal, transversal, transversal)
-    # Confere com a convenção do RocketPy (Rocket.__init__ → inertia[0] = I_11)
+    # ---------- Inércia seca ----------
+    # Convenção RocketPy: (I_11, I_22, I_33) = (transversal, transversal, longitudinal)
     dry_inertia: tuple[float, float, float]
 
     # ---------- Agregados ----------
@@ -136,7 +145,15 @@ class MotorDerivado:
     # ---------- Fatores de segurança ----------
     diagnosticos: tuple[DiagnosticoFS, ...]
 
-    def to_dict(self) -> dict:
+    @property
+    def inercia_transversal(self) -> float:
+        return self.dry_inertia[0]
+
+    @property
+    def inercia_longitudinal(self) -> float:
+        return self.dry_inertia[2]
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "nome": self.nome,
             "fonte": self.fonte,
@@ -148,6 +165,10 @@ class MotorDerivado:
             "kn_pico": self.kn_pico,
             "mass_flux_pico": self.mass_flux_pico,
             "isp_entregue": self.isp_entregue,
+            "grains": [g.to_dict() for g in self.grains],
+            "propellant_density": self.propellant_density,
+            "throat_radius": self.throat_radius,
+            "nozzle_exit_radius": self.nozzle_exit_radius,
             "propellant_mass": self.propellant_mass,
             "propellant_length": self.propellant_length,
             "stack_length": self.stack_length,
@@ -171,18 +192,29 @@ class MotorDerivado:
                 }
                 for x in self.diagnosticos
             ],
-            # curva_empuxo é grande — omitida de propósito
         }
 
 
 # ============================================================
-#  Derivações
+#  Cálculos internos
 # ============================================================
-
-def _derivar_do_motor(spec: MotorSpec) -> dict:
-    """Retorna tudo que vem da fonte de verdade (.ric > .eng)."""
+def _resolver_fonte_e_geometria(spec: MotorSpec) -> dict[str, Any]:
+    """Resolve tanto a balística quanto a geometria efetiva (.ric > .eng)."""
     if spec.ric_path is not None:
-        r = simular_ric(spec.ric_path)
+        props = carregar_props(spec.ric_path)
+        if spec.overrides:
+            props = aplicar_overrides(props, spec.overrides)
+
+        grains_ric, rho_ric, throat_r_ric, exit_r_ric = extrair_geometria_props(props)
+        r = simular_props(props, nome=spec.nome)
+
+        # Se o usuário não sobrescreveu explicitamente no MotorSpec (ou se veio do .ric),
+        # usamos os valores extraídos do `props` já com overrides aplicados.
+        grains_eff = grains_ric if not spec.grains or spec.overrides else spec.grains
+        rho_eff = rho_ric if spec.propellant_density is None or spec.overrides else spec.propellant_density
+        throat_eff = throat_r_ric if spec.throat_radius is None or spec.overrides else spec.throat_radius
+        exit_eff = exit_r_ric if spec.nozzle_exit_radius is None or spec.overrides else spec.nozzle_exit_radius
+
         return {
             "fonte": "ric",
             "burn_time": (r.tempo[0], r.tempo[-1]),
@@ -194,73 +226,78 @@ def _derivar_do_motor(spec: MotorSpec) -> dict:
             "kn_pico": r.kn_pico,
             "mass_flux_pico": r.mass_flux_pico,
             "isp_entregue": r.isp_entregue,
+            "grains": grains_eff,
+            "propellant_density": rho_eff,
+            "throat_radius": throat_eff,
+            "nozzle_exit_radius": exit_eff,
         }
+
     if spec.thrust_curve_path is not None:
-        burn, imp, mx, ep = _derivar_do_eng(spec)
+        tempos, empuxos, header = _ler_eng(spec.thrust_curve_path)
+        burn_time = (tempos[0], tempos[-1])
+        total_impulse = _integrar_trapezio(tempos, empuxos)
+        max_thrust = max(empuxos)
         return {
             "fonte": "eng",
-            "burn_time": burn,
-            "total_impulse": imp,
-            "max_thrust": mx,
-            "eng_propellant_mass": ep,
+            "burn_time": burn_time,
+            "total_impulse": total_impulse,
+            "max_thrust": max_thrust,
+            "eng_propellant_mass": header["propellant_mass"],
             "curva_empuxo": None,
             "p0_pico": None,
             "kn_pico": None,
             "mass_flux_pico": None,
             "isp_entregue": None,
+            "grains": spec.grains,
+            "propellant_density": float(spec.propellant_density),
+            "throat_radius": float(spec.throat_radius),
+            "nozzle_exit_radius": float(spec.nozzle_exit_radius),
         }
+
     raise ValueError(
-        f"MotorSpec '{spec.nome}' precisa de ric_path ou thrust_curve_path."
+        f"MotorSpec '{spec.nome}' precisa de 'ric_path' ou 'thrust_curve_path'."
     )
 
 
-def _derivar_do_eng(spec: MotorSpec) -> tuple:
-    tempos, empuxos, header = _ler_eng(spec.thrust_curve_path)
-
-    burn_time = (tempos[0], tempos[-1])
-    total_impulse = _integrar_trapezio(tempos, empuxos)
-    max_thrust = max(empuxos)
-    return burn_time, total_impulse, max_thrust, header["propellant_mass"]
-
-
-def _derivar_dos_graos(spec: MotorSpec) -> tuple:
-    """Retorna (massa, comprimento_prop, stack_length, cg_local, inner_eff)."""
+def _derivar_dos_graos(
+    grains: tuple[GrainSpec, ...],
+    propellant_density: float,
+    grain_separation: float,
+    margin_forward_side: float,
+) -> tuple[float, float, float, float, float]:
+    """Retorna `(massa_total, comprimento_prop, stack_length, cg_local, inner_eff)`."""
     massa_total = 0.0
     momento = 0.0
     volume_total = 0.0
-    x = spec.margin_forward_side          # começa após a margem forward
+    x = margin_forward_side
     comprimento_prop = 0.0
 
-    for i, g in enumerate(spec.grains):
-        V = math.pi * (g.outer_radius**2 - g.inner_radius**2) * g.length
-        m = V * spec.propellant_density
+    for i, g in enumerate(grains):
+        v = math.pi * (g.outer_radius**2 - g.inner_radius**2) * g.length
+        m = v * propellant_density
 
         x_centro = x + g.length / 2.0
         massa_total += m
         momento += m * x_centro
-        volume_total += V
+        volume_total += v
         comprimento_prop += g.length
 
-        # Próximo grão: avança o comprimento + separação (exceto no último)
         x += g.length
-        if i < len(spec.grains) - 1:
-            x += spec.grain_separation
+        if i < len(grains) - 1:
+            x += grain_separation
 
-    stack_length = comprimento_prop + (len(spec.grains) - 1) * spec.grain_separation
+    stack_length = comprimento_prop + (len(grains) - 1) * grain_separation
     cg_local = momento / massa_total if massa_total > 0 else 0.0
 
-    # Raio interno efetivo — preserva o volume total de propelente
-    # assumindo raio externo constante e comprimento total do propelente.
-    r_o = spec.grains[0].outer_radius
+    r_o = grains[0].outer_radius
     r_i_eff_sq = r_o**2 - volume_total / (math.pi * comprimento_prop)
     inner_eff = math.sqrt(max(0.0, r_i_eff_sq))
 
     return massa_total, comprimento_prop, stack_length, cg_local, inner_eff
 
 
-def _derivar_carcaca(spec: MotorSpec, stack_length: float) -> tuple:
-    """Retorna (case_length, case_outer_radius, dry_mass)."""
-    # Comprimento
+def _derivar_carcaca(spec: MotorSpec, stack_length: float) -> tuple[float, float, float]:
+    """Retorna `(case_length, case_outer_radius, dry_mass)`."""
     if spec.case_length is not None:
         case_length = spec.case_length
     else:
@@ -268,15 +305,13 @@ def _derivar_carcaca(spec: MotorSpec, stack_length: float) -> tuple:
             spec.margin_forward_side + stack_length + spec.margin_nozzle_side
         )
 
-    # Raio externo
     r_o = spec.case_inner_radius + spec.case_wall_thickness
 
-    # Massa seca
     if spec.dry_mass is not None:
         dry_mass = spec.dry_mass
     else:
-        V_casca = math.pi * (r_o**2 - spec.case_inner_radius**2) * case_length
-        massa_casca = V_casca * spec.case_density
+        v_casca = math.pi * (r_o**2 - spec.case_inner_radius**2) * case_length
+        massa_casca = v_casca * spec.case_density
         dry_mass = massa_casca + spec.nozzle_mass + spec.dry_mass_extra
 
     return case_length, r_o, dry_mass
@@ -285,82 +320,74 @@ def _derivar_carcaca(spec: MotorSpec, stack_length: float) -> tuple:
 def _derivar_inercia_seca(
     dry_mass: float, r_o: float, r_i: float, L: float,
 ) -> tuple[float, float]:
-    """Inércia de casca cilíndrica oca (aproximação da carcaça real).
-
-    Assume que toda a dry_mass está distribuída na casca cilíndrica — o que
-    superestima ligeiramente o roll (a tubeira é mais concentrada no eixo)
-    e o pitch (a tubeira está no meio, não nas extremidades). Aceitável
-    enquanto não há detalhamento da tubeira/bulkhead.
-
-    Estimativa: 7.5 kg nesse tamanho, I_xx ~40% acima do valor real
-    (tubeira ocupa raio menor). Refinar quando CAD/medição existir.
+    """Inércia de casca cilíndrica oca.
 
     Returns
     -------
-    (I_xx, I_yy) : I_xx = longitudinal (roll), I_yy = transversal (pitch/yaw).
+    (I_xx_longitudinal, I_yy_transversal)
+        I_xx_longitudinal = roll (em torno do eixo axial e_3)
+        I_yy_transversal  = pitch/yaw (em torno dos eixos transversais e_1, e_2)
     """
-    I_xx = 0.5 * dry_mass * (r_o**2 + r_i**2)
-    I_yy = (dry_mass / 12.0) * (3.0 * (r_o**2 + r_i**2) + L**2)
-    return I_xx, I_yy
+    I_xx_longitudinal = 0.5 * dry_mass * (r_o**2 + r_i**2)
+    I_yy_transversal = (dry_mass / 12.0) * (3.0 * (r_o**2 + r_i**2) + L**2)
+    return I_xx_longitudinal, I_yy_transversal
 
-
-# ============================================================
-#  Diagnósticos de segurança
-# ============================================================
 
 def _diagnosticar(
-    info: dict,
+    info: dict[str, Any],
     spec: MotorSpec,
+    limites: LimitesSeguranca,
 ) -> tuple[DiagnosticoFS, ...]:
-    """Roda todos os checks de segurança aplicáveis.
-
-    Retorna tupla vazia se a fonte for .eng (falta balística interna).
-    """
     if info["p0_pico"] is None:
         return ()
 
-    diags: list[DiagnosticoFS] = [
+    return (
         fs_carcaca(
             p0_pico=info["p0_pico"],
             case_inner_radius=spec.case_inner_radius,
             case_wall_thickness=spec.case_wall_thickness,
-            sigma_lim=SIGMA_LIM_AL6063_T5,
+            limites=limites,
         ),
-        check_p0(info["p0_pico"]),
-        check_kn(info["kn_pico"]),
-        check_mass_flux(info["mass_flux_pico"]),
-    ]
-    return tuple(diags)
+        check_p0(info["p0_pico"], limites=limites),
+        check_kn(info["kn_pico"], limites=limites),
+        check_mass_flux(info["mass_flux_pico"], limites=limites),
+    )
 
 
 # ============================================================
-#  Agregador
+#  Ponto de Entrada Principal
 # ============================================================
+def derivar_motor(
+    spec: MotorSpec,
+    *,
+    limites: LimitesSeguranca = LIMITES_PADRAO,
+) -> MotorDerivado:
+    """Deriva cinemática, balística interna, massas, inércias e diagnósticos do motor."""
+    info = _resolver_fonte_e_geometria(spec)
 
-def derivar_motor(spec: MotorSpec) -> MotorDerivado:
-    # --- Da fonte de verdade ---
-    info = _derivar_do_motor(spec)
+    grains_eff: tuple[GrainSpec, ...] = info["grains"]
+    rho_eff: float = info["propellant_density"]
 
-    # --- Dos grãos ---
-    prop_mass, prop_len, stack_len, cg_prop, inner_eff = _derivar_dos_graos(spec)
+    prop_mass, prop_len, stack_len, cg_prop, inner_eff = _derivar_dos_graos(
+        grains=grains_eff,
+        propellant_density=rho_eff,
+        grain_separation=spec.grain_separation,
+        margin_forward_side=spec.margin_forward_side,
+    )
 
-    # --- Da carcaça ---
     case_len, case_r_o, dry_mass = _derivar_carcaca(spec, stack_len)
     cg_dry = case_len / 2.0
 
-    # --- Inércias da carcaça ---
-    # Ordem do tensor: (I_11, I_22, I_33) = (longitudinal, transv, transv)
-    # Confere com RocketPy (Rocket.__init__ → inertia[0] = I_11 = roll)
+    # Convenção RocketPy: (I_11, I_22, I_33) = (transversal, transversal, longitudinal)
     if spec.dry_inertia_override is not None:
         dry_inertia = spec.dry_inertia_override
     else:
-        I_xx_dry, I_yy_dry = _derivar_inercia_seca(
+        I_long, I_transv = _derivar_inercia_seca(
             dry_mass, case_r_o, spec.case_inner_radius, case_len,
         )
-        dry_inertia = (I_xx_dry, I_yy_dry, I_yy_dry)   # ← FIX
+        dry_inertia = (I_transv, I_transv, I_long)
 
-    # --- Diagnósticos de segurança ---
-    diagnosticos = _diagnosticar(info, spec)
+    diagnosticos = _diagnosticar(info, spec, limites)
 
     return MotorDerivado(
         nome=spec.nome,
@@ -374,6 +401,10 @@ def derivar_motor(spec: MotorSpec) -> MotorDerivado:
         kn_pico=info["kn_pico"],
         mass_flux_pico=info["mass_flux_pico"],
         isp_entregue=info["isp_entregue"],
+        grains=grains_eff,
+        propellant_density=rho_eff,
+        throat_radius=info["throat_radius"],
+        nozzle_exit_radius=info["nozzle_exit_radius"],
         propellant_mass=prop_mass,
         propellant_length=prop_len,
         stack_length=stack_len,
@@ -387,69 +418,3 @@ def derivar_motor(spec: MotorSpec) -> MotorDerivado:
         mass_loaded=dry_mass + prop_mass,
         diagnosticos=diagnosticos,
     )
-
-
-# ============================================================
-#  Inspeção rápida
-# ============================================================
-
-def main() -> None:
-    from configs.foguetes.hefesto.motor import MOTOR_IREC
-
-    d = derivar_motor(MOTOR_IREC)
-
-    print(f"--- {d.nome} ---")
-    print(f"  fonte: {d.fonte}")
-    print()
-    print("Cinemática:")
-    print(f"  burn_time:              {d.burn_time}")
-    print(f"  total_impulse:          {d.total_impulse:.2f} N·s")
-    print(f"  max_thrust:             {d.max_thrust:.1f} N")
-    print(f"  eng_propellant_mass:    {d.eng_propellant_mass:.4f} kg")
-    print()
-    print("Geometria dos grãos:")
-    print(f"  propellant_mass:        {d.propellant_mass:.4f} kg")
-    print(f"  propellant_length:      {d.propellant_length:.4f} m")
-    print(f"  stack_length:           {d.stack_length:.4f} m")
-    print(f"  cg_propellant (local):  {d.cg_propellant:.4f} m")
-    print(f"  inner_radius_efetivo:   {d.grain_inner_radius_effective:.5f} m")
-    print()
-    print("Carcaça:")
-    print(f"  case_length:            {d.case_length:.4f} m")
-    print(f"  case_outer_radius:      {d.case_outer_radius:.5f} m")
-    print(f"  dry_mass:               {d.dry_mass:.4f} kg")
-    print(f"  cg_dry (local):         {d.cg_dry:.4f} m")
-    print()
-    print("Inércia seca (aproximação cilíndrica):")
-    print(f"  I_11 (roll):            {d.dry_inertia[0]:.6f} kg·m²")   # ← FIX
-    print(f"  I_22 (pitch/yaw):       {d.dry_inertia[1]:.6f} kg·m²")   # ← FIX
-    print()
-    print(f"  mass_loaded:            {d.mass_loaded:.4f} kg")
-
-    if d.p0_pico is not None:
-        print()
-        print("Balística interna:")
-        print(f"  P0_pico:                {d.p0_pico / 1e6:.3f} MPa")
-        print(f"  Kn_pico:                {d.kn_pico:.1f}")
-        print(f"  mass_flux_pico:         {d.mass_flux_pico:.3f} kg/(m²·s)")
-        print(f"  ISP_entregue:           {d.isp_entregue:.2f} s")
-
-    if d.diagnosticos:
-        print()
-        print("Diagnósticos de segurança:")
-        for diag in d.diagnosticos:
-            print(diag.linha())
-
-    # --- Validações ---
-    assert d.fonte == "ric", f"esperava fonte=ric, obtive {d.fonte}"
-    assert abs(d.total_impulse - 10555.4) < 5.0, f"impulse: {d.total_impulse}"
-    assert abs(d.p0_pico / 1e6 - 2.912) < 0.01, f"P0: {d.p0_pico/1e6}"
-    assert abs(d.kn_pico - 232.7) < 0.5, f"Kn: {d.kn_pico}"
-    assert len(d.curva_empuxo) == 126, f"curva: {len(d.curva_empuxo)} pontos"
-    assert all(x.ok for x in d.diagnosticos), "diagnóstico falhou"
-
-    print("\n✓ motor OK")
-
-
-if __name__ == "__main__":
-    main()

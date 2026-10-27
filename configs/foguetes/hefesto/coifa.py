@@ -1,14 +1,14 @@
 # configs/foguetes/hefesto/coifa.py
 """Especificação concreta da coifa do Hefesto."""
-from configs.especificacao import CoifaSpec
-from configs.material import COIFA_EFETIVA
+from __future__ import annotations
 
+from configs.material import COIFA_EFETIVA
+from src.specs import CoifaSpec
 
 # ════════════════════════════════════════════════════════════
 #  PARÂMETRO GLOBAL — parede da coifa
 # ════════════════════════════════════════════════════════════
 ESPESSURA_COIFA = 0.003   # m — 3 mm
-
 
 COIFA_IREC = CoifaSpec(
     nome="Coifa Hefesto",

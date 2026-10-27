@@ -1,17 +1,16 @@
 # configs/foguetes/hefesto/corpo.py
 """Lista concreta de componentes do corpo do Hefesto (nariz → cauda)."""
-from configs.componentes import TuboSpec, MassaPontualSpec
-from configs.material import ALUMINIO_6061, COMPOSITO_EFETIVO
+from __future__ import annotations
 
+from configs.material import ALUMINIO_6061, COMPOSITO_EFETIVO
+from src.specs import MassaPontualSpec, TuboSpec
 
 # ════════════════════════════════════════════════════════════
 #  PARÂMETRO GLOBAL — mexa aqui para mudar a parede do corpo
 # ════════════════════════════════════════════════════════════
-ESPESSURA_PAREDE = 0.002   # m — 3 mm nominal
-
+ESPESSURA_PAREDE = 0.002   # m — 2 mm
 
 COMPONENTES: list[TuboSpec | MassaPontualSpec] = [
-
     # ---------- Estrutura externa (compósito) ----------
     TuboSpec("Módulo Aviônica",            0.079, ESPESSURA_PAREDE, 0.540, 0.7200, COMPOSITO_EFETIVO),
     TuboSpec("Módulo Payload",             0.079, ESPESSURA_PAREDE, 0.450, 1.2150, COMPOSITO_EFETIVO),
@@ -24,7 +23,6 @@ COMPONENTES: list[TuboSpec | MassaPontualSpec] = [
     TuboSpec("Junção Propulsão/Aletas",    0.076, ESPESSURA_PAREDE, 0.200, 2.3500, ALUMINIO_6061),
 
     # ---------- Componentes com espessuras próprias ----------
-    # (fixadores, anéis, anteparos — geometria diferente, não é "parede")
     TuboSpec("Fixador Superior 1",         0.073, 0.010, 0.012, 0.9400, ALUMINIO_6061),
     TuboSpec("Fixador Inferior 1",         0.073, 0.010, 0.012, 1.0400, ALUMINIO_6061),
     TuboSpec("Fixador Superior 2",         0.073, 0.010, 0.012, 1.3900, ALUMINIO_6061),

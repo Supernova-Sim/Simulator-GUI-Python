@@ -18,7 +18,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["hefesto*", "configs*"]
+include = ["src*", "configs*", "centralControle*", "scripts*"]
 
 # openMotor (motorlib/uilib) vem direto do GitHub, fixado num commit, para o
 # projeto ser reproduzível em qualquer máquina sem depender de vendor/.
@@ -30,3 +30,9 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.17.3",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+filterwarnings = ["ignore::RuntimeWarning"]
+

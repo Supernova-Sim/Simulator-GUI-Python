@@ -1,36 +1,132 @@
 # configs/__init__.py
-"""API pública de configs.
+"""Fachada pública de configurações do projeto.
 
-Consumidores importam `from configs import X`, nunca de submódulos.
-Isso blinda o resto do projeto contra reorganizações internas.
+Reexporta os tipos de especificação (`src.specs`), recursos globais
+(`configs.material`, `configs.limites`) e a instância concreta do foguete
+`HEFESTO` (`configs.foguetes.hefesto`).
 """
+from __future__ import annotations
 
-# ============================================================
-#  ABSTRAÇÕES (formas)
-# ============================================================
-from configs.especificacao import AletaSpec, CoifaSpec
-from configs.componentes import TuboSpec, MassaPontualSpec
-from configs.motor.spec import MotorSpec, GrainSpec
-
-# ============================================================
-#  RECURSOS GLOBAIS
-# ============================================================
-from configs.material import (
-    ALUMINIO_6061,
-    FIBRA_CARBONO,
-    COMPOSITO_G10,
-    COMPOSITO_EFETIVO,
-    COIFA_EFETIVA,
-    SIGMA_LIM_AL6063_T5,
+from configs.foguetes.hefesto import (
+    ALETA_IREC,
+    ALETAS,
+    ALETAS_E,
+    ALETAS_POS_E,
+    ALETAS_TRAPEZIO_EQUIV,
+    COIFA,
+    COIFA_E,
+    COIFA_IREC,
+    COIFA_POS_E,
+    COMPONENTES,
+    ENG_MEDUSA,
+    FOGUETE,
+    FOGUETE_E,
+    GEOMETRIA_MEDIDA_HEFESTO,
+    HEFESTO,
+    IREC,
+    IREC_E,
+    IREC_ENSEMBLE_E,
+    LOWER_BUTTON_POSITION_E,
+    MOTOR_E,
+    MOTOR_IREC,
+    MOTOR_POS_E,
+    MOTOR_POSITION,
+    RAIL_BUTTONS,
+    RAIL_BUTTONS_E,
+    REEFED,
+    REEFED_E,
+    RIC_MEDUSA,
+    UNREEFED,
+    UNREEFED_E,
 )
 from configs.limites import (
-    FS_MIN_CARCACA, FS_ALVO_CARCACA,
-    FS_MIN_ALETAS, FS_MIN_ESTRUTURA, FS_MIN_RECUPERACAO,
-    P0_MAX, KN_MAX, MASS_FLUX_MAX,
-    PORT_THROAT_MIN, EROSION_MAX_GARGANTA,
+    EROSION_MAX_GARGANTA,
+    FS_ALVO_CARCACA,
+    FS_MIN_ALETAS,
+    FS_MIN_CARCACA,
+    FS_MIN_ESTRUTURA,
+    FS_MIN_RECUPERACAO,
+    KN_MAX,
+    LIMITES_IREC,
+    MASS_FLUX_MAX,
+    P0_MAX,
+    PORT_THROAT_MIN,
+)
+from configs.material import (
+    ALUMINIO_6061,
+    COIFA_EFETIVA,
+    COMPOSITO_EFETIVO,
+    COMPOSITO_G10,
+    FIBRA_CARBONO,
+    SIGMA_LIM_AL6063_T5,
+)
+from src.specs import (
+    AletaSpec,
+    CoifaSpec,
+    FogueteSpec,
+    GeometriaMedidaSpec,
+    GrainSpec,
+    LimitesSeguranca,
+    MassaPontualSpec,
+    MotorSpec,
+    TuboSpec,
 )
 
-# ============================================================
-#  INSTÂNCIA: HEFESTO
-# ============================================================
-from configs.foguetes.hefesto import *   # noqa: F401, F403
+__all__ = [
+    "ALETAS",
+    "ALETAS_E",
+    "ALETAS_POS_E",
+    "ALETAS_TRAPEZIO_EQUIV",
+    "ALETA_IREC",
+    "ALUMINIO_6061",
+    "COIFA",
+    "COIFA_E",
+    "COIFA_EFETIVA",
+    "COIFA_IREC",
+    "COIFA_POS_E",
+    "COMPONENTES",
+    "COMPOSITO_EFETIVO",
+    "COMPOSITO_G10",
+    "ENG_MEDUSA",
+    "EROSION_MAX_GARGANTA",
+    "FIBRA_CARBONO",
+    "FOGUETE",
+    "FOGUETE_E",
+    "FS_ALVO_CARCACA",
+    "FS_MIN_ALETAS",
+    "FS_MIN_CARCACA",
+    "FS_MIN_ESTRUTURA",
+    "FS_MIN_RECUPERACAO",
+    "GEOMETRIA_MEDIDA_HEFESTO",
+    "HEFESTO",
+    "IREC",
+    "IREC_E",
+    "IREC_ENSEMBLE_E",
+    "KN_MAX",
+    "LIMITES_IREC",
+    "LOWER_BUTTON_POSITION_E",
+    "MASS_FLUX_MAX",
+    "MOTOR_E",
+    "MOTOR_IREC",
+    "MOTOR_POSITION",
+    "MOTOR_POS_E",
+    "P0_MAX",
+    "PORT_THROAT_MIN",
+    "RAIL_BUTTONS",
+    "RAIL_BUTTONS_E",
+    "REEFED",
+    "REEFED_E",
+    "RIC_MEDUSA",
+    "SIGMA_LIM_AL6063_T5",
+    "UNREEFED",
+    "UNREEFED_E",
+    "AletaSpec",
+    "CoifaSpec",
+    "FogueteSpec",
+    "GeometriaMedidaSpec",
+    "GrainSpec",
+    "LimitesSeguranca",
+    "MassaPontualSpec",
+    "MotorSpec",
+    "TuboSpec",
+]

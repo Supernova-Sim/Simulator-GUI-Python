@@ -1,24 +1,34 @@
 # src/modelos.py
-"""Monta o foguete pronto para o RocketPy.
+"""Monta o `SolidMotor` e o `Rocket` prontos para simulação no RocketPy.
 
-Padrão de injeção: todos os parâmetros concretos (motor, componentes,
-aleta, coifa) chegam por argumento. Os defaults apontam para o Hefesto,
-mas qualquer um pode ser sobrescrito.
+Separa explicitamente os dois modos de representação estrutural do foguete:
+  - `modo="calculado"`: massa, CG e inércia vêm de `resolver(componentes, aleta, coifa, raio)`.
+  - `modo="medido"`: massa, CG e inércia vêm de `GeometriaMedidaSpec` (bancada/OpenRocket).
+
+Não importa nada de `configs/`; todas as especificações chegam por argumento.
 """
+from __future__ import annotations
+
+from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Any, Literal
+
 from rocketpy import Rocket, SolidMotor
 
-from configs import (
-    # defaults do Hefesto
-    MOTOR_IREC, COMPONENTES, COIFA_IREC,
-    FOGUETE, ALETAS, COIFA, RAIL_BUTTONS,
-    REEFED, UNREEFED,  MOTOR_POSITION,
-    # tipos
-    AletaSpec, CoifaSpec, MotorSpec,
-    TuboSpec, MassaPontualSpec,
-)
-from src.modelo import resolver
 from src.calculos.motor import MotorDerivado, derivar_motor
+from src.calculos.seguranca import LIMITES_PADRAO
+from src.modelo import FogueteResolvido, resolver
+from src.specs import (
+    AletaSpec,
+    CoifaSpec,
+    FogueteSpec,
+    LimitesSeguranca,
+    MassaPontualSpec,
+    MotorSpec,
+    TuboSpec,
+)
+
+ModoFoguete = Literal["calculado", "medido"]
 
 
 @dataclass
@@ -26,6 +36,8 @@ class FogueteMontado:
     rocket: Rocket
     motor: SolidMotor
     motor_derivado: MotorDerivado
+    modo: ModoFoguete
+    foguete_resolvido: FogueteResolvido | None
     nosecone: object
     fins: object
     rail_buttons: object
@@ -33,49 +45,48 @@ class FogueteMontado:
     reefed: object
 
 
-def _motor_kwargs(spec: MotorSpec, d: MotorDerivado, thrust_source=None) -> dict:
-    """Traduz MotorSpec + MotorDerivado para kwargs do SolidMotor."""
+def _motor_kwargs(spec: MotorSpec, d: MotorDerivado, thrust_source: Any = None) -> dict[str, Any]:
+    """Traduz `MotorSpec` + `MotorDerivado` para os argumentos de `SolidMotor`.
+
+    Usa sempre `d.grains`, `d.propellant_density`, `d.nozzle_exit_radius` e
+    `d.throat_radius` do `MotorDerivado` para refletir eventuais `overrides`.
+    """
     if thrust_source is not None:
         ts = thrust_source
     elif d.curva_empuxo is not None:
         ts = list(d.curva_empuxo)
     else:
-        ts = spec.thrust_curve_path
+        ts = str(spec.thrust_curve_path)
 
     return {
         "thrust_source": ts,
         "dry_mass": d.dry_mass,
         "dry_inertia": d.dry_inertia,
         "center_of_dry_mass_position": d.case_length - d.cg_dry,
-        "grain_number": len(spec.grains),
-        "grain_outer_radius": spec.grains[0].outer_radius,
+        "grain_number": len(d.grains),
+        "grain_outer_radius": d.grains[0].outer_radius,
         "grain_initial_inner_radius": d.grain_inner_radius_effective,
-        "grain_initial_height": spec.grains[0].length,
+        "grain_initial_height": d.grains[0].length,
         "grain_separation": spec.grain_separation,
-        "grain_density": spec.propellant_density,
+        "grain_density": d.propellant_density,
         "grains_center_of_mass_position": d.case_length - d.cg_propellant,
         "nozzle_position": spec.nozzle_position,
-        "nozzle_radius": spec.nozzle_exit_radius,
-        "throat_radius": spec.throat_radius,
+        "nozzle_radius": d.nozzle_exit_radius,
+        "throat_radius": d.throat_radius,
         "burn_time": (0.0, d.burn_time[1]),
         "coordinate_system_orientation": "nozzle_to_combustion_chamber",
     }
 
 
 def build_motor(
-    motor_spec: MotorSpec | None = None,
+    motor_spec: MotorSpec,
     fator_empuxo: float = 1.0,
+    *,
+    limites: LimitesSeguranca = LIMITES_PADRAO,
 ) -> tuple[SolidMotor, MotorDerivado]:
-    """Constrói o SolidMotor a partir de um MotorSpec.
-
-    Parameters
-    ----------
-    motor_spec : MotorSpec | None
-        Default = MOTOR_IREC (Hefesto).
-    """
-    spec = motor_spec if motor_spec is not None else MOTOR_IREC
-    d = derivar_motor(spec)
-    kwargs = _motor_kwargs(spec, d)
+    """Constrói o `SolidMotor` e o `MotorDerivado` a partir de um `MotorSpec`."""
+    d = derivar_motor(motor_spec, limites=limites)
+    kwargs = _motor_kwargs(motor_spec, d)
 
     if fator_empuxo != 1.0:
         base = SolidMotor(**kwargs)
@@ -85,99 +96,133 @@ def build_motor(
 
 
 def build_rocket(
+    foguete_spec: FogueteSpec,
     *,
-    # --- Identidade do foguete ---
+    modo: ModoFoguete = "calculado",
     motor_spec: MotorSpec | None = None,
-    componentes: list[TuboSpec | MassaPontualSpec] | None = None,
+    componentes: Sequence[TuboSpec | MassaPontualSpec] | None = None,
     spec_coifa: CoifaSpec | None = None,
     spec_aleta: AletaSpec | None = None,
-
-    # --- Aletas (quando spec_aleta é None) ---
     tipo_aletas: str = "freeform",
-
-    # --- Fatores de varredura ---
     fator_empuxo: float = 1.0,
     fator_arrasto: float = 1.0,
 ) -> FogueteMontado:
-    """Constrói o foguete injetando as dependências.
+    """Constrói o `FogueteMontado` no modo estrutural escolhido (`calculado` ou `medido`).
 
-    Defaults = Hefesto (IREC 2026). Para outro foguete, passe todos.
+    Parameters
+    ----------
+    foguete_spec : FogueteSpec
+        Especificação completa do foguete (ex.: `HEFESTO` de `configs`).
+    modo : {"calculado", "medido"}
+        - `"calculado"`: resolve massa, CG e inércia a partir de componentes, coifa e aletas.
+        - `"medido"`: usa os valores medidos de bancada (`foguete_spec.geometria_medida`).
+    motor_spec : MotorSpec | None
+        Permite substituir o motor nominal (ex.: por uma variação) sem recriar `foguete_spec`.
     """
-    # --- Defaults do Hefesto ---
-    motor_spec = motor_spec if motor_spec is not None else MOTOR_IREC
-    componentes = componentes if componentes is not None else COMPONENTES
-    spec_coifa = spec_coifa if spec_coifa is not None else COIFA_IREC
+    if modo not in ("calculado", "medido"):
+        raise ValueError(
+            f"modo inválido: {modo!r}. Escolha explicitamente 'calculado' ou 'medido'."
+        )
 
-    motor, motor_d = build_motor(motor_spec=motor_spec, fator_empuxo=fator_empuxo)
-    resolvido = None
+    motor_efetivo = motor_spec if motor_spec is not None else foguete_spec.motor
+    motor, motor_d = build_motor(
+        motor_spec=motor_efetivo,
+        fator_empuxo=fator_empuxo,
+        limites=foguete_spec.limites,
+    )
 
-    if spec_aleta is not None:
+    resolvido: FogueteResolvido | None = None
+
+    if modo == "calculado":
+        comp_eff = componentes if componentes is not None else foguete_spec.componentes
+        coifa_eff = spec_coifa if spec_coifa is not None else foguete_spec.coifa
+        aleta_eff = spec_aleta if spec_aleta is not None else foguete_spec.aleta
+
+        if not comp_eff or coifa_eff is None or aleta_eff is None:
+            raise ValueError(
+                f"Foguete '{foguete_spec.nome}' não possui todos os insumos para "
+                "modo='calculado' (componentes, coifa, aleta)."
+            )
+
         resolvido = resolver(
-            componentes=componentes,
-            spec_aleta=spec_aleta,
-            spec_coifa=spec_coifa,
-            raio=FOGUETE["radius"],
+            componentes=comp_eff,
+            spec_aleta=aleta_eff,
+            spec_coifa=coifa_eff,
+            raio=foguete_spec.raio,
         )
         parametros_rocket = resolvido.dict_rocket(
-            power_off_drag=FOGUETE["power_off_drag"],
-            power_on_drag=FOGUETE["power_on_drag"],
+            power_off_drag=str(foguete_spec.power_off_drag),
+            power_on_drag=str(foguete_spec.power_on_drag),
         )
         nose_kwargs = resolvido.dict_coifa()
     else:
-        parametros_rocket = dict(FOGUETE)
-        nose_kwargs = dict(COIFA)
+        geom = foguete_spec.geometria_medida
+        if geom is None:
+            raise ValueError(
+                f"Foguete '{foguete_spec.nome}' não possui 'geometria_medida' configurada "
+                "para modo='medido'."
+            )
+        parametros_rocket = geom.dict_rocket(
+            power_off_drag=str(foguete_spec.power_off_drag),
+            power_on_drag=str(foguete_spec.power_on_drag),
+        )
+        nose_kwargs = geom.dict_coifa()
 
     rkt = Rocket(**parametros_rocket)
 
     if fator_arrasto != 1.0:
         rkt.power_off_drag = rkt.power_off_drag * fator_arrasto
-        rkt.power_on_drag  = rkt.power_on_drag  * fator_arrasto
+        rkt.power_on_drag = rkt.power_on_drag * fator_arrasto
 
     nosecone = rkt.add_nose(**nose_kwargs)
 
-    if spec_aleta is not None:
-        fins = rkt.add_free_form_fins(
-            n=spec_aleta.n,
-            position=spec_aleta.position,
-            shape_points=resolvido.shape_points(),
-            cant_angle=spec_aleta.cant_angle,
-        )
-    elif tipo_aletas == "freeform":
-        fins = rkt.add_free_form_fins(**ALETAS)
-    # elif tipo_aletas == "trapezio":
-    #     fins = rkt.add_trapezoidal_fins(**ALETAS_TRAPEZIO_EQUIV)
+    if tipo_aletas == "freeform":
+        if modo == "calculado" and resolvido is not None:
+            aleta_eff = resolvido.spec_aleta
+            fins = rkt.add_free_form_fins(
+                n=aleta_eff.n,
+                position=aleta_eff.position,
+                shape_points=resolvido.shape_points(),
+                cant_angle=aleta_eff.cant_angle,
+            )
+        else:
+            geom = foguete_spec.geometria_medida
+            assert geom is not None
+            fins = rkt.add_free_form_fins(**geom.dict_aletas_freeform())
+    elif tipo_aletas == "trapezio":
+        geom = foguete_spec.geometria_medida
+        if geom is not None and geom.aletas_trapezio_equiv is not None:
+            fins = rkt.add_trapezoidal_fins(**geom.aletas_trapezio_equiv)
+        elif foguete_spec.aleta is not None:
+            a = foguete_spec.aleta
+            fins = rkt.add_trapezoidal_fins(
+                n=a.n,
+                root_chord=a.root_chord,
+                tip_chord=a.tip_chord,
+                span=a.span_le,
+                sweep_length=a.sweep_length,
+                position=a.position,
+                cant_angle=a.cant_angle,
+            )
+        else:
+            raise ValueError("Sem dados de aleta trapezoidal disponíveis.")
     else:
-        raise ValueError(f"tipo_aletas inválido: {tipo_aletas!r}")
+        raise ValueError(f"tipo_aletas inválido: {tipo_aletas!r}. Use 'freeform' ou 'trapezio'.")
 
-    rail_buttons = rkt.set_rail_buttons(**RAIL_BUTTONS)
-    unreefed = rkt.add_parachute(**UNREEFED)
-    reefed   = rkt.add_parachute(**REEFED)
-    rkt.add_motor(motor, position=MOTOR_POSITION)
+    rail_buttons = rkt.set_rail_buttons(**foguete_spec.rail_buttons)
+    unreefed = rkt.add_parachute(**foguete_spec.unreefed)
+    reefed = rkt.add_parachute(**foguete_spec.reefed)
+    rkt.add_motor(motor, position=foguete_spec.motor_position)
 
     return FogueteMontado(
-        rocket=rkt, motor=motor, motor_derivado=motor_d,
-        nosecone=nosecone, fins=fins, rail_buttons=rail_buttons,
-        unreefed=unreefed, reefed=reefed,
+        rocket=rkt,
+        motor=motor,
+        motor_derivado=motor_d,
+        modo=modo,
+        foguete_resolvido=resolvido,
+        nosecone=nosecone,
+        fins=fins,
+        rail_buttons=rail_buttons,
+        unreefed=unreefed,
+        reefed=reefed,
     )
-
-def main() -> None:
-    """Smoke test: monta o foguete e roda um voo curto."""
-    from configs import IREC, ALETA_IREC
-    from src.ambiente import build_irec
-    from rocketpy import Flight
-
-    # Configuração oficial do Hefesto (spec_aleta resolvida)
-    foguete = build_rocket(spec_aleta=ALETA_IREC, tipo_aletas="freeform")
-    voo = Flight(rocket=foguete.rocket, environment=build_irec(), **IREC)
-    apogee_agl = voo.apogee - 1401
-
-    print(f"apogee AGL:    {apogee_agl:.1f} m")
-    print(f"min stability: {voo.min_stability_margin:.3f} cal")
-
-    assert 2300 < apogee_agl < 2500, f"apogee fora da faixa: {apogee_agl}"
-    assert voo.min_stability_margin > 1.0, "margem < 1 cal"
-    print("\n✓ modelos OK")
-
-
-if __name__ == "__main__":
-    main()

@@ -1,158 +1,86 @@
 # Hefesto — Simulação do foguete IREC
 
-Simulação de voo do foguete Hefesto para a IREC 2027. Combina:
+Simulação de voo do foguete Hefesto para a IREC. Combina:
 - **OpenMotor** (balística interna do motor via `.ric`)
 - **RocketPy** (dinâmica de voo com atmosfera ERA5)
-- **RASAero** (arrasto aerodinâmico, via Windows/VM)
+- **RASAero** (arrasto aerodinâmico via `.csv`)
 
-## Estrutura
+Consulte o [GLOSSARY.md](file:///home/icaro/Hub/01-Projetos_e_UFJF/supernova/simulacoes/github/hefesto%20privado-estrutura-vibe/GLOSSARY.md) para as definições canônicas de termos, referenciais de coordenadas e convenção de momentos de inércia `(I_11, I_22, I_33) = (I_transversal, I_transversal, I_longitudinal)`.
+
+## Arquitetura e Direção de Dependências
+
+O projeto segue um fluxo **estritamente unidirecional**:
+`centralControle/ & scripts/` → `configs/` → `src/`
+
+- **`src/` nunca importa `configs/`**: toda função de `src/` recebe suas especificações (`Specs`) explicitamente por argumento.
+- **`configs/` possui zero I/O no `import`**: declara apenas objetos imutáveis (`MotorSpec`, `FogueteSpec`, `TuboSpec`, `AletaSpec`, `CoifaSpec`); a leitura de arquivos `.ric`/`.eng` acontece apenas sob demanda dentro de `derivar_motor()`.
 
 ```
-src/                         ← ABSTRAÇÕES (lógica pura, sem valores concretos)
+src/                         ← MOTOR DE DOMÍNIO (puro, sem importar configs/)
 ├── paths.py                     caminhos canônicos do projeto
-├── ambiente.py                  construtor genérico de Environment
-├── modelo.py                    agrega specs + derivados num foguete resolvido
-├── modelos.py                   monta o Rocket/SolidMotor do RocketPy
-├── dump.py                      imprime toda a configuração formatada
-├── calculos/
-│   ├── motor.py                 .ric → MotorDerivado (+ FS)
-│   ├── motorlib_wrapper.py      wrapper do OpenMotor headless
-│   ├── seguranca.py             fs_carcaca, check_p0/kn/mass_flux
-│   ├── componentes.py           TuboSpec/MassaPontualSpec → derivado
-│   ├── aletas.py                AletaSpec → derivado
-│   └── coifa.py                 CoifaSpec → derivado
-└── parsers/
-    ├── openmotor.py             .ric → RicMotorSpec → MotorSpec
-    └── openrocket.py            .ork → specs (a implementar)
+├── specs.py                     contratos de entrada (Specs) + validação fail-fast
+├── ambiente.py                  fábricas de Environment (ERA5 Reanalysis/Ensemble)
+├── modelo.py                    resolver() → FogueteResolvido (modo="calculado")
+├── modelos.py                   build_motor() e build_rocket(modo="calculado"|"medido")
+├── inspecao.py                  relatórios formatados de motor, estrutura, segurança e voo
+├── smoke.py                     executor da suíte automatizada de testes (pytest)
+└── calculos/
+    ├── motorlib_wrapper.py      adaptador OpenMotor (.ric → props + extração + solver)
+    ├── motorlib_variacoes.py    overrides dot-path/wildcard em memória sobre props
+    ├── motor.py                 derivar_motor(MotorSpec) → MotorDerivado (+ FS)
+    ├── seguranca.py             fs_carcaca, check_p0, check_kn, check_mass_flux
+    ├── componentes.py           TuboSpec / MassaPontualSpec → ComponenteDerivado
+    ├── aletas.py                AletaSpec → AletaDerivada
+    ├── aletas_rasaero.py        AletaSpec (SI) → AletaRASAero (polegadas)
+    └── coifa.py                 CoifaSpec → CoifaDerivada
 
-configs/                     ← ABSTRAÇÕES (formas) + RECURSOS + INSTÂNCIA
-├── __init__.py                  FACADE — todo mundo importa daqui
-├── especificacao.py             AletaSpec, CoifaSpec
-├── componentes.py               TuboSpec, MassaPontualSpec
-├── material.py                  σ_lim, densidades
-├── limites.py                   FS_MIN, P0_MAX, Kn_MAX, MASS_FLUX_MAX
-├── motor/spec.py                MotorSpec, GrainSpec
-└── foguetes/hefesto/            INSTÂNCIA — valores concretos do Hefesto
-    ├── corpo.py                 COMPONENTES (lista)
-    ├── geometria.py             FOGUETE, ALETAS, COIFA, RAIL_BUTTONS
-    ├── recuperacao.py           REEFED, UNREEFED
+configs/                     ← DADOS PUROS E INSTÂNCIAS (zero I/O no import)
+├── __init__.py                  fachada pública (reexporta Specs + HEFESTO)
+├── material.py                  densidades e σ_lim
+├── limites.py                   LIMITES_IREC (LimitesSeguranca)
+└── foguetes/hefesto/            instância concreta do foguete Hefesto
+    ├── __init__.py              HEFESTO (FogueteSpec completa)
+    ├── corpo.py                 COMPONENTES (modo="calculado")
+    ├── coifa.py                 COIFA_IREC (modo="calculado")
     ├── aletas.py                ALETA_IREC, ALETAS_TRAPEZIO_EQUIV
-    ├── coifa.py                 COIFA_IREC
-    ├── motor.py                 MOTOR_IREC
+    ├── geometria.py             GEOMETRIA_MEDIDA_HEFESTO (modo="medido"), RAIL_BUTTONS
+    ├── recuperacao.py           REEFED, UNREEFED
+    ├── motor.py                 MOTOR_IREC (MotorSpec declarativa)
+    ├── motor_variacoes.py       PARAMS_LIVRES, criar_variacao(), VARIACOES
     ├── voo.py                   IREC, IREC_E, IREC_ENSEMBLE_E
-    └── estocastico.py           todos os *_E (Monte Carlo)
+    └── estocastico.py           incertezas *_E para Monte Carlo
 
-centralControle/             ← PAINEL OPERACIONAL
-├── rodar.py                     CLI: sim | motor | fs | varrer | dump
-├── README.md                    manual de uso (leia antes de mexer)
-├── parametros.yaml              parâmetros de execução
+centralControle/             ← PAINEL OPERACIONAL (CLI)
+├── rodar.py                     CLI unificada: sim | motor | estrutura | fs | dump | varrer | smoke
+├── inspecionar.py               CLI de inspeção por seção
+├── README.md                    manual operacional rápido
 └── checklists.md                checklists de projeto e submissão
 
-data/
-├── entrada/
-│   ├── motores/*.eng            curvas RASP de referência
-│   ├── openmotor/*.ric          geometria do motor (OpenMotor)
-│   ├── openrocket/*.ork         geometria do foguete (OpenRocket)
-│   ├── arrasto/*.csv            coeficientes de arrasto
-│   └── atmosfera/*.nc           ERA5 (reanálise + ensemble)
-└── saida/                       JSONs de simulações, CSVs de varredura
-
-vendor/openMotor/            ← OpenMotor clonado (gitignorado)
-scripts/                     ← scripts específicos (não é API)
-debug.py                     ← runner rápido na IDE (seu playground)
-```
-
-## Fluxo de uma simulação
-
-```
-data/entrada/openmotor/MotorNovo.ric
-        │
-        │  (src.parsers.openmotor + motorlib)
-        ▼
-curva_empuxo + P0_pico + Kn + mass_flux + FS
-        │
-        │  (src.calculos.motor.derivar_motor)
-        ▼
-MotorDerivado ──────────► diagnostico de segurança
-        │
-        │  (src.modelos.build_rocket)
-        ▼
-RocketPy.Rocket + SolidMotor
-        │
-        │  (RocketPy.Flight + Environment ERA5)
-        ▼
-apogeu, estabilidade, dispersão
+tests/                       ← SUÍTE AUTOMATIZADA (pytest)
+├── test_specs_contratos.py      validação fail-fast e regra arquitetural (src ↛ configs)
+├── test_calculos_estrutura.py   componentes, coifa, aletas, segurança e inércia
+├── test_motor_e_variacoes.py    balística .ric/.eng e sincronização de overrides
+└── test_integracao_voo.py       build_rocket (calculado vs medido) e voo RocketPy
 ```
 
 ## Como rodar
 
-### Na IDE (rápido)
-
-Abra `debug.py`, ajuste os parâmetros no topo e dê Run. Ideal para exploração.
-
-### Pelo centralControle
+### Pela CLI (`centralControle/rodar.py`)
 
 ```bash
-python centralControle/rodar.py sim      # determinística
-python centralControle/rodar.py motor    # só o motor (sem voo)
-python centralControle/rodar.py fs       # diagnósticos de segurança
-python centralControle/rodar.py dump     # imprime toda a configuração
-python centralControle/rodar.py varrer   # varredura paramétrica
+python centralControle/rodar.py smoke                  # roda todos os testes (pytest)
+python centralControle/rodar.py fs                     # diagnósticos de segurança do motor
+python centralControle/rodar.py motor                  # relatório completo do motor
+python centralControle/rodar.py estrutura              # estrutura (compara calculado vs medido)
+python centralControle/rodar.py dump                   # imprime toda a configuração
+python centralControle/rodar.py sim                    # simulação determinística (modo calculado)
+python centralControle/rodar.py sim --modo medido      # simulação determinística (modo medido)
+python centralControle/rodar.py sim --motor throat_largo
+python centralControle/rodar.py varrer                 # varredura empuxo × arrasto
+python centralControle/rodar.py varrer-motor -p nozzle.throat=0.032:0.036:0.002
+python centralControle/rodar.py analisar-motor
 ```
 
-### Smoke test (verifica se tudo importa e valores batem)
+### Na IDE (`debug.py` ou `scripts/simDeterministica.py`)
 
-```bash
-python centralControle/rodar.py smoke
-```
-
-## Como adicionar um novo foguete
-
-1. Crie `configs/foguetes/<nome>/` copiando o conteúdo de `hefesto/`.
-2. Ajuste `geometria.py`, `corpo.py`, `aletas.py`, `coifa.py`, `motor.py`.
-3. Atualize `configs/__init__.py` para expor as novas instâncias:
-   ```python
-   from configs.foguetes.<nome> import *   # noqa
-   ```
-4. Se quiser usar em simulações, passe explicitamente:
-   ```python
-   from configs.foguetes.novo import MOTOR_NOVO, ALETA_NOVA
-   build_rocket(motor_spec=MOTOR_NOVO, spec_aleta=ALETA_NOVA, tipo_aletas="freeform")
-   ```
-
-## Como adicionar um novo motor
-
-1. Crie o `.ric` no OpenMotor GUI, salve em `data/entrada/openmotor/`.
-2. Crie `configs/foguetes/<nome>/motor.py`:
-   ```python
-   from src.parsers.openmotor import motor_spec_do_ric
-   from src.paths import OPENMOTOR, MOTORES
-
-   MOTOR_NOVO = motor_spec_do_ric(
-       OPENMOTOR / "MotorNovo.ric",
-       nome="Nome do Motor",
-       case_inner_radius=...,
-       case_wall_thickness=...,
-       case_density=2700,
-       grain_separation=...,
-       nozzle_position=...,
-       case_length=...,
-       dry_mass=...,
-   )
-   ```
-3. Rode `python centralControle/rodar.py fs` para ver os diagnósticos.
-
-## Limitações conhecidas
-
-| Item | Estado |
-|---|---|
-| Monte Carlo | Reformulação pendente (usa OOP do RocketPy antigo) |
-| Parser `.ork` | Não implementado |
-| Arrasto RASAero | Manual (Windows/VM), `.csv` versionado |
-| Análise de sensibilidade (Sobol/Morris) | Não implementada |
-
-## Referências
-
-- Relatório do motor Medusa (`docs/Relatório de Modificações do Medusa.pdf`)
-- OpenMotor: https://github.com/reilleya/openMotor
-- RocketPy: https://docs.rocketpy.org
+Abra `debug.py` ou `scripts/simDeterministica.py`, ajuste as constantes no topo (`MODO_FOGUETE = "calculado" | "medido"`, `USAR_VARIACAO_MOTOR`, etc.) e execute.
