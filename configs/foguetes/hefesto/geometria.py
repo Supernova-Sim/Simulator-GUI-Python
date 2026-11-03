@@ -2,7 +2,7 @@
 """Geometria medida / nominal do Hefesto (`modo='medido'`) e acessórios de acoplamento."""
 from __future__ import annotations
 
-from configs.foguetes.hefesto.aletas import ALETAS_TRAPEZIO_EQUIV
+from configs.foguetes.hefesto.aletas_cfg import ALETAS_TRAPEZIO_EQUIV
 from src.paths import ARRASTO
 from src.specs import GeometriaMedidaSpec
 

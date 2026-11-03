@@ -6,7 +6,7 @@ from rocketpy import Flight
 from configs import HEFESTO, IREC, MOTOR_IREC
 from src.ambiente import build_irec
 from src.calculos.motor import derivar_motor
-from src.modelos import build_rocket
+from src.construtor_foguete import build_rocket
 
 d = derivar_motor(MOTOR_IREC)
 print(

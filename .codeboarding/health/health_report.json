@@ -1,0 +1,70 @@
+{
+  "repository_name": "hefesto privado-estrutura-vibe",
+  "timestamp": "2026-10-30T21:25:55.142788+00:00",
+  "overall_score": 0.9866666666666667,
+  "check_summaries": [
+    {
+      "check_name": "function_size",
+      "description": "Checks that functions/methods do not exceed line count thresholds",
+      "languages": [],
+      "check_type": "standard",
+      "total_entities_checked": 150,
+      "findings_count": 2,
+      "warning_count": 2,
+      "score": 0.9866666666666667,
+      "finding_groups": [
+        {
+          "severity": "warning",
+          "threshold": 150,
+          "description": "Functions exceeding 150.0 lines",
+          "entities": [
+            {
+              "entity_name": "src.c4_gerador.gerar_markdown_c4",
+              "file_path": "src/c4_gerador.py",
+              "line_start": 521,
+              "line_end": 772,
+              "metric_value": 251
+            },
+            {
+              "entity_name": "src.c4_gerador.extrair_analise_impacto_a2m",
+              "file_path": "src/c4_gerador.py",
+              "line_start": 332,
+              "line_end": 518,
+              "metric_value": 186
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "check_name": "circular_dependencies",
+      "description": "Detects circular dependencies between packages",
+      "languages": [],
+      "check_type": "circular_dependencies",
+      "cycles": [
+        "src.calculos -> src -> src.calculos"
+      ],
+      "packages_checked": 9,
+      "packages_in_cycles": 2
+    },
+    {
+      "check_name": "unused_code_diagnostics",
+      "description": "Detects unused imports, variables, functions, and dead code via LSP diagnostics",
+      "languages": [],
+      "check_type": "standard",
+      "total_entities_checked": 0,
+      "findings_count": 0,
+      "warning_count": 0,
+      "score": 1.0,
+      "finding_groups": []
+    }
+  ],
+  "file_summaries": [
+    {
+      "file_path": "src/c4_gerador.py",
+      "total_findings": 2,
+      "warning_findings": 2,
+      "composite_risk_score": 30.0
+    }
+  ]
+}

@@ -2,8 +2,8 @@
 """Instância concreta: foguete Hefesto."""
 from __future__ import annotations
 
-from configs.foguetes.hefesto.aletas import ALETA_IREC, ALETAS_TRAPEZIO_EQUIV
-from configs.foguetes.hefesto.coifa import COIFA_IREC
+from configs.foguetes.hefesto.aletas_cfg import ALETA_IREC, ALETAS_TRAPEZIO_EQUIV
+from configs.foguetes.hefesto.coifa_cfg import COIFA_IREC
 from configs.foguetes.hefesto.corpo import COMPONENTES
 from configs.foguetes.hefesto.estocastico import (
     ALETAS_E,
@@ -26,7 +26,7 @@ from configs.foguetes.hefesto.geometria import (
     MOTOR_POSITION,
     RAIL_BUTTONS,
 )
-from configs.foguetes.hefesto.motor import ENG_MEDUSA, MOTOR_IREC, RIC_MEDUSA
+from configs.foguetes.hefesto.motor_cfg import ENG_MEDUSA, MOTOR_IREC, RIC_MEDUSA
 from configs.foguetes.hefesto.recuperacao import REEFED, UNREEFED
 from configs.foguetes.hefesto.voo import IREC, IREC_E, IREC_ENSEMBLE_E
 from configs.limites import LIMITES_IREC

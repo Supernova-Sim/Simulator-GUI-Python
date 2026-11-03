@@ -1,6 +1,9 @@
 # src/calculos/motor.py
 """Deriva propriedades completas do motor a partir de um `MotorSpec` (.ric > .eng).
 
+🧩 Arquitetura C4 (Nível 3): docs/arquitetura/c3-subsistema-motor.md
+⚡ Arquitetura C4 (Nível 4): clique no botão de Grafo no topo direito ao lado de 'More Actions'
+
 Este é um módulo profundo:
   1. Se `spec.ric_path` está definido, carrega o `.ric`, aplica `spec.overrides`
      em memória UMA única vez e extrai do mesmo dicionário `props` tanto a
@@ -128,6 +131,8 @@ class MotorDerivado:
     stack_length: float
     cg_propellant: float
     grain_inner_radius_effective: float
+    grain_outer_radius_effective: float
+    grain_height_effective: float
 
     # ---------- Carcaça ----------
     case_length: float
@@ -174,6 +179,8 @@ class MotorDerivado:
             "stack_length": self.stack_length,
             "cg_propellant": self.cg_propellant,
             "grain_inner_radius_effective": self.grain_inner_radius_effective,
+            "grain_outer_radius_effective": self.grain_outer_radius_effective,
+            "grain_height_effective": self.grain_height_effective,
             "case_length": self.case_length,
             "case_outer_radius": self.case_outer_radius,
             "dry_mass": self.dry_mass,
@@ -243,7 +250,7 @@ def _resolver_fonte_e_geometria(spec: MotorSpec) -> dict[str, Any]:
             "total_impulse": total_impulse,
             "max_thrust": max_thrust,
             "eng_propellant_mass": header["propellant_mass"],
-            "curva_empuxo": None,
+            "curva_empuxo": tuple(zip(tempos, empuxos)),
             "p0_pico": None,
             "kn_pico": None,
             "mass_flux_pico": None,
@@ -264,8 +271,9 @@ def _derivar_dos_graos(
     propellant_density: float,
     grain_separation: float,
     margin_forward_side: float,
-) -> tuple[float, float, float, float, float]:
-    """Retorna `(massa_total, comprimento_prop, stack_length, cg_local, inner_eff)`."""
+) -> tuple[float, float, float, float, float, float, float]:
+    """Retorna `(massa_total, comprimento_prop, stack_length, cg_local, inner_eff,
+    grain_height_eff, outer_eff)`."""
     massa_total = 0.0
     momento = 0.0
     volume_total = 0.0
@@ -289,11 +297,20 @@ def _derivar_dos_graos(
     stack_length = comprimento_prop + (len(grains) - 1) * grain_separation
     cg_local = momento / massa_total if massa_total > 0 else 0.0
 
-    r_o = grains[0].outer_radius
-    r_i_eff_sq = r_o**2 - volume_total / (math.pi * comprimento_prop)
+    grain_height_eff = comprimento_prop / len(grains)
+    outer_eff = sum(g.outer_radius * g.length for g in grains) / comprimento_prop
+    r_i_eff_sq = outer_eff**2 - volume_total / (math.pi * comprimento_prop)
     inner_eff = math.sqrt(max(0.0, r_i_eff_sq))
 
-    return massa_total, comprimento_prop, stack_length, cg_local, inner_eff
+    return (
+        massa_total,
+        comprimento_prop,
+        stack_length,
+        cg_local,
+        inner_eff,
+        grain_height_eff,
+        outer_eff,
+    )
 
 
 def _derivar_carcaca(spec: MotorSpec, stack_length: float) -> tuple[float, float, float]:
@@ -368,7 +385,15 @@ def derivar_motor(
     grains_eff: tuple[GrainSpec, ...] = info["grains"]
     rho_eff: float = info["propellant_density"]
 
-    prop_mass, prop_len, stack_len, cg_prop, inner_eff = _derivar_dos_graos(
+    (
+        prop_mass,
+        prop_len,
+        stack_len,
+        cg_prop,
+        inner_eff,
+        grain_height_eff,
+        outer_eff,
+    ) = _derivar_dos_graos(
         grains=grains_eff,
         propellant_density=rho_eff,
         grain_separation=spec.grain_separation,
@@ -410,6 +435,8 @@ def derivar_motor(
         stack_length=stack_len,
         cg_propellant=cg_prop,
         grain_inner_radius_effective=inner_eff,
+        grain_outer_radius_effective=outer_eff,
+        grain_height_effective=grain_height_eff,
         case_length=case_len,
         case_outer_radius=case_r_o,
         dry_mass=dry_mass,

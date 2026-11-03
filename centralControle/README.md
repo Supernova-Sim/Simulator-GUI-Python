@@ -19,6 +19,8 @@ python centralControle/rodar.py <comando>
 | `varrer` | Varredura de apogeu (`fator_empuxo × fator_arrasto`) | Sensibilidade de voo |
 | `varrer-motor` | Varredura paramétrica multidimensional do `.ric` | Otimização de grãos e garganta |
 | `analisar-motor` | Filtra, ranqueia e plota resultados da varredura do motor | Pós-processamento de `varrer-motor` |
+| `c4` | Gera diagrama C4 Nível 4 (Código) via AST e a2m (`--todos` para lote) | Visualizar arquitetura e risco de quebra de um arquivo |
+| `guia-c4` | Exibe o guia rápido de navegação arquitetural no terminal | Consulta rápida de visualização |
 
 ## Exemplos Rápidos
 

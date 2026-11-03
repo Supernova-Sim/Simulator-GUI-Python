@@ -1,0 +1,5128 @@
+{
+  "metadata": {
+    "generated_at": "2026-10-30T21:27:34.357487+00:00",
+    "source_tree_hash": "a0fdb424880b1837078576a1022667503dff5a34ffd808f1f01e85cce7e3cba7",
+    "repo_name": "hefesto privado-estrutura-vibe",
+    "depth_level": 3,
+    "depth_cap": 3,
+    "file_coverage_summary": {
+      "total_files": 128,
+      "analyzed": 42,
+      "not_analyzed": 86,
+      "not_analyzed_by_reason": {
+        "other": 86
+      }
+    },
+    "tree_spec": {
+      "version": 4,
+      "grouper": "affinity",
+      "machinery": [],
+      "scopes": {
+        "root": {
+          "axis": "structural",
+          "rung": "frontier",
+          "leaf_reason": "",
+          "last_id": 4,
+          "rules": [
+            {
+              "id": "1",
+              "name": "src",
+              "origin": "box",
+              "prefixes": [
+                [
+                  "src"
+                ]
+              ],
+              "terms": [
+                "src"
+              ]
+            },
+            {
+              "id": "2",
+              "name": "scripts",
+              "origin": "box",
+              "prefixes": [
+                [
+                  "scripts"
+                ]
+              ]
+            },
+            {
+              "id": "3",
+              "name": "Loose files",
+              "origin": "loose",
+              "fallback_prefixes": [
+                []
+              ]
+            },
+            {
+              "id": "4",
+              "name": "centralControle",
+              "origin": "box",
+              "prefixes": [
+                [
+                  "centralControle"
+                ]
+              ],
+              "terms": [
+                "central"
+              ]
+            }
+          ]
+        },
+        "1": {
+          "axis": "files",
+          "rung": "files",
+          "leaf_reason": "",
+          "last_id": 3,
+          "rules": [
+            {
+              "id": "1.1",
+              "name": "inspecao",
+              "origin": "grouped",
+              "prefixes": [
+                [
+                  "src",
+                  "inspecao.py"
+                ],
+                [
+                  "src",
+                  "calculos",
+                  "motor.py"
+                ],
+                [
+                  "src",
+                  "calculos",
+                  "seguranca.py"
+                ],
+                [
+                  "src",
+                  "calculos",
+                  "motorlib_variacoes.py"
+                ],
+                [
+                  "src",
+                  "calculos",
+                  "motorlib_wrapper.py"
+                ],
+                [
+                  "src",
+                  "modelo.py"
+                ],
+                [
+                  "src",
+                  "modelos.py"
+                ]
+              ],
+              "terms": [
+                "inspecao",
+                "motor",
+                "seguranca",
+                "motorlib",
+                "modelo"
+              ],
+              "parts": [
+                {
+                  "id": "",
+                  "name": "inspecao",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "inspecao.py"
+                    ]
+                  ]
+                },
+                {
+                  "id": "",
+                  "name": "motor",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "calculos",
+                      "motor.py"
+                    ]
+                  ]
+                },
+                {
+                  "id": "",
+                  "name": "seguranca",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "calculos",
+                      "seguranca.py"
+                    ]
+                  ]
+                },
+                {
+                  "id": "",
+                  "name": "motorlib_variacoes",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "calculos",
+                      "motorlib_variacoes.py"
+                    ]
+                  ]
+                },
+                {
+                  "id": "",
+                  "name": "motorlib_wrapper",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "calculos",
+                      "motorlib_wrapper.py"
+                    ]
+                  ]
+                },
+                {
+                  "id": "",
+                  "name": "modelo",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "modelo.py"
+                    ]
+                  ]
+                },
+                {
+                  "id": "",
+                  "name": "modelos",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "modelos.py"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "1.2",
+              "name": "Loose files",
+              "origin": "loose",
+              "fallback_prefixes": [
+                [
+                  "src"
+                ]
+              ]
+            },
+            {
+              "id": "1.3",
+              "name": "aletas",
+              "origin": "grouped",
+              "prefixes": [
+                [
+                  "src",
+                  "calculos",
+                  "aletas.py"
+                ],
+                [
+                  "src",
+                  "calculos",
+                  "aletas_rasaero.py"
+                ]
+              ],
+              "terms": [
+                "aleta"
+              ],
+              "parts": [
+                {
+                  "id": "",
+                  "name": "aletas",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "calculos",
+                      "aletas.py"
+                    ]
+                  ]
+                },
+                {
+                  "id": "",
+                  "name": "aletas_rasaero",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "calculos",
+                      "aletas_rasaero.py"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "2": {
+          "axis": "",
+          "rung": "leaf",
+          "leaf_reason": "small: 5 units, at most 7; nothing to un-merge",
+          "last_id": 0,
+          "rules": []
+        },
+        "3": {
+          "axis": "",
+          "rung": "leaf",
+          "leaf_reason": "small: 2 units, at most 7; nothing to un-merge",
+          "last_id": 0,
+          "rules": []
+        },
+        "4": {
+          "axis": "",
+          "rung": "leaf",
+          "leaf_reason": "small: 2 units, at most 7; nothing to un-merge",
+          "last_id": 0,
+          "rules": []
+        },
+        "1.1": {
+          "axis": "files",
+          "rung": "files",
+          "leaf_reason": "",
+          "last_id": 4,
+          "rules": [
+            {
+              "id": "1.1.1",
+              "name": "inspecao",
+              "origin": "grouped",
+              "prefixes": [
+                [
+                  "src",
+                  "inspecao.py"
+                ],
+                [
+                  "src",
+                  "calculos",
+                  "motor.py"
+                ],
+                [
+                  "src",
+                  "calculos",
+                  "seguranca.py"
+                ]
+              ],
+              "terms": [
+                "inspecao",
+                "motor",
+                "seguranca"
+              ],
+              "parts": [
+                {
+                  "id": "",
+                  "name": "inspecao",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "inspecao.py"
+                    ]
+                  ]
+                },
+                {
+                  "id": "",
+                  "name": "motor",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "calculos",
+                      "motor.py"
+                    ]
+                  ]
+                },
+                {
+                  "id": "",
+                  "name": "seguranca",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "calculos",
+                      "seguranca.py"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "1.1.2",
+              "name": "modelo",
+              "origin": "grouped",
+              "prefixes": [
+                [
+                  "src",
+                  "modelo.py"
+                ],
+                [
+                  "src",
+                  "modelos.py"
+                ]
+              ],
+              "terms": [
+                "modelo"
+              ],
+              "parts": [
+                {
+                  "id": "",
+                  "name": "modelo",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "modelo.py"
+                    ]
+                  ]
+                },
+                {
+                  "id": "",
+                  "name": "modelos",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "modelos.py"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "1.1.3",
+              "name": "motorlib_variacoes",
+              "origin": "grouped",
+              "prefixes": [
+                [
+                  "src",
+                  "calculos",
+                  "motorlib_variacoes.py"
+                ],
+                [
+                  "src",
+                  "calculos",
+                  "motorlib_wrapper.py"
+                ]
+              ],
+              "terms": [
+                "motorlib"
+              ],
+              "parts": [
+                {
+                  "id": "",
+                  "name": "motorlib_variacoes",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "calculos",
+                      "motorlib_variacoes.py"
+                    ]
+                  ]
+                },
+                {
+                  "id": "",
+                  "name": "motorlib_wrapper",
+                  "origin": "file",
+                  "prefixes": [
+                    [
+                      "src",
+                      "calculos",
+                      "motorlib_wrapper.py"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "1.1.4",
+              "name": "specs",
+              "origin": "file",
+              "prefixes": [
+                [
+                  "src",
+                  "specs.py"
+                ]
+              ]
+            }
+          ]
+        },
+        "1.2": {
+          "axis": "",
+          "rung": "leaf",
+          "leaf_reason": "small: 6 units, at most 7; nothing to un-merge",
+          "last_id": 0,
+          "rules": []
+        },
+        "1.3": {
+          "axis": "",
+          "rung": "leaf",
+          "leaf_reason": "small: 2 units, at most 7; un-merge failed the guard",
+          "last_id": 0,
+          "rules": []
+        },
+        "1.1.1": {
+          "axis": "",
+          "rung": "leaf",
+          "leaf_reason": "small: 3 units, at most 7; un-merge failed the guard",
+          "last_id": 0,
+          "rules": []
+        },
+        "1.1.2": {
+          "axis": "",
+          "rung": "leaf",
+          "leaf_reason": "small: 2 units, at most 7; un-merge failed the guard",
+          "last_id": 0,
+          "rules": []
+        },
+        "1.1.3": {
+          "axis": "",
+          "rung": "leaf",
+          "leaf_reason": "small: 2 units, at most 7; un-merge failed the guard",
+          "last_id": 0,
+          "rules": []
+        },
+        "1.1.4": {
+          "axis": "",
+          "rung": "leaf",
+          "leaf_reason": "small: 1 units, at most 7; nothing to un-merge",
+          "last_id": 0,
+          "rules": []
+        }
+      }
+    }
+  },
+  "description": "Root orchestration and modeling architecture for the Hefesto sounding rocket project, organizing command-line dispatchers, flight and parameter sweep execution scripts, rocket component and environmental domain models, and motor configuration presets.",
+  "files": {
+    "src/ambiente.py": {
+      "method_keys": [
+        "src/ambiente.py|src.ambiente.build_irec",
+        "src/ambiente.py|src.ambiente.build_irec_ensemble"
+      ],
+      "content_hash": "0bf9b899067b6bc9",
+      "module_hash": "4f3dd141f23032e2"
+    },
+    "src/c4_gerador.py": {
+      "method_keys": [
+        "src/c4_gerador.py|src.c4_gerador.CampoInfo",
+        "src/c4_gerador.py|src.c4_gerador.MetodoInfo",
+        "src/c4_gerador.py|src.c4_gerador.ClasseInfo",
+        "src/c4_gerador.py|src.c4_gerador.FuncaoInfo",
+        "src/c4_gerador.py|src.c4_gerador.obter_binario_a2m",
+        "src/c4_gerador.py|src.c4_gerador.os_is_executable",
+        "src/c4_gerador.py|src.c4_gerador._limpar_tipo_mermaid",
+        "src/c4_gerador.py|src.c4_gerador._resumo_doc",
+        "src/c4_gerador.py|src.c4_gerador._formatar_args",
+        "src/c4_gerador.py|src.c4_gerador._extrair_chamadas",
+        "src/c4_gerador.py|src.c4_gerador._c4_filename",
+        "src/c4_gerador.py|src.c4_gerador.construir_mapa_modulos_c4",
+        "src/c4_gerador.py|src.c4_gerador.analisar_arquivo",
+        "src/c4_gerador.py|src.c4_gerador._sub_c3_relacionado",
+        "src/c4_gerador.py|src.c4_gerador.extrair_analise_impacto_a2m",
+        "src/c4_gerador.py|src.c4_gerador.gerar_markdown_c4",
+        "src/c4_gerador.py|src.c4_gerador.gerar_arquivo_c4",
+        "src/c4_gerador.py|src.c4_gerador.gerar_todos",
+        "src/c4_gerador.py|src.c4_gerador.main"
+      ],
+      "content_hash": "9b623a98a9a13a6a",
+      "module_hash": "22530caf953d3729"
+    },
+    "src/calculos/aletas.py": {
+      "method_keys": [
+        "src/calculos/aletas.py|src.calculos.aletas.AletaDerivada",
+        "src/calculos/aletas.py|src.calculos.aletas._poligono_propriedades",
+        "src/calculos/aletas.py|src.calculos.aletas.calcular_aleta"
+      ],
+      "content_hash": "9a234121f58fc80e",
+      "module_hash": "8380ec9b681219e2"
+    },
+    "src/calculos/aletas_rasaero.py": {
+      "method_keys": [
+        "src/calculos/aletas_rasaero.py|src.calculos.aletas_rasaero.AletaRASAero",
+        "src/calculos/aletas_rasaero.py|src.calculos.aletas_rasaero.AletaRASAero.imprimir",
+        "src/calculos/aletas_rasaero.py|src.calculos.aletas_rasaero.aleta_para_rasaero"
+      ],
+      "content_hash": "f07f26c883560b36",
+      "module_hash": "2857440c056a6cfd"
+    },
+    "src/calculos/coifa.py": {
+      "method_keys": [
+        "src/calculos/coifa.py|src.calculos.coifa._perfil_conico",
+        "src/calculos/coifa.py|src.calculos.coifa._perfil_lvhaack",
+        "src/calculos/coifa.py|src.calculos.coifa._perfil_ogive",
+        "src/calculos/coifa.py|src.calculos.coifa.perfil",
+        "src/calculos/coifa.py|src.calculos.coifa._derivada_perfil",
+        "src/calculos/coifa.py|src.calculos.coifa.CoifaDerivada",
+        "src/calculos/coifa.py|src.calculos.coifa.calcular_coifa"
+      ],
+      "content_hash": "78f1ef58e83785da",
+      "module_hash": "f1a816facd289835"
+    },
+    "src/calculos/componentes.py": {
+      "method_keys": [
+        "src/calculos/componentes.py|src.calculos.componentes.ComponenteDerivado",
+        "src/calculos/componentes.py|src.calculos.componentes.derivar_tubo",
+        "src/calculos/componentes.py|src.calculos.componentes.derivar_massa_pontual",
+        "src/calculos/componentes.py|src.calculos.componentes.derivar",
+        "src/calculos/componentes.py|src.calculos.componentes.derivar_todos"
+      ],
+      "content_hash": "fc4f1d5d112a2c98",
+      "module_hash": "f6d90e47b9db0885"
+    },
+    "src/calculos/motor.py": {
+      "method_keys": [
+        "src/calculos/motor.py|src.calculos.motor._ler_eng",
+        "src/calculos/motor.py|src.calculos.motor._integrar_trapezio",
+        "src/calculos/motor.py|src.calculos.motor.MotorDerivado",
+        "src/calculos/motor.py|src.calculos.motor.MotorDerivado.inercia_transversal",
+        "src/calculos/motor.py|src.calculos.motor.MotorDerivado.inercia_longitudinal",
+        "src/calculos/motor.py|src.calculos.motor.MotorDerivado.to_dict",
+        "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria",
+        "src/calculos/motor.py|src.calculos.motor._derivar_dos_graos",
+        "src/calculos/motor.py|src.calculos.motor._derivar_carcaca",
+        "src/calculos/motor.py|src.calculos.motor._derivar_inercia_seca",
+        "src/calculos/motor.py|src.calculos.motor._diagnosticar",
+        "src/calculos/motor.py|src.calculos.motor.derivar_motor"
+      ],
+      "content_hash": "2b88aee194e5493b",
+      "module_hash": "38c25ed84fd45f7a"
+    },
+    "src/calculos/motorlib_variacoes.py": {
+      "method_keys": [
+        "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes._normalizar_path",
+        "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes.validar_overrides",
+        "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes._set_path",
+        "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes._tem_indice_especifico",
+        "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes.aplicar_overrides",
+        "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes.simular_variacao"
+      ],
+      "content_hash": "bd51d87b6c410cb7",
+      "module_hash": "85bf4144ad54c275"
+    },
+    "src/calculos/motorlib_wrapper.py": {
+      "method_keys": [
+        "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper._safe_use",
+        "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper._as_1d",
+        "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper._as_2d",
+        "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper._pico_2d",
+        "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper._integrar_trapezio",
+        "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.MotorResultado",
+        "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.MotorResultado.curva_empuxo",
+        "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.MotorResultado.resumo",
+        "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.carregar_props",
+        "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.extrair_geometria_props",
+        "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.simular_props",
+        "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.simular_ric"
+      ],
+      "content_hash": "3fce93912e255b1a",
+      "module_hash": "49680bd38c1fcb3d"
+    },
+    "src/calculos/seguranca.py": {
+      "method_keys": [
+        "src/calculos/seguranca.py|src.calculos.seguranca.DiagnosticoFS",
+        "src/calculos/seguranca.py|src.calculos.seguranca.DiagnosticoFS.linha",
+        "src/calculos/seguranca.py|src.calculos.seguranca.fs_carcaca",
+        "src/calculos/seguranca.py|src.calculos.seguranca.check_p0",
+        "src/calculos/seguranca.py|src.calculos.seguranca.check_kn",
+        "src/calculos/seguranca.py|src.calculos.seguranca.check_mass_flux"
+      ],
+      "content_hash": "c9a30e9021ae19ef",
+      "module_hash": "1035985b9f6b9e8f"
+    },
+    "src/inspecao.py": {
+      "method_keys": [
+        "src/inspecao.py|src.inspecao._titulo",
+        "src/inspecao.py|src.inspecao._sub",
+        "src/inspecao.py|src.inspecao._linha",
+        "src/inspecao.py|src.inspecao._fmt",
+        "src/inspecao.py|src.inspecao.relatorio_motor",
+        "src/inspecao.py|src.inspecao.relatorio_motor_variacoes",
+        "src/inspecao.py|src.inspecao.relatorio_estrutura",
+        "src/inspecao.py|src.inspecao.relatorio_seguranca",
+        "src/inspecao.py|src.inspecao.relatorio_voo"
+      ],
+      "content_hash": "3ea80cbcc33b5b86",
+      "module_hash": "f1f7527fa6ccca76"
+    },
+    "src/modelo.py": {
+      "method_keys": [
+        "src/modelo.py|src.modelo.FogueteResolvido",
+        "src/modelo.py|src.modelo.FogueteResolvido.massa_seca",
+        "src/modelo.py|src.modelo.FogueteResolvido.cg_sem_motor",
+        "src/modelo.py|src.modelo.FogueteResolvido.inercia_longitudinal",
+        "src/modelo.py|src.modelo.FogueteResolvido.inercia_transversal",
+        "src/modelo.py|src.modelo.FogueteResolvido.inercia_rocketpy",
+        "src/modelo.py|src.modelo.FogueteResolvido.dict_rocket",
+        "src/modelo.py|src.modelo.FogueteResolvido.dict_coifa",
+        "src/modelo.py|src.modelo.FogueteResolvido.shape_points",
+        "src/modelo.py|src.modelo.resolver"
+      ],
+      "content_hash": "c5ff85ef8ab03712",
+      "module_hash": "b1bfaf6b6d0655b9"
+    },
+    "src/modelos.py": {
+      "method_keys": [
+        "src/modelos.py|src.modelos.FogueteMontado",
+        "src/modelos.py|src.modelos._motor_kwargs",
+        "src/modelos.py|src.modelos.build_motor",
+        "src/modelos.py|src.modelos.build_rocket"
+      ],
+      "content_hash": "3eea18fe31998c5d",
+      "module_hash": "eb812db70b8becd6"
+    },
+    "src/smoke.py": {
+      "method_keys": [
+        "src/smoke.py|src.smoke.main"
+      ],
+      "content_hash": "db55d1176d6a0118",
+      "module_hash": "022a7db5cceec8e1"
+    },
+    "src/specs.py": {
+      "method_keys": [
+        "src/specs.py|src.specs.LimitesSeguranca",
+        "src/specs.py|src.specs.LimitesSeguranca.__post_init__",
+        "src/specs.py|src.specs.GrainSpec",
+        "src/specs.py|src.specs.GrainSpec.__post_init__",
+        "src/specs.py|src.specs.GrainSpec.to_dict",
+        "src/specs.py|src.specs.MotorSpec",
+        "src/specs.py|src.specs.MotorSpec.__post_init__",
+        "src/specs.py|src.specs.MotorSpec.resumo",
+        "src/specs.py|src.specs.MotorSpec.to_dict",
+        "src/specs.py|src.specs.TuboSpec",
+        "src/specs.py|src.specs.TuboSpec.__post_init__",
+        "src/specs.py|src.specs.TuboSpec.raio_interno",
+        "src/specs.py|src.specs.MassaPontualSpec",
+        "src/specs.py|src.specs.MassaPontualSpec.__post_init__",
+        "src/specs.py|src.specs.AletaSpec",
+        "src/specs.py|src.specs.AletaSpec.__post_init__",
+        "src/specs.py|src.specs.CoifaSpec",
+        "src/specs.py|src.specs.CoifaSpec.__post_init__",
+        "src/specs.py|src.specs.GeometriaMedidaSpec",
+        "src/specs.py|src.specs.GeometriaMedidaSpec.__post_init__",
+        "src/specs.py|src.specs.GeometriaMedidaSpec.inercia_rocketpy",
+        "src/specs.py|src.specs.GeometriaMedidaSpec.dict_rocket",
+        "src/specs.py|src.specs.GeometriaMedidaSpec.dict_coifa",
+        "src/specs.py|src.specs.GeometriaMedidaSpec.dict_aletas_freeform",
+        "src/specs.py|src.specs.FogueteSpec",
+        "src/specs.py|src.specs.FogueteSpec.__post_init__"
+      ],
+      "content_hash": "37e33e70dc174827",
+      "module_hash": "119c434ae05698b4"
+    },
+    "src/viz.py": {
+      "method_keys": [
+        "src/viz.py|src.viz._set_backend"
+      ],
+      "content_hash": "bf7f058772035654",
+      "module_hash": "60fa6b4e45624e80"
+    },
+    "scripts/analisar_motor.py": {
+      "method_keys": [
+        "scripts/analisar_motor.py|scripts.analisar_motor._ultimo_csv",
+        "scripts/analisar_motor.py|scripts.analisar_motor.carregar_varredura",
+        "scripts/analisar_motor.py|scripts.analisar_motor.params_do_registro",
+        "scripts/analisar_motor.py|scripts.analisar_motor.filtrar",
+        "scripts/analisar_motor.py|scripts.analisar_motor.rankear",
+        "scripts/analisar_motor.py|scripts.analisar_motor.achar_otimo",
+        "scripts/analisar_motor.py|scripts.analisar_motor.resumo",
+        "scripts/analisar_motor.py|scripts.analisar_motor.plotar_1d",
+        "scripts/analisar_motor.py|scripts.analisar_motor.plotar_2d",
+        "scripts/analisar_motor.py|scripts.analisar_motor.imprimir_top",
+        "scripts/analisar_motor.py|scripts.analisar_motor.main"
+      ],
+      "content_hash": "677789d75200705e",
+      "module_hash": "33c9911f3940f02e"
+    },
+    "scripts/monteCarloIrec.py": {
+      "method_keys": [
+        "scripts/monteCarloIrec.py|scripts.monteCarloIrec.main"
+      ],
+      "content_hash": "3906a64c94f2b8ee",
+      "module_hash": "887bf8baf1cef86f"
+    },
+    "scripts/simDeterministica.py": {
+      "method_keys": [
+        "scripts/simDeterministica.py|scripts.simDeterministica._resolver_motor",
+        "scripts/simDeterministica.py|scripts.simDeterministica.main"
+      ],
+      "content_hash": "f4313fad5063f8a6",
+      "module_hash": "12bd73c92cf70fdd"
+    },
+    "scripts/varredura.py": {
+      "method_keys": [
+        "scripts/varredura.py|scripts.varredura.simular",
+        "scripts/varredura.py|scripts.varredura.main"
+      ],
+      "content_hash": "76a41aa58b4f25ea",
+      "module_hash": "876dfe40042d2179"
+    },
+    "scripts/varredura_motor.py": {
+      "method_keys": [
+        "scripts/varredura_motor.py|scripts.varredura_motor._parse_valores",
+        "scripts/varredura_motor.py|scripts.varredura_motor._parse_param",
+        "scripts/varredura_motor.py|scripts.varredura_motor._gerar_grid",
+        "scripts/varredura_motor.py|scripts.varredura_motor.LinhaVarredura",
+        "scripts/varredura_motor.py|scripts.varredura_motor._simular_um",
+        "scripts/varredura_motor.py|scripts.varredura_motor.varrer_motor",
+        "scripts/varredura_motor.py|scripts.varredura_motor._salvar_resultados",
+        "scripts/varredura_motor.py|scripts.varredura_motor.imprimir_tabela",
+        "scripts/varredura_motor.py|scripts.varredura_motor.main"
+      ],
+      "content_hash": "04c617a49f43cbd3",
+      "module_hash": "df0f83d154be9b31"
+    },
+    "configs/foguetes/hefesto/motor_variacoes.py": {
+      "method_keys": [
+        "configs/foguetes/hefesto/motor_variacoes.py|configs.foguetes.hefesto.motor_variacoes.criar_variacao"
+      ],
+      "content_hash": "225c166919102c79",
+      "module_hash": "40b9a91f32544631"
+    },
+    "sitecustomize.py": {
+      "method_keys": [
+        "sitecustomize.py|sitecustomize._safe_use"
+      ],
+      "content_hash": "d479ac26dbb669b9",
+      "module_hash": "3addb5298fec41ac"
+    },
+    "centralControle/inspecionar.py": {
+      "method_keys": [
+        "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_motor",
+        "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_motor_variacoes",
+        "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_estrutura",
+        "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_seguranca",
+        "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_voo",
+        "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_tudo",
+        "centralControle/inspecionar.py|centralControle.inspecionar.main"
+      ],
+      "content_hash": "32001fee7a935640",
+      "module_hash": "daacc1ebba7cced3"
+    },
+    "centralControle/rodar.py": {
+      "method_keys": [
+        "centralControle/rodar.py|centralControle.rodar.cmd_sim",
+        "centralControle/rodar.py|centralControle.rodar.cmd_fs",
+        "centralControle/rodar.py|centralControle.rodar.cmd_varrer",
+        "centralControle/rodar.py|centralControle.rodar.cmd_dump",
+        "centralControle/rodar.py|centralControle.rodar.cmd_motor",
+        "centralControle/rodar.py|centralControle.rodar.cmd_estrutura",
+        "centralControle/rodar.py|centralControle.rodar.cmd_smoke",
+        "centralControle/rodar.py|centralControle.rodar.cmd_varrer_motor",
+        "centralControle/rodar.py|centralControle.rodar.cmd_analisar_motor",
+        "centralControle/rodar.py|centralControle.rodar.cmd_setup",
+        "centralControle/rodar.py|centralControle.rodar.cmd_c4",
+        "centralControle/rodar.py|centralControle.rodar.cmd_guia_c4",
+        "centralControle/rodar.py|centralControle.rodar.main"
+      ],
+      "content_hash": "52cbda0ab883f159",
+      "module_hash": "1542b959001d8c6b"
+    }
+  },
+  "methods_index": {
+    "src/ambiente.py|src.ambiente.build_irec": {
+      "file_path": "src/ambiente.py",
+      "qualified_name": "src.ambiente.build_irec",
+      "start_line": 23,
+      "end_line": 36,
+      "type": "FUNCTION",
+      "content_hash": "68cf4ce335f39368"
+    },
+    "src/ambiente.py|src.ambiente.build_irec_ensemble": {
+      "file_path": "src/ambiente.py",
+      "qualified_name": "src.ambiente.build_irec_ensemble",
+      "start_line": 39,
+      "end_line": 52,
+      "type": "FUNCTION",
+      "content_hash": "d0d9b41d78993098"
+    },
+    "src/c4_gerador.py|src.c4_gerador.CampoInfo": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador.CampoInfo",
+      "start_line": 65,
+      "end_line": 67,
+      "type": "CLASS",
+      "content_hash": "c06ff2a682e836c9"
+    },
+    "src/c4_gerador.py|src.c4_gerador.MetodoInfo": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador.MetodoInfo",
+      "start_line": 71,
+      "end_line": 78,
+      "type": "CLASS",
+      "content_hash": "28236e40f02f75ca"
+    },
+    "src/c4_gerador.py|src.c4_gerador.ClasseInfo": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador.ClasseInfo",
+      "start_line": 82,
+      "end_line": 90,
+      "type": "CLASS",
+      "content_hash": "299b6444dedd061b"
+    },
+    "src/c4_gerador.py|src.c4_gerador.FuncaoInfo": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador.FuncaoInfo",
+      "start_line": 94,
+      "end_line": 101,
+      "type": "CLASS",
+      "content_hash": "9fe25824119d03a3"
+    },
+    "src/c4_gerador.py|src.c4_gerador.obter_binario_a2m": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador.obter_binario_a2m",
+      "start_line": 104,
+      "end_line": 114,
+      "type": "FUNCTION",
+      "content_hash": "d5bae47d560a64f1"
+    },
+    "src/c4_gerador.py|src.c4_gerador.os_is_executable": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador.os_is_executable",
+      "start_line": 117,
+      "end_line": 119,
+      "type": "FUNCTION",
+      "content_hash": "022f4a6c6f66ff0c"
+    },
+    "src/c4_gerador.py|src.c4_gerador._limpar_tipo_mermaid": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador._limpar_tipo_mermaid",
+      "start_line": 122,
+      "end_line": 129,
+      "type": "FUNCTION",
+      "content_hash": "5950afe3438baf4e"
+    },
+    "src/c4_gerador.py|src.c4_gerador._resumo_doc": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador._resumo_doc",
+      "start_line": 132,
+      "end_line": 135,
+      "type": "FUNCTION",
+      "content_hash": "fbbeee9f514cd162"
+    },
+    "src/c4_gerador.py|src.c4_gerador._formatar_args": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador._formatar_args",
+      "start_line": 138,
+      "end_line": 157,
+      "type": "FUNCTION",
+      "content_hash": "2e70b1f07476e81c"
+    },
+    "src/c4_gerador.py|src.c4_gerador._extrair_chamadas": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador._extrair_chamadas",
+      "start_line": 160,
+      "end_line": 174,
+      "type": "FUNCTION",
+      "content_hash": "c4c3272dc0c127af"
+    },
+    "src/c4_gerador.py|src.c4_gerador._c4_filename": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador._c4_filename",
+      "start_line": 177,
+      "end_line": 187,
+      "type": "FUNCTION",
+      "content_hash": "c5c1057f074b2f99"
+    },
+    "src/c4_gerador.py|src.c4_gerador.construir_mapa_modulos_c4": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador.construir_mapa_modulos_c4",
+      "start_line": 190,
+      "end_line": 218,
+      "type": "FUNCTION",
+      "content_hash": "3ae82aec75a18724"
+    },
+    "src/c4_gerador.py|src.c4_gerador.analisar_arquivo": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador.analisar_arquivo",
+      "start_line": 221,
+      "end_line": 322,
+      "type": "FUNCTION",
+      "content_hash": "90d269ae4f6c508c"
+    },
+    "src/c4_gerador.py|src.c4_gerador._sub_c3_relacionado": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador._sub_c3_relacionado",
+      "start_line": 325,
+      "end_line": 329,
+      "type": "FUNCTION",
+      "content_hash": "4e0a693b99dcdc84"
+    },
+    "src/c4_gerador.py|src.c4_gerador.extrair_analise_impacto_a2m": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador.extrair_analise_impacto_a2m",
+      "start_line": 332,
+      "end_line": 518,
+      "type": "FUNCTION",
+      "content_hash": "ed0e40f73cc2c513"
+    },
+    "src/c4_gerador.py|src.c4_gerador.gerar_markdown_c4": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador.gerar_markdown_c4",
+      "start_line": 521,
+      "end_line": 772,
+      "type": "FUNCTION",
+      "content_hash": "5741c3be59e2951d"
+    },
+    "src/c4_gerador.py|src.c4_gerador.gerar_arquivo_c4": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador.gerar_arquivo_c4",
+      "start_line": 775,
+      "end_line": 788,
+      "type": "FUNCTION",
+      "content_hash": "fdd5f0138c3e92c6"
+    },
+    "src/c4_gerador.py|src.c4_gerador.gerar_todos": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador.gerar_todos",
+      "start_line": 791,
+      "end_line": 811,
+      "type": "FUNCTION",
+      "content_hash": "9c35dfd1cb524c58"
+    },
+    "src/c4_gerador.py|src.c4_gerador.main": {
+      "file_path": "src/c4_gerador.py",
+      "qualified_name": "src.c4_gerador.main",
+      "start_line": 814,
+      "end_line": 827,
+      "type": "FUNCTION",
+      "content_hash": "4ca42b8893f50efe"
+    },
+    "src/calculos/aletas.py|src.calculos.aletas.AletaDerivada": {
+      "file_path": "src/calculos/aletas.py",
+      "qualified_name": "src.calculos.aletas.AletaDerivada",
+      "start_line": 11,
+      "end_line": 24,
+      "type": "CLASS",
+      "content_hash": "c10c552d74129a51"
+    },
+    "src/calculos/aletas.py|src.calculos.aletas._poligono_propriedades": {
+      "file_path": "src/calculos/aletas.py",
+      "qualified_name": "src.calculos.aletas._poligono_propriedades",
+      "start_line": 27,
+      "end_line": 45,
+      "type": "FUNCTION",
+      "content_hash": "87c45999301e9cfe"
+    },
+    "src/calculos/aletas.py|src.calculos.aletas.calcular_aleta": {
+      "file_path": "src/calculos/aletas.py",
+      "qualified_name": "src.calculos.aletas.calcular_aleta",
+      "start_line": 48,
+      "end_line": 92,
+      "type": "FUNCTION",
+      "content_hash": "bea43799aef4f474"
+    },
+    "src/calculos/aletas_rasaero.py|src.calculos.aletas_rasaero.AletaRASAero": {
+      "file_path": "src/calculos/aletas_rasaero.py",
+      "qualified_name": "src.calculos.aletas_rasaero.AletaRASAero",
+      "start_line": 13,
+      "end_line": 30,
+      "type": "CLASS",
+      "content_hash": "1d41bb6a7f49edce"
+    },
+    "src/calculos/aletas_rasaero.py|src.calculos.aletas_rasaero.AletaRASAero.imprimir": {
+      "file_path": "src/calculos/aletas_rasaero.py",
+      "qualified_name": "src.calculos.aletas_rasaero.AletaRASAero.imprimir",
+      "start_line": 23,
+      "end_line": 30,
+      "type": "METHOD",
+      "content_hash": "0b6f0e91b6644d1c"
+    },
+    "src/calculos/aletas_rasaero.py|src.calculos.aletas_rasaero.aleta_para_rasaero": {
+      "file_path": "src/calculos/aletas_rasaero.py",
+      "qualified_name": "src.calculos.aletas_rasaero.aleta_para_rasaero",
+      "start_line": 33,
+      "end_line": 55,
+      "type": "FUNCTION",
+      "content_hash": "94f2ba77e1d3c2eb"
+    },
+    "src/calculos/coifa.py|src.calculos.coifa._perfil_conico": {
+      "file_path": "src/calculos/coifa.py",
+      "qualified_name": "src.calculos.coifa._perfil_conico",
+      "start_line": 15,
+      "end_line": 16,
+      "type": "FUNCTION",
+      "content_hash": "25c4b191a6f4db3a"
+    },
+    "src/calculos/coifa.py|src.calculos.coifa._perfil_lvhaack": {
+      "file_path": "src/calculos/coifa.py",
+      "qualified_name": "src.calculos.coifa._perfil_lvhaack",
+      "start_line": 19,
+      "end_line": 25,
+      "type": "FUNCTION",
+      "content_hash": "e0e25f195bafce55"
+    },
+    "src/calculos/coifa.py|src.calculos.coifa._perfil_ogive": {
+      "file_path": "src/calculos/coifa.py",
+      "qualified_name": "src.calculos.coifa._perfil_ogive",
+      "start_line": 28,
+      "end_line": 32,
+      "type": "FUNCTION",
+      "content_hash": "455cedd6c6030bec"
+    },
+    "src/calculos/coifa.py|src.calculos.coifa.perfil": {
+      "file_path": "src/calculos/coifa.py",
+      "qualified_name": "src.calculos.coifa.perfil",
+      "start_line": 42,
+      "end_line": 45,
+      "type": "FUNCTION",
+      "content_hash": "59c0bbf55b186a84"
+    },
+    "src/calculos/coifa.py|src.calculos.coifa._derivada_perfil": {
+      "file_path": "src/calculos/coifa.py",
+      "qualified_name": "src.calculos.coifa._derivada_perfil",
+      "start_line": 48,
+      "end_line": 51,
+      "type": "FUNCTION",
+      "content_hash": "c0bd884f60a7682c"
+    },
+    "src/calculos/coifa.py|src.calculos.coifa.CoifaDerivada": {
+      "file_path": "src/calculos/coifa.py",
+      "qualified_name": "src.calculos.coifa.CoifaDerivada",
+      "start_line": 55,
+      "end_line": 60,
+      "type": "CLASS",
+      "content_hash": "101c2131c03c29a2"
+    },
+    "src/calculos/coifa.py|src.calculos.coifa.calcular_coifa": {
+      "file_path": "src/calculos/coifa.py",
+      "qualified_name": "src.calculos.coifa.calcular_coifa",
+      "start_line": 63,
+      "end_line": 116,
+      "type": "FUNCTION",
+      "content_hash": "9a050f8eb1fb2ff7"
+    },
+    "src/calculos/componentes.py|src.calculos.componentes.ComponenteDerivado": {
+      "file_path": "src/calculos/componentes.py",
+      "qualified_name": "src.calculos.componentes.ComponenteDerivado",
+      "start_line": 17,
+      "end_line": 22,
+      "type": "CLASS",
+      "content_hash": "19d6141c791c573c"
+    },
+    "src/calculos/componentes.py|src.calculos.componentes.derivar_tubo": {
+      "file_path": "src/calculos/componentes.py",
+      "qualified_name": "src.calculos.componentes.derivar_tubo",
+      "start_line": 25,
+      "end_line": 41,
+      "type": "FUNCTION",
+      "content_hash": "1ba5ebfe684ec4a3"
+    },
+    "src/calculos/componentes.py|src.calculos.componentes.derivar_massa_pontual": {
+      "file_path": "src/calculos/componentes.py",
+      "qualified_name": "src.calculos.componentes.derivar_massa_pontual",
+      "start_line": 44,
+      "end_line": 59,
+      "type": "FUNCTION",
+      "content_hash": "9984b9c0a37c0e00"
+    },
+    "src/calculos/componentes.py|src.calculos.componentes.derivar": {
+      "file_path": "src/calculos/componentes.py",
+      "qualified_name": "src.calculos.componentes.derivar",
+      "start_line": 62,
+      "end_line": 67,
+      "type": "FUNCTION",
+      "content_hash": "aa4a410a3c1280e2"
+    },
+    "src/calculos/componentes.py|src.calculos.componentes.derivar_todos": {
+      "file_path": "src/calculos/componentes.py",
+      "qualified_name": "src.calculos.componentes.derivar_todos",
+      "start_line": 70,
+      "end_line": 73,
+      "type": "FUNCTION",
+      "content_hash": "2b31a94b5a0b8fc7"
+    },
+    "src/calculos/motor.py|src.calculos.motor._ler_eng": {
+      "file_path": "src/calculos/motor.py",
+      "qualified_name": "src.calculos.motor._ler_eng",
+      "start_line": 45,
+      "end_line": 88,
+      "type": "FUNCTION",
+      "content_hash": "dd281b37e1664179"
+    },
+    "src/calculos/motor.py|src.calculos.motor._integrar_trapezio": {
+      "file_path": "src/calculos/motor.py",
+      "qualified_name": "src.calculos.motor._integrar_trapezio",
+      "start_line": 91,
+      "end_line": 96,
+      "type": "FUNCTION",
+      "content_hash": "a68d78a51dc2bfa9"
+    },
+    "src/calculos/motor.py|src.calculos.motor.MotorDerivado": {
+      "file_path": "src/calculos/motor.py",
+      "qualified_name": "src.calculos.motor.MotorDerivado",
+      "start_line": 103,
+      "end_line": 198,
+      "type": "CLASS",
+      "content_hash": "a4c117912dfb20c3"
+    },
+    "src/calculos/motor.py|src.calculos.motor.MotorDerivado.inercia_transversal": {
+      "file_path": "src/calculos/motor.py",
+      "qualified_name": "src.calculos.motor.MotorDerivado.inercia_transversal",
+      "start_line": 152,
+      "end_line": 153,
+      "type": "METHOD",
+      "content_hash": "df8ccc7c64431447"
+    },
+    "src/calculos/motor.py|src.calculos.motor.MotorDerivado.inercia_longitudinal": {
+      "file_path": "src/calculos/motor.py",
+      "qualified_name": "src.calculos.motor.MotorDerivado.inercia_longitudinal",
+      "start_line": 156,
+      "end_line": 157,
+      "type": "METHOD",
+      "content_hash": "9830fb0ca11b7847"
+    },
+    "src/calculos/motor.py|src.calculos.motor.MotorDerivado.to_dict": {
+      "file_path": "src/calculos/motor.py",
+      "qualified_name": "src.calculos.motor.MotorDerivado.to_dict",
+      "start_line": 159,
+      "end_line": 198,
+      "type": "METHOD",
+      "content_hash": "756f6e235ba3b83c"
+    },
+    "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria": {
+      "file_path": "src/calculos/motor.py",
+      "qualified_name": "src.calculos.motor._resolver_fonte_e_geometria",
+      "start_line": 204,
+      "end_line": 262,
+      "type": "FUNCTION",
+      "content_hash": "e133284095b51817"
+    },
+    "src/calculos/motor.py|src.calculos.motor._derivar_dos_graos": {
+      "file_path": "src/calculos/motor.py",
+      "qualified_name": "src.calculos.motor._derivar_dos_graos",
+      "start_line": 265,
+      "end_line": 299,
+      "type": "FUNCTION",
+      "content_hash": "25a059aff5fc9302"
+    },
+    "src/calculos/motor.py|src.calculos.motor._derivar_carcaca": {
+      "file_path": "src/calculos/motor.py",
+      "qualified_name": "src.calculos.motor._derivar_carcaca",
+      "start_line": 302,
+      "end_line": 320,
+      "type": "FUNCTION",
+      "content_hash": "0df983e8838d19ce"
+    },
+    "src/calculos/motor.py|src.calculos.motor._derivar_inercia_seca": {
+      "file_path": "src/calculos/motor.py",
+      "qualified_name": "src.calculos.motor._derivar_inercia_seca",
+      "start_line": 323,
+      "end_line": 336,
+      "type": "FUNCTION",
+      "content_hash": "0e83f54bf086773f"
+    },
+    "src/calculos/motor.py|src.calculos.motor._diagnosticar": {
+      "file_path": "src/calculos/motor.py",
+      "qualified_name": "src.calculos.motor._diagnosticar",
+      "start_line": 339,
+      "end_line": 357,
+      "type": "FUNCTION",
+      "content_hash": "856b1486eb6aa8cb"
+    },
+    "src/calculos/motor.py|src.calculos.motor.derivar_motor": {
+      "file_path": "src/calculos/motor.py",
+      "qualified_name": "src.calculos.motor.derivar_motor",
+      "start_line": 363,
+      "end_line": 423,
+      "type": "FUNCTION",
+      "content_hash": "e852c7d7d70d8ca0"
+    },
+    "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes._normalizar_path": {
+      "file_path": "src/calculos/motorlib_variacoes.py",
+      "qualified_name": "src.calculos.motorlib_variacoes._normalizar_path",
+      "start_line": 24,
+      "end_line": 27,
+      "type": "FUNCTION",
+      "content_hash": "1d748d045ff04ef5"
+    },
+    "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes.validar_overrides": {
+      "file_path": "src/calculos/motorlib_variacoes.py",
+      "qualified_name": "src.calculos.motorlib_variacoes.validar_overrides",
+      "start_line": 30,
+      "end_line": 49,
+      "type": "FUNCTION",
+      "content_hash": "0c024e8a2126c05e"
+    },
+    "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes._set_path": {
+      "file_path": "src/calculos/motorlib_variacoes.py",
+      "qualified_name": "src.calculos.motorlib_variacoes._set_path",
+      "start_line": 52,
+      "end_line": 100,
+      "type": "FUNCTION",
+      "content_hash": "9611641f44cb255d"
+    },
+    "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes._tem_indice_especifico": {
+      "file_path": "src/calculos/motorlib_variacoes.py",
+      "qualified_name": "src.calculos.motorlib_variacoes._tem_indice_especifico",
+      "start_line": 103,
+      "end_line": 104,
+      "type": "FUNCTION",
+      "content_hash": "a5bdea67642c8b7f"
+    },
+    "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes.aplicar_overrides": {
+      "file_path": "src/calculos/motorlib_variacoes.py",
+      "qualified_name": "src.calculos.motorlib_variacoes.aplicar_overrides",
+      "start_line": 107,
+      "end_line": 119,
+      "type": "FUNCTION",
+      "content_hash": "24efea533f39c4df"
+    },
+    "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes.simular_variacao": {
+      "file_path": "src/calculos/motorlib_variacoes.py",
+      "qualified_name": "src.calculos.motorlib_variacoes.simular_variacao",
+      "start_line": 122,
+      "end_line": 133,
+      "type": "FUNCTION",
+      "content_hash": "ff167187634b0d40"
+    },
+    "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper._safe_use": {
+      "file_path": "src/calculos/motorlib_wrapper.py",
+      "qualified_name": "src.calculos.motorlib_wrapper._safe_use",
+      "start_line": 28,
+      "end_line": 31,
+      "type": "FUNCTION",
+      "content_hash": "e66db0b9524e8565"
+    },
+    "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper._as_1d": {
+      "file_path": "src/calculos/motorlib_wrapper.py",
+      "qualified_name": "src.calculos.motorlib_wrapper._as_1d",
+      "start_line": 54,
+      "end_line": 55,
+      "type": "FUNCTION",
+      "content_hash": "7faa1d38f529cb75"
+    },
+    "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper._as_2d": {
+      "file_path": "src/calculos/motorlib_wrapper.py",
+      "qualified_name": "src.calculos.motorlib_wrapper._as_2d",
+      "start_line": 58,
+      "end_line": 61,
+      "type": "FUNCTION",
+      "content_hash": "175fa6beb9d539ae"
+    },
+    "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper._pico_2d": {
+      "file_path": "src/calculos/motorlib_wrapper.py",
+      "qualified_name": "src.calculos.motorlib_wrapper._pico_2d",
+      "start_line": 64,
+      "end_line": 65,
+      "type": "FUNCTION",
+      "content_hash": "32d0d07c7615a956"
+    },
+    "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper._integrar_trapezio": {
+      "file_path": "src/calculos/motorlib_wrapper.py",
+      "qualified_name": "src.calculos.motorlib_wrapper._integrar_trapezio",
+      "start_line": 68,
+      "end_line": 72,
+      "type": "FUNCTION",
+      "content_hash": "da27c7ce642de78f"
+    },
+    "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.MotorResultado": {
+      "file_path": "src/calculos/motorlib_wrapper.py",
+      "qualified_name": "src.calculos.motorlib_wrapper.MotorResultado",
+      "start_line": 79,
+      "end_line": 136,
+      "type": "CLASS",
+      "content_hash": "fb95a4fe1b414515"
+    },
+    "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.MotorResultado.curva_empuxo": {
+      "file_path": "src/calculos/motorlib_wrapper.py",
+      "qualified_name": "src.calculos.motorlib_wrapper.MotorResultado.curva_empuxo",
+      "start_line": 116,
+      "end_line": 118,
+      "type": "METHOD",
+      "content_hash": "7429608fbd03eda4"
+    },
+    "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.MotorResultado.resumo": {
+      "file_path": "src/calculos/motorlib_wrapper.py",
+      "qualified_name": "src.calculos.motorlib_wrapper.MotorResultado.resumo",
+      "start_line": 120,
+      "end_line": 136,
+      "type": "METHOD",
+      "content_hash": "5808a9bffdd0c58a"
+    },
+    "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.carregar_props": {
+      "file_path": "src/calculos/motorlib_wrapper.py",
+      "qualified_name": "src.calculos.motorlib_wrapper.carregar_props",
+      "start_line": 142,
+      "end_line": 147,
+      "type": "FUNCTION",
+      "content_hash": "547fa1013627f2c6"
+    },
+    "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.extrair_geometria_props": {
+      "file_path": "src/calculos/motorlib_wrapper.py",
+      "qualified_name": "src.calculos.motorlib_wrapper.extrair_geometria_props",
+      "start_line": 150,
+      "end_line": 195,
+      "type": "FUNCTION",
+      "content_hash": "77c64871537efe5d"
+    },
+    "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.simular_props": {
+      "file_path": "src/calculos/motorlib_wrapper.py",
+      "qualified_name": "src.calculos.motorlib_wrapper.simular_props",
+      "start_line": 198,
+      "end_line": 277,
+      "type": "FUNCTION",
+      "content_hash": "4f05ed717b437eee"
+    },
+    "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.simular_ric": {
+      "file_path": "src/calculos/motorlib_wrapper.py",
+      "qualified_name": "src.calculos.motorlib_wrapper.simular_ric",
+      "start_line": 280,
+      "end_line": 283,
+      "type": "FUNCTION",
+      "content_hash": "5d9b80806a7cae65"
+    },
+    "src/calculos/seguranca.py|src.calculos.seguranca.DiagnosticoFS": {
+      "file_path": "src/calculos/seguranca.py",
+      "qualified_name": "src.calculos.seguranca.DiagnosticoFS",
+      "start_line": 17,
+      "end_line": 37,
+      "type": "CLASS",
+      "content_hash": "eb7112061c607bee"
+    },
+    "src/calculos/seguranca.py|src.calculos.seguranca.DiagnosticoFS.linha": {
+      "file_path": "src/calculos/seguranca.py",
+      "qualified_name": "src.calculos.seguranca.DiagnosticoFS.linha",
+      "start_line": 26,
+      "end_line": 37,
+      "type": "METHOD",
+      "content_hash": "4bb5602ca38ba43b"
+    },
+    "src/calculos/seguranca.py|src.calculos.seguranca.fs_carcaca": {
+      "file_path": "src/calculos/seguranca.py",
+      "qualified_name": "src.calculos.seguranca.fs_carcaca",
+      "start_line": 40,
+      "end_line": 64,
+      "type": "FUNCTION",
+      "content_hash": "2d3bc5d595bd7b77"
+    },
+    "src/calculos/seguranca.py|src.calculos.seguranca.check_p0": {
+      "file_path": "src/calculos/seguranca.py",
+      "qualified_name": "src.calculos.seguranca.check_p0",
+      "start_line": 67,
+      "end_line": 80,
+      "type": "FUNCTION",
+      "content_hash": "37c5d3ea1fe9251d"
+    },
+    "src/calculos/seguranca.py|src.calculos.seguranca.check_kn": {
+      "file_path": "src/calculos/seguranca.py",
+      "qualified_name": "src.calculos.seguranca.check_kn",
+      "start_line": 83,
+      "end_line": 96,
+      "type": "FUNCTION",
+      "content_hash": "8ca615960ce7a9f7"
+    },
+    "src/calculos/seguranca.py|src.calculos.seguranca.check_mass_flux": {
+      "file_path": "src/calculos/seguranca.py",
+      "qualified_name": "src.calculos.seguranca.check_mass_flux",
+      "start_line": 99,
+      "end_line": 112,
+      "type": "FUNCTION",
+      "content_hash": "2da721f89b57b35e"
+    },
+    "src/inspecao.py|src.inspecao._titulo": {
+      "file_path": "src/inspecao.py",
+      "qualified_name": "src.inspecao._titulo",
+      "start_line": 19,
+      "end_line": 23,
+      "type": "FUNCTION",
+      "content_hash": "f6aa2b56fcb6664a"
+    },
+    "src/inspecao.py|src.inspecao._sub": {
+      "file_path": "src/inspecao.py",
+      "qualified_name": "src.inspecao._sub",
+      "start_line": 26,
+      "end_line": 28,
+      "type": "FUNCTION",
+      "content_hash": "756290236ee3024c"
+    },
+    "src/inspecao.py|src.inspecao._linha": {
+      "file_path": "src/inspecao.py",
+      "qualified_name": "src.inspecao._linha",
+      "start_line": 31,
+      "end_line": 35,
+      "type": "FUNCTION",
+      "content_hash": "988cdaa0f395ca0b"
+    },
+    "src/inspecao.py|src.inspecao._fmt": {
+      "file_path": "src/inspecao.py",
+      "qualified_name": "src.inspecao._fmt",
+      "start_line": 38,
+      "end_line": 42,
+      "type": "FUNCTION",
+      "content_hash": "1ec8e1eec7f59e07"
+    },
+    "src/inspecao.py|src.inspecao.relatorio_motor": {
+      "file_path": "src/inspecao.py",
+      "qualified_name": "src.inspecao.relatorio_motor",
+      "start_line": 45,
+      "end_line": 112,
+      "type": "FUNCTION",
+      "content_hash": "11b98c10ce78fbc7"
+    },
+    "src/inspecao.py|src.inspecao.relatorio_motor_variacoes": {
+      "file_path": "src/inspecao.py",
+      "qualified_name": "src.inspecao.relatorio_motor_variacoes",
+      "start_line": 115,
+      "end_line": 167,
+      "type": "FUNCTION",
+      "content_hash": "70a42803d3cc0db2"
+    },
+    "src/inspecao.py|src.inspecao.relatorio_estrutura": {
+      "file_path": "src/inspecao.py",
+      "qualified_name": "src.inspecao.relatorio_estrutura",
+      "start_line": 170,
+      "end_line": 272,
+      "type": "FUNCTION",
+      "content_hash": "0e1062b4277c778f"
+    },
+    "src/inspecao.py|src.inspecao.relatorio_seguranca": {
+      "file_path": "src/inspecao.py",
+      "qualified_name": "src.inspecao.relatorio_seguranca",
+      "start_line": 275,
+      "end_line": 293,
+      "type": "FUNCTION",
+      "content_hash": "0e05f56c68233dc2"
+    },
+    "src/inspecao.py|src.inspecao.relatorio_voo": {
+      "file_path": "src/inspecao.py",
+      "qualified_name": "src.inspecao.relatorio_voo",
+      "start_line": 296,
+      "end_line": 326,
+      "type": "FUNCTION",
+      "content_hash": "0ea2006893b33fb9"
+    },
+    "src/modelo.py|src.modelo.FogueteResolvido": {
+      "file_path": "src/modelo.py",
+      "qualified_name": "src.modelo.FogueteResolvido",
+      "start_line": 21,
+      "end_line": 102,
+      "type": "CLASS",
+      "content_hash": "1e2b05f5bf560d59"
+    },
+    "src/modelo.py|src.modelo.FogueteResolvido.massa_seca": {
+      "file_path": "src/modelo.py",
+      "qualified_name": "src.modelo.FogueteResolvido.massa_seca",
+      "start_line": 31,
+      "end_line": 33,
+      "type": "METHOD",
+      "content_hash": "f03d22904c186591"
+    },
+    "src/modelo.py|src.modelo.FogueteResolvido.cg_sem_motor": {
+      "file_path": "src/modelo.py",
+      "qualified_name": "src.modelo.FogueteResolvido.cg_sem_motor",
+      "start_line": 36,
+      "end_line": 44,
+      "type": "METHOD",
+      "content_hash": "41493a519a4a2008"
+    },
+    "src/modelo.py|src.modelo.FogueteResolvido.inercia_longitudinal": {
+      "file_path": "src/modelo.py",
+      "qualified_name": "src.modelo.FogueteResolvido.inercia_longitudinal",
+      "start_line": 47,
+      "end_line": 50,
+      "type": "METHOD",
+      "content_hash": "ab58207e22bb4f91"
+    },
+    "src/modelo.py|src.modelo.FogueteResolvido.inercia_transversal": {
+      "file_path": "src/modelo.py",
+      "qualified_name": "src.modelo.FogueteResolvido.inercia_transversal",
+      "start_line": 53,
+      "end_line": 68,
+      "type": "METHOD",
+      "content_hash": "ccb93a19a04b71e4"
+    },
+    "src/modelo.py|src.modelo.FogueteResolvido.inercia_rocketpy": {
+      "file_path": "src/modelo.py",
+      "qualified_name": "src.modelo.FogueteResolvido.inercia_rocketpy",
+      "start_line": 71,
+      "end_line": 75,
+      "type": "METHOD",
+      "content_hash": "345b9a259ce381f7"
+    },
+    "src/modelo.py|src.modelo.FogueteResolvido.dict_rocket": {
+      "file_path": "src/modelo.py",
+      "qualified_name": "src.modelo.FogueteResolvido.dict_rocket",
+      "start_line": 77,
+      "end_line": 86,
+      "type": "METHOD",
+      "content_hash": "025576ceb5db0291"
+    },
+    "src/modelo.py|src.modelo.FogueteResolvido.dict_coifa": {
+      "file_path": "src/modelo.py",
+      "qualified_name": "src.modelo.FogueteResolvido.dict_coifa",
+      "start_line": 88,
+      "end_line": 93,
+      "type": "METHOD",
+      "content_hash": "3b73fc79b8c2b349"
+    },
+    "src/modelo.py|src.modelo.FogueteResolvido.shape_points": {
+      "file_path": "src/modelo.py",
+      "qualified_name": "src.modelo.FogueteResolvido.shape_points",
+      "start_line": 95,
+      "end_line": 102,
+      "type": "METHOD",
+      "content_hash": "d11ad3b2493dd581"
+    },
+    "src/modelo.py|src.modelo.resolver": {
+      "file_path": "src/modelo.py",
+      "qualified_name": "src.modelo.resolver",
+      "start_line": 105,
+      "end_line": 122,
+      "type": "FUNCTION",
+      "content_hash": "8f70dd7f54eb5fbf"
+    },
+    "src/modelos.py|src.modelos.FogueteMontado": {
+      "file_path": "src/modelos.py",
+      "qualified_name": "src.modelos.FogueteMontado",
+      "start_line": 35,
+      "end_line": 45,
+      "type": "CLASS",
+      "content_hash": "18842e3b1d2805b9"
+    },
+    "src/modelos.py|src.modelos._motor_kwargs": {
+      "file_path": "src/modelos.py",
+      "qualified_name": "src.modelos._motor_kwargs",
+      "start_line": 48,
+      "end_line": 78,
+      "type": "FUNCTION",
+      "content_hash": "aa4ad5160dafc913"
+    },
+    "src/modelos.py|src.modelos.build_motor": {
+      "file_path": "src/modelos.py",
+      "qualified_name": "src.modelos.build_motor",
+      "start_line": 81,
+      "end_line": 95,
+      "type": "FUNCTION",
+      "content_hash": "468fe9d82c195f44"
+    },
+    "src/modelos.py|src.modelos.build_rocket": {
+      "file_path": "src/modelos.py",
+      "qualified_name": "src.modelos.build_rocket",
+      "start_line": 98,
+      "end_line": 228,
+      "type": "FUNCTION",
+      "content_hash": "d10b36c8ea0bc90a"
+    },
+    "src/smoke.py|src.smoke.main": {
+      "file_path": "src/smoke.py",
+      "qualified_name": "src.smoke.main",
+      "start_line": 10,
+      "end_line": 14,
+      "type": "FUNCTION",
+      "content_hash": "5101ff4734c5eeee"
+    },
+    "src/specs.py|src.specs.LimitesSeguranca": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.LimitesSeguranca",
+      "start_line": 24,
+      "end_line": 50,
+      "type": "CLASS",
+      "content_hash": "1b1150e8b319971c"
+    },
+    "src/specs.py|src.specs.LimitesSeguranca.__post_init__": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.LimitesSeguranca.__post_init__",
+      "start_line": 40,
+      "end_line": 50,
+      "type": "METHOD",
+      "content_hash": "b88a5c0b5e7a48e2"
+    },
+    "src/specs.py|src.specs.GrainSpec": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.GrainSpec",
+      "start_line": 57,
+      "end_line": 79,
+      "type": "CLASS",
+      "content_hash": "102460d0f82a7941"
+    },
+    "src/specs.py|src.specs.GrainSpec.__post_init__": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.GrainSpec.__post_init__",
+      "start_line": 63,
+      "end_line": 72,
+      "type": "METHOD",
+      "content_hash": "7afe218fc6c100a5"
+    },
+    "src/specs.py|src.specs.GrainSpec.to_dict": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.GrainSpec.to_dict",
+      "start_line": 74,
+      "end_line": 79,
+      "type": "METHOD",
+      "content_hash": "1ba7a2631391c10c"
+    },
+    "src/specs.py|src.specs.MotorSpec": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.MotorSpec",
+      "start_line": 83,
+      "end_line": 210,
+      "type": "CLASS",
+      "content_hash": "9833b0d5fc86ea08"
+    },
+    "src/specs.py|src.specs.MotorSpec.__post_init__": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.MotorSpec.__post_init__",
+      "start_line": 125,
+      "end_line": 168,
+      "type": "METHOD",
+      "content_hash": "7f6b8d30016bd782"
+    },
+    "src/specs.py|src.specs.MotorSpec.resumo": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.MotorSpec.resumo",
+      "start_line": 170,
+      "end_line": 184,
+      "type": "METHOD",
+      "content_hash": "fa54645ea018770f"
+    },
+    "src/specs.py|src.specs.MotorSpec.to_dict": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.MotorSpec.to_dict",
+      "start_line": 186,
+      "end_line": 210,
+      "type": "METHOD",
+      "content_hash": "69a48907287bc76e"
+    },
+    "src/specs.py|src.specs.TuboSpec": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.TuboSpec",
+      "start_line": 217,
+      "end_line": 242,
+      "type": "CLASS",
+      "content_hash": "bcb7898b7ba2e03a"
+    },
+    "src/specs.py|src.specs.TuboSpec.__post_init__": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.TuboSpec.__post_init__",
+      "start_line": 227,
+      "end_line": 238,
+      "type": "METHOD",
+      "content_hash": "1b3c22430d714dcc"
+    },
+    "src/specs.py|src.specs.TuboSpec.raio_interno": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.TuboSpec.raio_interno",
+      "start_line": 241,
+      "end_line": 242,
+      "type": "METHOD",
+      "content_hash": "10357722c3c71130"
+    },
+    "src/specs.py|src.specs.MassaPontualSpec": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.MassaPontualSpec",
+      "start_line": 246,
+      "end_line": 266,
+      "type": "CLASS",
+      "content_hash": "c946f28b0c9c656b"
+    },
+    "src/specs.py|src.specs.MassaPontualSpec.__post_init__": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.MassaPontualSpec.__post_init__",
+      "start_line": 254,
+      "end_line": 266,
+      "type": "METHOD",
+      "content_hash": "16bf8c7e0ad0c1af"
+    },
+    "src/specs.py|src.specs.AletaSpec": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.AletaSpec",
+      "start_line": 270,
+      "end_line": 298,
+      "type": "CLASS",
+      "content_hash": "32eb2c9b9249ae05"
+    },
+    "src/specs.py|src.specs.AletaSpec.__post_init__": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.AletaSpec.__post_init__",
+      "start_line": 284,
+      "end_line": 298,
+      "type": "METHOD",
+      "content_hash": "d7a3288292073697"
+    },
+    "src/specs.py|src.specs.CoifaSpec": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.CoifaSpec",
+      "start_line": 302,
+      "end_line": 324,
+      "type": "CLASS",
+      "content_hash": "b7bf160935ad3b68"
+    },
+    "src/specs.py|src.specs.CoifaSpec.__post_init__": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.CoifaSpec.__post_init__",
+      "start_line": 313,
+      "end_line": 324,
+      "type": "METHOD",
+      "content_hash": "dcddf569153e137e"
+    },
+    "src/specs.py|src.specs.GeometriaMedidaSpec": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.GeometriaMedidaSpec",
+      "start_line": 331,
+      "end_line": 392,
+      "type": "CLASS",
+      "content_hash": "52f3a2c3ba114fcc"
+    },
+    "src/specs.py|src.specs.GeometriaMedidaSpec.__post_init__": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.GeometriaMedidaSpec.__post_init__",
+      "start_line": 347,
+      "end_line": 361,
+      "type": "METHOD",
+      "content_hash": "f8253269f8750292"
+    },
+    "src/specs.py|src.specs.GeometriaMedidaSpec.inercia_rocketpy": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.GeometriaMedidaSpec.inercia_rocketpy",
+      "start_line": 364,
+      "end_line": 366,
+      "type": "METHOD",
+      "content_hash": "e48cc2ea17314783"
+    },
+    "src/specs.py|src.specs.GeometriaMedidaSpec.dict_rocket": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.GeometriaMedidaSpec.dict_rocket",
+      "start_line": 368,
+      "end_line": 377,
+      "type": "METHOD",
+      "content_hash": "025576ceb5db0291"
+    },
+    "src/specs.py|src.specs.GeometriaMedidaSpec.dict_coifa": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.GeometriaMedidaSpec.dict_coifa",
+      "start_line": 379,
+      "end_line": 384,
+      "type": "METHOD",
+      "content_hash": "c785c59a6c9cec70"
+    },
+    "src/specs.py|src.specs.GeometriaMedidaSpec.dict_aletas_freeform": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.GeometriaMedidaSpec.dict_aletas_freeform",
+      "start_line": 386,
+      "end_line": 392,
+      "type": "METHOD",
+      "content_hash": "a7c909ebf6a730f6"
+    },
+    "src/specs.py|src.specs.FogueteSpec": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.FogueteSpec",
+      "start_line": 399,
+      "end_line": 433,
+      "type": "CLASS",
+      "content_hash": "41914fb6d909d95d"
+    },
+    "src/specs.py|src.specs.FogueteSpec.__post_init__": {
+      "file_path": "src/specs.py",
+      "qualified_name": "src.specs.FogueteSpec.__post_init__",
+      "start_line": 422,
+      "end_line": 433,
+      "type": "METHOD",
+      "content_hash": "6cd623767709a13b"
+    },
+    "src/viz.py|src.viz._set_backend": {
+      "file_path": "src/viz.py",
+      "qualified_name": "src.viz._set_backend",
+      "start_line": 6,
+      "end_line": 20,
+      "type": "FUNCTION",
+      "content_hash": "d34ba209d9a56313"
+    },
+    "scripts/analisar_motor.py|scripts.analisar_motor._ultimo_csv": {
+      "file_path": "scripts/analisar_motor.py",
+      "qualified_name": "scripts.analisar_motor._ultimo_csv",
+      "start_line": 52,
+      "end_line": 58,
+      "type": "FUNCTION",
+      "content_hash": "6d207195ffe9bf83"
+    },
+    "scripts/analisar_motor.py|scripts.analisar_motor.carregar_varredura": {
+      "file_path": "scripts/analisar_motor.py",
+      "qualified_name": "scripts.analisar_motor.carregar_varredura",
+      "start_line": 61,
+      "end_line": 84,
+      "type": "FUNCTION",
+      "content_hash": "fef5146218dbbd02"
+    },
+    "scripts/analisar_motor.py|scripts.analisar_motor.params_do_registro": {
+      "file_path": "scripts/analisar_motor.py",
+      "qualified_name": "scripts.analisar_motor.params_do_registro",
+      "start_line": 87,
+      "end_line": 91,
+      "type": "FUNCTION",
+      "content_hash": "ac97980448b153c7"
+    },
+    "scripts/analisar_motor.py|scripts.analisar_motor.filtrar": {
+      "file_path": "scripts/analisar_motor.py",
+      "qualified_name": "scripts.analisar_motor.filtrar",
+      "start_line": 97,
+      "end_line": 135,
+      "type": "FUNCTION",
+      "content_hash": "684e2a402a605a20"
+    },
+    "scripts/analisar_motor.py|scripts.analisar_motor.rankear": {
+      "file_path": "scripts/analisar_motor.py",
+      "qualified_name": "scripts.analisar_motor.rankear",
+      "start_line": 138,
+      "end_line": 155,
+      "type": "FUNCTION",
+      "content_hash": "916769fdaa9a6c3e"
+    },
+    "scripts/analisar_motor.py|scripts.analisar_motor.achar_otimo": {
+      "file_path": "scripts/analisar_motor.py",
+      "qualified_name": "scripts.analisar_motor.achar_otimo",
+      "start_line": 158,
+      "end_line": 169,
+      "type": "FUNCTION",
+      "content_hash": "eabde809937cdb9d"
+    },
+    "scripts/analisar_motor.py|scripts.analisar_motor.resumo": {
+      "file_path": "scripts/analisar_motor.py",
+      "qualified_name": "scripts.analisar_motor.resumo",
+      "start_line": 175,
+      "end_line": 224,
+      "type": "FUNCTION",
+      "content_hash": "8276a73ae9df97c3"
+    },
+    "scripts/analisar_motor.py|scripts.analisar_motor.plotar_1d": {
+      "file_path": "scripts/analisar_motor.py",
+      "qualified_name": "scripts.analisar_motor.plotar_1d",
+      "start_line": 230,
+      "end_line": 282,
+      "type": "FUNCTION",
+      "content_hash": "54153a48b61c7e39"
+    },
+    "scripts/analisar_motor.py|scripts.analisar_motor.plotar_2d": {
+      "file_path": "scripts/analisar_motor.py",
+      "qualified_name": "scripts.analisar_motor.plotar_2d",
+      "start_line": 285,
+      "end_line": 343,
+      "type": "FUNCTION",
+      "content_hash": "69dacf1efa5808b7"
+    },
+    "scripts/analisar_motor.py|scripts.analisar_motor.imprimir_top": {
+      "file_path": "scripts/analisar_motor.py",
+      "qualified_name": "scripts.analisar_motor.imprimir_top",
+      "start_line": 349,
+      "end_line": 385,
+      "type": "FUNCTION",
+      "content_hash": "e3e422123bdf1fe3"
+    },
+    "scripts/analisar_motor.py|scripts.analisar_motor.main": {
+      "file_path": "scripts/analisar_motor.py",
+      "qualified_name": "scripts.analisar_motor.main",
+      "start_line": 391,
+      "end_line": 427,
+      "type": "FUNCTION",
+      "content_hash": "883375e463b1824e"
+    },
+    "scripts/monteCarloIrec.py|scripts.monteCarloIrec.main": {
+      "file_path": "scripts/monteCarloIrec.py",
+      "qualified_name": "scripts.monteCarloIrec.main",
+      "start_line": 38,
+      "end_line": 103,
+      "type": "FUNCTION",
+      "content_hash": "e74f1326e7644a16"
+    },
+    "scripts/simDeterministica.py|scripts.simDeterministica._resolver_motor": {
+      "file_path": "scripts/simDeterministica.py",
+      "qualified_name": "scripts.simDeterministica._resolver_motor",
+      "start_line": 32,
+      "end_line": 44,
+      "type": "FUNCTION",
+      "content_hash": "914f03a49cee32ba"
+    },
+    "scripts/simDeterministica.py|scripts.simDeterministica.main": {
+      "file_path": "scripts/simDeterministica.py",
+      "qualified_name": "scripts.simDeterministica.main",
+      "start_line": 47,
+      "end_line": 125,
+      "type": "FUNCTION",
+      "content_hash": "dc020bbbaf0bd582"
+    },
+    "scripts/varredura.py|scripts.varredura.simular": {
+      "file_path": "scripts/varredura.py",
+      "qualified_name": "scripts.varredura.simular",
+      "start_line": 30,
+      "end_line": 44,
+      "type": "FUNCTION",
+      "content_hash": "3ef0f908be0072e4"
+    },
+    "scripts/varredura.py|scripts.varredura.main": {
+      "file_path": "scripts/varredura.py",
+      "qualified_name": "scripts.varredura.main",
+      "start_line": 47,
+      "end_line": 90,
+      "type": "FUNCTION",
+      "content_hash": "ea365020e49a0628"
+    },
+    "scripts/varredura_motor.py|scripts.varredura_motor._parse_valores": {
+      "file_path": "scripts/varredura_motor.py",
+      "qualified_name": "scripts.varredura_motor._parse_valores",
+      "start_line": 37,
+      "end_line": 56,
+      "type": "FUNCTION",
+      "content_hash": "414eb1eae714b976"
+    },
+    "scripts/varredura_motor.py|scripts.varredura_motor._parse_param": {
+      "file_path": "scripts/varredura_motor.py",
+      "qualified_name": "scripts.varredura_motor._parse_param",
+      "start_line": 59,
+      "end_line": 63,
+      "type": "FUNCTION",
+      "content_hash": "cc7fef466fa4e6ed"
+    },
+    "scripts/varredura_motor.py|scripts.varredura_motor._gerar_grid": {
+      "file_path": "scripts/varredura_motor.py",
+      "qualified_name": "scripts.varredura_motor._gerar_grid",
+      "start_line": 66,
+      "end_line": 71,
+      "type": "FUNCTION",
+      "content_hash": "5c25b0fa02ac669d"
+    },
+    "scripts/varredura_motor.py|scripts.varredura_motor.LinhaVarredura": {
+      "file_path": "scripts/varredura_motor.py",
+      "qualified_name": "scripts.varredura_motor.LinhaVarredura",
+      "start_line": 75,
+      "end_line": 89,
+      "type": "CLASS",
+      "content_hash": "585046e0bde8ffe4"
+    },
+    "scripts/varredura_motor.py|scripts.varredura_motor._simular_um": {
+      "file_path": "scripts/varredura_motor.py",
+      "qualified_name": "scripts.varredura_motor._simular_um",
+      "start_line": 92,
+      "end_line": 157,
+      "type": "FUNCTION",
+      "content_hash": "72ff253e0265250f"
+    },
+    "scripts/varredura_motor.py|scripts.varredura_motor.varrer_motor": {
+      "file_path": "scripts/varredura_motor.py",
+      "qualified_name": "scripts.varredura_motor.varrer_motor",
+      "start_line": 160,
+      "end_line": 211,
+      "type": "FUNCTION",
+      "content_hash": "b632b2b0f76d982a"
+    },
+    "scripts/varredura_motor.py|scripts.varredura_motor._salvar_resultados": {
+      "file_path": "scripts/varredura_motor.py",
+      "qualified_name": "scripts.varredura_motor._salvar_resultados",
+      "start_line": 214,
+      "end_line": 282,
+      "type": "FUNCTION",
+      "content_hash": "9df7c0cba72a4dac"
+    },
+    "scripts/varredura_motor.py|scripts.varredura_motor.imprimir_tabela": {
+      "file_path": "scripts/varredura_motor.py",
+      "qualified_name": "scripts.varredura_motor.imprimir_tabela",
+      "start_line": 285,
+      "end_line": 304,
+      "type": "FUNCTION",
+      "content_hash": "849b4615ae822ca6"
+    },
+    "scripts/varredura_motor.py|scripts.varredura_motor.main": {
+      "file_path": "scripts/varredura_motor.py",
+      "qualified_name": "scripts.varredura_motor.main",
+      "start_line": 307,
+      "end_line": 339,
+      "type": "FUNCTION",
+      "content_hash": "1f7fc082575ca39e"
+    },
+    "configs/foguetes/hefesto/motor_variacoes.py|configs.foguetes.hefesto.motor_variacoes.criar_variacao": {
+      "file_path": "configs/foguetes/hefesto/motor_variacoes.py",
+      "qualified_name": "configs.foguetes.hefesto.motor_variacoes.criar_variacao",
+      "start_line": 35,
+      "end_line": 47,
+      "type": "FUNCTION",
+      "content_hash": "f33bad427e734aaf"
+    },
+    "sitecustomize.py|sitecustomize._safe_use": {
+      "file_path": "sitecustomize.py",
+      "qualified_name": "sitecustomize._safe_use",
+      "start_line": 10,
+      "end_line": 13,
+      "type": "FUNCTION",
+      "content_hash": "ef47e42d26460c47"
+    },
+    "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_motor": {
+      "file_path": "centralControle/inspecionar.py",
+      "qualified_name": "centralControle.inspecionar.inspecionar_motor",
+      "start_line": 37,
+      "end_line": 38,
+      "type": "FUNCTION",
+      "content_hash": "235fbf0ff1024145"
+    },
+    "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_motor_variacoes": {
+      "file_path": "centralControle/inspecionar.py",
+      "qualified_name": "centralControle.inspecionar.inspecionar_motor_variacoes",
+      "start_line": 41,
+      "end_line": 42,
+      "type": "FUNCTION",
+      "content_hash": "61a8997209a1e376"
+    },
+    "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_estrutura": {
+      "file_path": "centralControle/inspecionar.py",
+      "qualified_name": "centralControle.inspecionar.inspecionar_estrutura",
+      "start_line": 45,
+      "end_line": 46,
+      "type": "FUNCTION",
+      "content_hash": "d481865ada668482"
+    },
+    "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_seguranca": {
+      "file_path": "centralControle/inspecionar.py",
+      "qualified_name": "centralControle.inspecionar.inspecionar_seguranca",
+      "start_line": 49,
+      "end_line": 50,
+      "type": "FUNCTION",
+      "content_hash": "aaf0071d875e29c7"
+    },
+    "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_voo": {
+      "file_path": "centralControle/inspecionar.py",
+      "qualified_name": "centralControle.inspecionar.inspecionar_voo",
+      "start_line": 53,
+      "end_line": 59,
+      "type": "FUNCTION",
+      "content_hash": "61a48ed0a7d20983"
+    },
+    "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_tudo": {
+      "file_path": "centralControle/inspecionar.py",
+      "qualified_name": "centralControle.inspecionar.inspecionar_tudo",
+      "start_line": 62,
+      "end_line": 68,
+      "type": "FUNCTION",
+      "content_hash": "492dd3a81bcb4385"
+    },
+    "centralControle/inspecionar.py|centralControle.inspecionar.main": {
+      "file_path": "centralControle/inspecionar.py",
+      "qualified_name": "centralControle.inspecionar.main",
+      "start_line": 81,
+      "end_line": 93,
+      "type": "FUNCTION",
+      "content_hash": "c7063a84ec8cf443"
+    },
+    "centralControle/rodar.py|centralControle.rodar.cmd_sim": {
+      "file_path": "centralControle/rodar.py",
+      "qualified_name": "centralControle.rodar.cmd_sim",
+      "start_line": 41,
+      "end_line": 77,
+      "type": "FUNCTION",
+      "content_hash": "d2241bba3998f448"
+    },
+    "centralControle/rodar.py|centralControle.rodar.cmd_fs": {
+      "file_path": "centralControle/rodar.py",
+      "qualified_name": "centralControle.rodar.cmd_fs",
+      "start_line": 80,
+      "end_line": 83,
+      "type": "FUNCTION",
+      "content_hash": "6e2e065b6a40685d"
+    },
+    "centralControle/rodar.py|centralControle.rodar.cmd_varrer": {
+      "file_path": "centralControle/rodar.py",
+      "qualified_name": "centralControle.rodar.cmd_varrer",
+      "start_line": 86,
+      "end_line": 89,
+      "type": "FUNCTION",
+      "content_hash": "26530c9e684740c2"
+    },
+    "centralControle/rodar.py|centralControle.rodar.cmd_dump": {
+      "file_path": "centralControle/rodar.py",
+      "qualified_name": "centralControle.rodar.cmd_dump",
+      "start_line": 92,
+      "end_line": 95,
+      "type": "FUNCTION",
+      "content_hash": "9a5aef6dd36d82f1"
+    },
+    "centralControle/rodar.py|centralControle.rodar.cmd_motor": {
+      "file_path": "centralControle/rodar.py",
+      "qualified_name": "centralControle.rodar.cmd_motor",
+      "start_line": 98,
+      "end_line": 101,
+      "type": "FUNCTION",
+      "content_hash": "865554ff15e5cd5b"
+    },
+    "centralControle/rodar.py|centralControle.rodar.cmd_estrutura": {
+      "file_path": "centralControle/rodar.py",
+      "qualified_name": "centralControle.rodar.cmd_estrutura",
+      "start_line": 104,
+      "end_line": 107,
+      "type": "FUNCTION",
+      "content_hash": "3f978e98fe52b76f"
+    },
+    "centralControle/rodar.py|centralControle.rodar.cmd_smoke": {
+      "file_path": "centralControle/rodar.py",
+      "qualified_name": "centralControle.rodar.cmd_smoke",
+      "start_line": 110,
+      "end_line": 113,
+      "type": "FUNCTION",
+      "content_hash": "fb95421b7635dd62"
+    },
+    "centralControle/rodar.py|centralControle.rodar.cmd_varrer_motor": {
+      "file_path": "centralControle/rodar.py",
+      "qualified_name": "centralControle.rodar.cmd_varrer_motor",
+      "start_line": 116,
+      "end_line": 130,
+      "type": "FUNCTION",
+      "content_hash": "a0e97b0494e5687d"
+    },
+    "centralControle/rodar.py|centralControle.rodar.cmd_analisar_motor": {
+      "file_path": "centralControle/rodar.py",
+      "qualified_name": "centralControle.rodar.cmd_analisar_motor",
+      "start_line": 133,
+      "end_line": 137,
+      "type": "FUNCTION",
+      "content_hash": "5d4be0490fdae05b"
+    },
+    "centralControle/rodar.py|centralControle.rodar.cmd_setup": {
+      "file_path": "centralControle/rodar.py",
+      "qualified_name": "centralControle.rodar.cmd_setup",
+      "start_line": 140,
+      "end_line": 181,
+      "type": "FUNCTION",
+      "content_hash": "81fea0d3afd2283b"
+    },
+    "centralControle/rodar.py|centralControle.rodar.cmd_c4": {
+      "file_path": "centralControle/rodar.py",
+      "qualified_name": "centralControle.rodar.cmd_c4",
+      "start_line": 184,
+      "end_line": 195,
+      "type": "FUNCTION",
+      "content_hash": "7bf64c82e5bbf457"
+    },
+    "centralControle/rodar.py|centralControle.rodar.cmd_guia_c4": {
+      "file_path": "centralControle/rodar.py",
+      "qualified_name": "centralControle.rodar.cmd_guia_c4",
+      "start_line": 198,
+      "end_line": 216,
+      "type": "FUNCTION",
+      "content_hash": "de6107458a46f5b9"
+    },
+    "centralControle/rodar.py|centralControle.rodar.main": {
+      "file_path": "centralControle/rodar.py",
+      "qualified_name": "centralControle.rodar.main",
+      "start_line": 219,
+      "end_line": 288,
+      "type": "FUNCTION",
+      "content_hash": "7f2c427a6a2c1f9b"
+    }
+  },
+  "components": [
+    {
+      "name": "Simulation and Modeling Domain Core",
+      "description": "Core flight simulation, rocket assembly, motor calculations, and telemetry/inspection domain logic.",
+      "key_entities": [
+        {
+          "qualified_name": "src.modelos.build_rocket",
+          "reference_file": "src/modelos.py",
+          "reference_start_line": 98,
+          "reference_end_line": 228
+        },
+        {
+          "qualified_name": "src.ambiente.build_irec",
+          "reference_file": "src/ambiente.py",
+          "reference_start_line": 23,
+          "reference_end_line": 36
+        },
+        {
+          "qualified_name": "src.inspecao.relatorio_estrutura",
+          "reference_file": "src/inspecao.py",
+          "reference_start_line": 170,
+          "reference_end_line": 272
+        },
+        {
+          "qualified_name": "src.calculos.motor.derivar_motor",
+          "reference_file": "src/calculos/motor.py",
+          "reference_start_line": 363,
+          "reference_end_line": 423
+        }
+      ],
+      "source_cluster_ids": [
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24"
+      ],
+      "file_methods": [
+        {
+          "file_path": "src/ambiente.py",
+          "methods": [
+            "src.ambiente.build_irec",
+            "src.ambiente.build_irec_ensemble"
+          ]
+        },
+        {
+          "file_path": "src/c4_gerador.py",
+          "methods": [
+            "src.c4_gerador.CampoInfo",
+            "src.c4_gerador.MetodoInfo",
+            "src.c4_gerador.ClasseInfo",
+            "src.c4_gerador.FuncaoInfo",
+            "src.c4_gerador.obter_binario_a2m",
+            "src.c4_gerador.os_is_executable",
+            "src.c4_gerador._limpar_tipo_mermaid",
+            "src.c4_gerador._resumo_doc",
+            "src.c4_gerador._formatar_args",
+            "src.c4_gerador._extrair_chamadas",
+            "src.c4_gerador._c4_filename",
+            "src.c4_gerador.construir_mapa_modulos_c4",
+            "src.c4_gerador.analisar_arquivo",
+            "src.c4_gerador._sub_c3_relacionado",
+            "src.c4_gerador.extrair_analise_impacto_a2m",
+            "src.c4_gerador.gerar_markdown_c4",
+            "src.c4_gerador.gerar_arquivo_c4",
+            "src.c4_gerador.gerar_todos",
+            "src.c4_gerador.main"
+          ]
+        },
+        {
+          "file_path": "src/calculos/aletas.py",
+          "methods": [
+            "src.calculos.aletas.AletaDerivada",
+            "src.calculos.aletas._poligono_propriedades",
+            "src.calculos.aletas.calcular_aleta"
+          ]
+        },
+        {
+          "file_path": "src/calculos/aletas_rasaero.py",
+          "methods": [
+            "src.calculos.aletas_rasaero.AletaRASAero",
+            "src.calculos.aletas_rasaero.AletaRASAero.imprimir",
+            "src.calculos.aletas_rasaero.aleta_para_rasaero"
+          ]
+        },
+        {
+          "file_path": "src/calculos/coifa.py",
+          "methods": [
+            "src.calculos.coifa._perfil_conico",
+            "src.calculos.coifa._perfil_lvhaack",
+            "src.calculos.coifa._perfil_ogive",
+            "src.calculos.coifa.perfil",
+            "src.calculos.coifa._derivada_perfil",
+            "src.calculos.coifa.CoifaDerivada",
+            "src.calculos.coifa.calcular_coifa"
+          ]
+        },
+        {
+          "file_path": "src/calculos/componentes.py",
+          "methods": [
+            "src.calculos.componentes.ComponenteDerivado",
+            "src.calculos.componentes.derivar_tubo",
+            "src.calculos.componentes.derivar_massa_pontual",
+            "src.calculos.componentes.derivar",
+            "src.calculos.componentes.derivar_todos"
+          ]
+        },
+        {
+          "file_path": "src/calculos/motor.py",
+          "methods": [
+            "src.calculos.motor._ler_eng",
+            "src.calculos.motor._integrar_trapezio",
+            "src.calculos.motor.MotorDerivado",
+            "src.calculos.motor.MotorDerivado.inercia_transversal",
+            "src.calculos.motor.MotorDerivado.inercia_longitudinal",
+            "src.calculos.motor.MotorDerivado.to_dict",
+            "src.calculos.motor._resolver_fonte_e_geometria",
+            "src.calculos.motor._derivar_dos_graos",
+            "src.calculos.motor._derivar_carcaca",
+            "src.calculos.motor._derivar_inercia_seca",
+            "src.calculos.motor._diagnosticar",
+            "src.calculos.motor.derivar_motor"
+          ]
+        },
+        {
+          "file_path": "src/calculos/motorlib_variacoes.py",
+          "methods": [
+            "src.calculos.motorlib_variacoes._normalizar_path",
+            "src.calculos.motorlib_variacoes.validar_overrides",
+            "src.calculos.motorlib_variacoes._set_path",
+            "src.calculos.motorlib_variacoes._tem_indice_especifico",
+            "src.calculos.motorlib_variacoes.aplicar_overrides",
+            "src.calculos.motorlib_variacoes.simular_variacao"
+          ]
+        },
+        {
+          "file_path": "src/calculos/motorlib_wrapper.py",
+          "methods": [
+            "src.calculos.motorlib_wrapper._safe_use",
+            "src.calculos.motorlib_wrapper._as_1d",
+            "src.calculos.motorlib_wrapper._as_2d",
+            "src.calculos.motorlib_wrapper._pico_2d",
+            "src.calculos.motorlib_wrapper._integrar_trapezio",
+            "src.calculos.motorlib_wrapper.MotorResultado",
+            "src.calculos.motorlib_wrapper.MotorResultado.curva_empuxo",
+            "src.calculos.motorlib_wrapper.MotorResultado.resumo",
+            "src.calculos.motorlib_wrapper.carregar_props",
+            "src.calculos.motorlib_wrapper.extrair_geometria_props",
+            "src.calculos.motorlib_wrapper.simular_props",
+            "src.calculos.motorlib_wrapper.simular_ric"
+          ]
+        },
+        {
+          "file_path": "src/calculos/seguranca.py",
+          "methods": [
+            "src.calculos.seguranca.DiagnosticoFS",
+            "src.calculos.seguranca.DiagnosticoFS.linha",
+            "src.calculos.seguranca.fs_carcaca",
+            "src.calculos.seguranca.check_p0",
+            "src.calculos.seguranca.check_kn",
+            "src.calculos.seguranca.check_mass_flux"
+          ]
+        },
+        {
+          "file_path": "src/inspecao.py",
+          "methods": [
+            "src.inspecao._titulo",
+            "src.inspecao._sub",
+            "src.inspecao._linha",
+            "src.inspecao._fmt",
+            "src.inspecao.relatorio_motor",
+            "src.inspecao.relatorio_motor_variacoes",
+            "src.inspecao.relatorio_estrutura",
+            "src.inspecao.relatorio_seguranca",
+            "src.inspecao.relatorio_voo"
+          ]
+        },
+        {
+          "file_path": "src/modelo.py",
+          "methods": [
+            "src.modelo.FogueteResolvido",
+            "src.modelo.FogueteResolvido.massa_seca",
+            "src.modelo.FogueteResolvido.cg_sem_motor",
+            "src.modelo.FogueteResolvido.inercia_longitudinal",
+            "src.modelo.FogueteResolvido.inercia_transversal",
+            "src.modelo.FogueteResolvido.inercia_rocketpy",
+            "src.modelo.FogueteResolvido.dict_rocket",
+            "src.modelo.FogueteResolvido.dict_coifa",
+            "src.modelo.FogueteResolvido.shape_points",
+            "src.modelo.resolver"
+          ]
+        },
+        {
+          "file_path": "src/modelos.py",
+          "methods": [
+            "src.modelos.FogueteMontado",
+            "src.modelos._motor_kwargs",
+            "src.modelos.build_motor",
+            "src.modelos.build_rocket"
+          ]
+        },
+        {
+          "file_path": "src/smoke.py",
+          "methods": [
+            "src.smoke.main"
+          ]
+        },
+        {
+          "file_path": "src/specs.py",
+          "methods": [
+            "src.specs.LimitesSeguranca",
+            "src.specs.LimitesSeguranca.__post_init__",
+            "src.specs.GrainSpec",
+            "src.specs.GrainSpec.__post_init__",
+            "src.specs.GrainSpec.to_dict",
+            "src.specs.MotorSpec",
+            "src.specs.MotorSpec.__post_init__",
+            "src.specs.MotorSpec.resumo",
+            "src.specs.MotorSpec.to_dict",
+            "src.specs.TuboSpec",
+            "src.specs.TuboSpec.__post_init__",
+            "src.specs.TuboSpec.raio_interno",
+            "src.specs.MassaPontualSpec",
+            "src.specs.MassaPontualSpec.__post_init__",
+            "src.specs.AletaSpec",
+            "src.specs.AletaSpec.__post_init__",
+            "src.specs.CoifaSpec",
+            "src.specs.CoifaSpec.__post_init__",
+            "src.specs.GeometriaMedidaSpec",
+            "src.specs.GeometriaMedidaSpec.__post_init__",
+            "src.specs.GeometriaMedidaSpec.inercia_rocketpy",
+            "src.specs.GeometriaMedidaSpec.dict_rocket",
+            "src.specs.GeometriaMedidaSpec.dict_coifa",
+            "src.specs.GeometriaMedidaSpec.dict_aletas_freeform",
+            "src.specs.FogueteSpec",
+            "src.specs.FogueteSpec.__post_init__"
+          ]
+        },
+        {
+          "file_path": "src/viz.py",
+          "methods": [
+            "src.viz._set_backend"
+          ]
+        }
+      ],
+      "component_id": "1",
+      "can_expand": true,
+      "components": [
+        {
+          "name": "Rocket Specifications and Motor Modeling",
+          "description": "Defines domain specifications, evaluates safety criteria, models motor dynamics, and aggregates rocket mass and inertia properties into a resolved model.",
+          "key_entities": [
+            {
+              "qualified_name": "src.modelo.resolver",
+              "reference_file": "src/modelo.py",
+              "reference_start_line": 105,
+              "reference_end_line": 122
+            },
+            {
+              "qualified_name": "src.modelo.FogueteResolvido",
+              "reference_file": "src/modelo.py",
+              "reference_start_line": 21,
+              "reference_end_line": 102
+            },
+            {
+              "qualified_name": "src.specs.MotorSpec",
+              "reference_file": "src/specs.py",
+              "reference_start_line": 83,
+              "reference_end_line": 210
+            },
+            {
+              "qualified_name": "src.specs.TuboSpec",
+              "reference_file": "src/specs.py",
+              "reference_start_line": 217,
+              "reference_end_line": 242
+            },
+            {
+              "qualified_name": "src.specs.LimitesSeguranca",
+              "reference_file": "src/specs.py",
+              "reference_start_line": 24,
+              "reference_end_line": 50
+            }
+          ],
+          "source_cluster_ids": [
+            "1.6",
+            "1.7",
+            "1.8",
+            "1.9",
+            "1.10",
+            "1.11",
+            "1.12",
+            "1.14"
+          ],
+          "file_methods": [
+            {
+              "file_path": "src/calculos/motor.py",
+              "methods": [
+                "src.calculos.motor._ler_eng",
+                "src.calculos.motor._integrar_trapezio",
+                "src.calculos.motor.MotorDerivado",
+                "src.calculos.motor.MotorDerivado.inercia_transversal",
+                "src.calculos.motor.MotorDerivado.inercia_longitudinal",
+                "src.calculos.motor.MotorDerivado.to_dict",
+                "src.calculos.motor._resolver_fonte_e_geometria",
+                "src.calculos.motor._derivar_dos_graos",
+                "src.calculos.motor._derivar_carcaca",
+                "src.calculos.motor._derivar_inercia_seca",
+                "src.calculos.motor._diagnosticar",
+                "src.calculos.motor.derivar_motor"
+              ]
+            },
+            {
+              "file_path": "src/calculos/motorlib_variacoes.py",
+              "methods": [
+                "src.calculos.motorlib_variacoes._normalizar_path",
+                "src.calculos.motorlib_variacoes.validar_overrides",
+                "src.calculos.motorlib_variacoes._set_path",
+                "src.calculos.motorlib_variacoes._tem_indice_especifico",
+                "src.calculos.motorlib_variacoes.aplicar_overrides",
+                "src.calculos.motorlib_variacoes.simular_variacao"
+              ]
+            },
+            {
+              "file_path": "src/calculos/motorlib_wrapper.py",
+              "methods": [
+                "src.calculos.motorlib_wrapper._safe_use",
+                "src.calculos.motorlib_wrapper._as_1d",
+                "src.calculos.motorlib_wrapper._as_2d",
+                "src.calculos.motorlib_wrapper._pico_2d",
+                "src.calculos.motorlib_wrapper._integrar_trapezio",
+                "src.calculos.motorlib_wrapper.MotorResultado",
+                "src.calculos.motorlib_wrapper.MotorResultado.curva_empuxo",
+                "src.calculos.motorlib_wrapper.MotorResultado.resumo",
+                "src.calculos.motorlib_wrapper.carregar_props",
+                "src.calculos.motorlib_wrapper.extrair_geometria_props",
+                "src.calculos.motorlib_wrapper.simular_props",
+                "src.calculos.motorlib_wrapper.simular_ric"
+              ]
+            },
+            {
+              "file_path": "src/calculos/seguranca.py",
+              "methods": [
+                "src.calculos.seguranca.DiagnosticoFS",
+                "src.calculos.seguranca.DiagnosticoFS.linha",
+                "src.calculos.seguranca.fs_carcaca",
+                "src.calculos.seguranca.check_p0",
+                "src.calculos.seguranca.check_kn",
+                "src.calculos.seguranca.check_mass_flux"
+              ]
+            },
+            {
+              "file_path": "src/inspecao.py",
+              "methods": [
+                "src.inspecao._titulo",
+                "src.inspecao._sub",
+                "src.inspecao._linha",
+                "src.inspecao._fmt",
+                "src.inspecao.relatorio_motor",
+                "src.inspecao.relatorio_motor_variacoes",
+                "src.inspecao.relatorio_estrutura",
+                "src.inspecao.relatorio_seguranca",
+                "src.inspecao.relatorio_voo"
+              ]
+            },
+            {
+              "file_path": "src/modelo.py",
+              "methods": [
+                "src.modelo.FogueteResolvido",
+                "src.modelo.FogueteResolvido.massa_seca",
+                "src.modelo.FogueteResolvido.cg_sem_motor",
+                "src.modelo.FogueteResolvido.inercia_longitudinal",
+                "src.modelo.FogueteResolvido.inercia_transversal",
+                "src.modelo.FogueteResolvido.inercia_rocketpy",
+                "src.modelo.FogueteResolvido.dict_rocket",
+                "src.modelo.FogueteResolvido.dict_coifa",
+                "src.modelo.FogueteResolvido.shape_points",
+                "src.modelo.resolver"
+              ]
+            },
+            {
+              "file_path": "src/modelos.py",
+              "methods": [
+                "src.modelos.FogueteMontado",
+                "src.modelos._motor_kwargs",
+                "src.modelos.build_motor",
+                "src.modelos.build_rocket"
+              ]
+            },
+            {
+              "file_path": "src/specs.py",
+              "methods": [
+                "src.specs.LimitesSeguranca",
+                "src.specs.LimitesSeguranca.__post_init__",
+                "src.specs.GrainSpec",
+                "src.specs.GrainSpec.__post_init__",
+                "src.specs.GrainSpec.to_dict",
+                "src.specs.MotorSpec",
+                "src.specs.MotorSpec.__post_init__",
+                "src.specs.MotorSpec.resumo",
+                "src.specs.MotorSpec.to_dict",
+                "src.specs.TuboSpec",
+                "src.specs.TuboSpec.__post_init__",
+                "src.specs.TuboSpec.raio_interno",
+                "src.specs.MassaPontualSpec",
+                "src.specs.MassaPontualSpec.__post_init__",
+                "src.specs.AletaSpec",
+                "src.specs.AletaSpec.__post_init__",
+                "src.specs.CoifaSpec",
+                "src.specs.CoifaSpec.__post_init__",
+                "src.specs.GeometriaMedidaSpec",
+                "src.specs.GeometriaMedidaSpec.__post_init__",
+                "src.specs.GeometriaMedidaSpec.inercia_rocketpy",
+                "src.specs.GeometriaMedidaSpec.dict_rocket",
+                "src.specs.GeometriaMedidaSpec.dict_coifa",
+                "src.specs.GeometriaMedidaSpec.dict_aletas_freeform",
+                "src.specs.FogueteSpec",
+                "src.specs.FogueteSpec.__post_init__"
+              ]
+            }
+          ],
+          "component_id": "1.1",
+          "can_expand": true,
+          "components": [
+            {
+              "name": "Motor Derivation and Structural Inspection",
+              "description": "Calculates motor ballistic properties, structural dry mass, safety margins, and structural inspection reports.",
+              "key_entities": [
+                {
+                  "qualified_name": "src.calculos.motor.MotorDerivado",
+                  "reference_file": "src/calculos/motor.py",
+                  "reference_start_line": 103,
+                  "reference_end_line": 198
+                },
+                {
+                  "qualified_name": "src.calculos.motor.derivar_motor",
+                  "reference_file": "src/calculos/motor.py",
+                  "reference_start_line": 363,
+                  "reference_end_line": 423
+                },
+                {
+                  "qualified_name": "src.inspecao.relatorio_estrutura",
+                  "reference_file": "src/inspecao.py",
+                  "reference_start_line": 170,
+                  "reference_end_line": 272
+                },
+                {
+                  "qualified_name": "src.inspecao.relatorio_motor",
+                  "reference_file": "src/inspecao.py",
+                  "reference_start_line": 45,
+                  "reference_end_line": 112
+                }
+              ],
+              "source_cluster_ids": [
+                "1.1.0",
+                "1.1.3",
+                "1.1.4"
+              ],
+              "file_methods": [
+                {
+                  "file_path": "src/calculos/motor.py",
+                  "methods": [
+                    "src.calculos.motor._ler_eng",
+                    "src.calculos.motor._integrar_trapezio",
+                    "src.calculos.motor.MotorDerivado",
+                    "src.calculos.motor.MotorDerivado.inercia_transversal",
+                    "src.calculos.motor.MotorDerivado.inercia_longitudinal",
+                    "src.calculos.motor.MotorDerivado.to_dict",
+                    "src.calculos.motor._resolver_fonte_e_geometria",
+                    "src.calculos.motor._derivar_dos_graos",
+                    "src.calculos.motor._derivar_carcaca",
+                    "src.calculos.motor._derivar_inercia_seca",
+                    "src.calculos.motor._diagnosticar",
+                    "src.calculos.motor.derivar_motor"
+                  ]
+                },
+                {
+                  "file_path": "src/calculos/seguranca.py",
+                  "methods": [
+                    "src.calculos.seguranca.DiagnosticoFS",
+                    "src.calculos.seguranca.DiagnosticoFS.linha",
+                    "src.calculos.seguranca.fs_carcaca",
+                    "src.calculos.seguranca.check_p0",
+                    "src.calculos.seguranca.check_kn",
+                    "src.calculos.seguranca.check_mass_flux"
+                  ]
+                },
+                {
+                  "file_path": "src/inspecao.py",
+                  "methods": [
+                    "src.inspecao._titulo",
+                    "src.inspecao._sub",
+                    "src.inspecao._linha",
+                    "src.inspecao._fmt",
+                    "src.inspecao.relatorio_motor",
+                    "src.inspecao.relatorio_motor_variacoes",
+                    "src.inspecao.relatorio_estrutura",
+                    "src.inspecao.relatorio_seguranca",
+                    "src.inspecao.relatorio_voo"
+                  ]
+                }
+              ],
+              "component_id": "1.1.1",
+              "can_expand": false,
+              "components": [],
+              "components_relations": []
+            },
+            {
+              "name": "RocketPy Assembly and Resolution",
+              "description": "Aggregates mass and inertia properties into analytical models and constructs RocketPy rocket and motor instances.",
+              "key_entities": [
+                {
+                  "qualified_name": "src.modelo.FogueteResolvido",
+                  "reference_file": "src/modelo.py",
+                  "reference_start_line": 21,
+                  "reference_end_line": 102
+                },
+                {
+                  "qualified_name": "src.modelo.resolver",
+                  "reference_file": "src/modelo.py",
+                  "reference_start_line": 105,
+                  "reference_end_line": 122
+                },
+                {
+                  "qualified_name": "src.modelos.FogueteMontado",
+                  "reference_file": "src/modelos.py",
+                  "reference_start_line": 35,
+                  "reference_end_line": 45
+                },
+                {
+                  "qualified_name": "src.modelos.build_motor",
+                  "reference_file": "src/modelos.py",
+                  "reference_start_line": 81,
+                  "reference_end_line": 95
+                },
+                {
+                  "qualified_name": "src.modelos.build_rocket",
+                  "reference_file": "src/modelos.py",
+                  "reference_start_line": 98,
+                  "reference_end_line": 228
+                }
+              ],
+              "source_cluster_ids": [
+                "1.1.5",
+                "1.1.6"
+              ],
+              "file_methods": [
+                {
+                  "file_path": "src/modelo.py",
+                  "methods": [
+                    "src.modelo.FogueteResolvido",
+                    "src.modelo.FogueteResolvido.massa_seca",
+                    "src.modelo.FogueteResolvido.cg_sem_motor",
+                    "src.modelo.FogueteResolvido.inercia_longitudinal",
+                    "src.modelo.FogueteResolvido.inercia_transversal",
+                    "src.modelo.FogueteResolvido.inercia_rocketpy",
+                    "src.modelo.FogueteResolvido.dict_rocket",
+                    "src.modelo.FogueteResolvido.dict_coifa",
+                    "src.modelo.FogueteResolvido.shape_points",
+                    "src.modelo.resolver"
+                  ]
+                },
+                {
+                  "file_path": "src/modelos.py",
+                  "methods": [
+                    "src.modelos.FogueteMontado",
+                    "src.modelos._motor_kwargs",
+                    "src.modelos.build_motor",
+                    "src.modelos.build_rocket"
+                  ]
+                }
+              ],
+              "component_id": "1.1.2",
+              "can_expand": false,
+              "components": [],
+              "components_relations": []
+            },
+            {
+              "name": "OpenMotor Ballistic Simulation Adapter",
+              "description": "Adapts OpenMotor simulation runs, reads .ric configuration properties, and applies simulation parameter overrides.",
+              "key_entities": [
+                {
+                  "qualified_name": "src.calculos.motorlib_variacoes.aplicar_overrides",
+                  "reference_file": "src/calculos/motorlib_variacoes.py",
+                  "reference_start_line": 107,
+                  "reference_end_line": 119
+                },
+                {
+                  "qualified_name": "src.calculos.motorlib_wrapper.MotorResultado",
+                  "reference_file": "src/calculos/motorlib_wrapper.py",
+                  "reference_start_line": 79,
+                  "reference_end_line": 136
+                },
+                {
+                  "qualified_name": "src.calculos.motorlib_wrapper.carregar_props",
+                  "reference_file": "src/calculos/motorlib_wrapper.py",
+                  "reference_start_line": 142,
+                  "reference_end_line": 147
+                },
+                {
+                  "qualified_name": "src.calculos.motorlib_wrapper.extrair_geometria_props",
+                  "reference_file": "src/calculos/motorlib_wrapper.py",
+                  "reference_start_line": 150,
+                  "reference_end_line": 195
+                },
+                {
+                  "qualified_name": "src.calculos.motorlib_wrapper.simular_props",
+                  "reference_file": "src/calculos/motorlib_wrapper.py",
+                  "reference_start_line": 198,
+                  "reference_end_line": 277
+                }
+              ],
+              "source_cluster_ids": [
+                "1.1.1",
+                "1.1.2"
+              ],
+              "file_methods": [
+                {
+                  "file_path": "src/calculos/motorlib_variacoes.py",
+                  "methods": [
+                    "src.calculos.motorlib_variacoes._normalizar_path",
+                    "src.calculos.motorlib_variacoes.validar_overrides",
+                    "src.calculos.motorlib_variacoes._set_path",
+                    "src.calculos.motorlib_variacoes._tem_indice_especifico",
+                    "src.calculos.motorlib_variacoes.aplicar_overrides",
+                    "src.calculos.motorlib_variacoes.simular_variacao"
+                  ]
+                },
+                {
+                  "file_path": "src/calculos/motorlib_wrapper.py",
+                  "methods": [
+                    "src.calculos.motorlib_wrapper._safe_use",
+                    "src.calculos.motorlib_wrapper._as_1d",
+                    "src.calculos.motorlib_wrapper._as_2d",
+                    "src.calculos.motorlib_wrapper._pico_2d",
+                    "src.calculos.motorlib_wrapper._integrar_trapezio",
+                    "src.calculos.motorlib_wrapper.MotorResultado",
+                    "src.calculos.motorlib_wrapper.MotorResultado.curva_empuxo",
+                    "src.calculos.motorlib_wrapper.MotorResultado.resumo",
+                    "src.calculos.motorlib_wrapper.carregar_props",
+                    "src.calculos.motorlib_wrapper.extrair_geometria_props",
+                    "src.calculos.motorlib_wrapper.simular_props",
+                    "src.calculos.motorlib_wrapper.simular_ric"
+                  ]
+                }
+              ],
+              "component_id": "1.1.3",
+              "can_expand": false,
+              "components": [],
+              "components_relations": []
+            },
+            {
+              "name": "Rocket Specification Schemas",
+              "description": "Defines domain dataclasses, geometry specifications, safety limits, and serialization schemas for rocket components.",
+              "key_entities": [
+                {
+                  "qualified_name": "src.specs.GrainSpec",
+                  "reference_file": "src/specs.py",
+                  "reference_start_line": 57,
+                  "reference_end_line": 79
+                },
+                {
+                  "qualified_name": "src.specs.LimitesSeguranca",
+                  "reference_file": "src/specs.py",
+                  "reference_start_line": 24,
+                  "reference_end_line": 50
+                },
+                {
+                  "qualified_name": "src.specs.MotorSpec",
+                  "reference_file": "src/specs.py",
+                  "reference_start_line": 83,
+                  "reference_end_line": 210
+                },
+                {
+                  "qualified_name": "src.specs.TuboSpec",
+                  "reference_file": "src/specs.py",
+                  "reference_start_line": 217,
+                  "reference_end_line": 242
+                },
+                {
+                  "qualified_name": "src.specs.GeometriaMedidaSpec",
+                  "reference_file": "src/specs.py",
+                  "reference_start_line": 331,
+                  "reference_end_line": 392
+                }
+              ],
+              "source_cluster_ids": [
+                "1.1.7"
+              ],
+              "file_methods": [
+                {
+                  "file_path": "src/specs.py",
+                  "methods": [
+                    "src.specs.LimitesSeguranca",
+                    "src.specs.LimitesSeguranca.__post_init__",
+                    "src.specs.GrainSpec",
+                    "src.specs.GrainSpec.__post_init__",
+                    "src.specs.GrainSpec.to_dict",
+                    "src.specs.MotorSpec",
+                    "src.specs.MotorSpec.__post_init__",
+                    "src.specs.MotorSpec.resumo",
+                    "src.specs.MotorSpec.to_dict",
+                    "src.specs.TuboSpec",
+                    "src.specs.TuboSpec.__post_init__",
+                    "src.specs.TuboSpec.raio_interno",
+                    "src.specs.MassaPontualSpec",
+                    "src.specs.MassaPontualSpec.__post_init__",
+                    "src.specs.AletaSpec",
+                    "src.specs.AletaSpec.__post_init__",
+                    "src.specs.CoifaSpec",
+                    "src.specs.CoifaSpec.__post_init__",
+                    "src.specs.GeometriaMedidaSpec",
+                    "src.specs.GeometriaMedidaSpec.__post_init__",
+                    "src.specs.GeometriaMedidaSpec.inercia_rocketpy",
+                    "src.specs.GeometriaMedidaSpec.dict_rocket",
+                    "src.specs.GeometriaMedidaSpec.dict_coifa",
+                    "src.specs.GeometriaMedidaSpec.dict_aletas_freeform",
+                    "src.specs.FogueteSpec",
+                    "src.specs.FogueteSpec.__post_init__"
+                  ]
+                }
+              ],
+              "component_id": "1.1.4",
+              "can_expand": false,
+              "components": [],
+              "components_relations": []
+            }
+          ],
+          "components_relations": [
+            {
+              "relation": "inspects structural properties of",
+              "src_name": "Motor Derivation and Structural Inspection",
+              "dst_name": "RocketPy Assembly and Resolution",
+              "evidence": "",
+              "key_edges": [
+                {
+                  "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+                  "target": "src/modelo.py|src.modelo.FogueteResolvido",
+                  "call_sites": [
+                    {
+                      "line": 183,
+                      "column": 37
+                    },
+                    {
+                      "line": 184,
+                      "column": 39
+                    },
+                    {
+                      "line": 185,
+                      "column": 50
+                    },
+                    {
+                      "line": 186,
+                      "column": 38
+                    }
+                  ],
+                  "description": "Inspects resolved rocket structural properties including center of gravity and moments of inertia."
+                }
+              ],
+              "src_id": "1.1.1",
+              "dst_id": "1.1.2",
+              "is_static": true,
+              "all_edges": [
+                {
+                  "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+                  "target": "src/modelo.py|src.modelo.FogueteResolvido",
+                  "call_sites": [
+                    {
+                      "line": 183,
+                      "column": 37
+                    },
+                    {
+                      "line": 184,
+                      "column": 39
+                    },
+                    {
+                      "line": 185,
+                      "column": 50
+                    },
+                    {
+                      "line": 186,
+                      "column": 38
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+                  "target": "src/modelo.py|src.modelo.FogueteResolvido.cg_sem_motor",
+                  "call_sites": [
+                    {
+                      "line": 184,
+                      "column": 39
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+                  "target": "src/modelo.py|src.modelo.FogueteResolvido.inercia_longitudinal",
+                  "call_sites": [
+                    {
+                      "line": 186,
+                      "column": 38
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+                  "target": "src/modelo.py|src.modelo.FogueteResolvido.inercia_transversal",
+                  "call_sites": [
+                    {
+                      "line": 185,
+                      "column": 50
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+                  "target": "src/modelo.py|src.modelo.FogueteResolvido.massa_seca",
+                  "call_sites": [
+                    {
+                      "line": 183,
+                      "column": 37
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+                  "target": "src/modelo.py|src.modelo.resolver",
+                  "call_sites": [
+                    {
+                      "line": 176,
+                      "column": 13
+                    }
+                  ],
+                  "description": ""
+                }
+              ]
+            },
+            {
+              "relation": "delegates internal ballistic simulation to",
+              "src_name": "Motor Derivation and Structural Inspection",
+              "dst_name": "OpenMotor Ballistic Simulation Adapter",
+              "evidence": "",
+              "key_edges": [
+                {
+                  "source": "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria",
+                  "target": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.simular_props",
+                  "call_sites": [
+                    {
+                      "line": 212,
+                      "column": 13
+                    }
+                  ],
+                  "description": "Applies parameter overrides and runs OpenMotor simulation to obtain thrust curves and internal ballistics."
+                }
+              ],
+              "src_id": "1.1.1",
+              "dst_id": "1.1.3",
+              "is_static": true,
+              "all_edges": [
+                {
+                  "source": "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria",
+                  "target": "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes.aplicar_overrides",
+                  "call_sites": [
+                    {
+                      "line": 209,
+                      "column": 21
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria",
+                  "target": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.MotorResultado",
+                  "call_sites": [
+                    {
+                      "line": 227,
+                      "column": 37
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria",
+                  "target": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.MotorResultado.curva_empuxo",
+                  "call_sites": [
+                    {
+                      "line": 227,
+                      "column": 37
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria",
+                  "target": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.carregar_props",
+                  "call_sites": [
+                    {
+                      "line": 207,
+                      "column": 17
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria",
+                  "target": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.extrair_geometria_props",
+                  "call_sites": [
+                    {
+                      "line": 211,
+                      "column": 57
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria",
+                  "target": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.simular_props",
+                  "call_sites": [
+                    {
+                      "line": 212,
+                      "column": 13
+                    }
+                  ],
+                  "description": ""
+                }
+              ]
+            },
+            {
+              "relation": "derives properties from specs in",
+              "src_name": "Motor Derivation and Structural Inspection",
+              "dst_name": "Rocket Specification Schemas",
+              "evidence": "",
+              "key_edges": [
+                {
+                  "source": "src/calculos/motor.py|src.calculos.motor.MotorDerivado.to_dict",
+                  "target": "src/specs.py|src.specs.GrainSpec",
+                  "call_sites": [
+                    {
+                      "line": 171,
+                      "column": 26
+                    }
+                  ],
+                  "description": "Extracts grain geometry and component specifications during motor derivation and inspection."
+                }
+              ],
+              "src_id": "1.1.1",
+              "dst_id": "1.1.4",
+              "is_static": true,
+              "all_edges": [
+                {
+                  "source": "src/calculos/motor.py|src.calculos.motor.MotorDerivado.to_dict",
+                  "target": "src/specs.py|src.specs.GrainSpec",
+                  "call_sites": [
+                    {
+                      "line": 171,
+                      "column": 26
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/calculos/motor.py|src.calculos.motor.MotorDerivado.to_dict",
+                  "target": "src/specs.py|src.specs.GrainSpec.to_dict",
+                  "call_sites": [
+                    {
+                      "line": 171,
+                      "column": 26
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+                  "target": "src/specs.py|src.specs.TuboSpec",
+                  "call_sites": [
+                    {
+                      "line": 223,
+                      "column": 33
+                    },
+                    {
+                      "line": 225,
+                      "column": 27
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+                  "target": "src/specs.py|src.specs.TuboSpec.raio_interno",
+                  "call_sites": [
+                    {
+                      "line": 225,
+                      "column": 27
+                    }
+                  ],
+                  "description": ""
+                }
+              ]
+            },
+            {
+              "relation": "derives motor ballistics using",
+              "src_name": "RocketPy Assembly and Resolution",
+              "dst_name": "Motor Derivation and Structural Inspection",
+              "evidence": "",
+              "key_edges": [
+                {
+                  "source": "src/modelos.py|src.modelos.build_motor",
+                  "target": "src/calculos/motor.py|src.calculos.motor.derivar_motor",
+                  "call_sites": [
+                    {
+                      "line": 88,
+                      "column": 9
+                    }
+                  ],
+                  "description": "Derives motor properties and internal ballistics before assembling RocketPy SolidMotor instances."
+                }
+              ],
+              "src_id": "1.1.2",
+              "dst_id": "1.1.1",
+              "is_static": true,
+              "all_edges": [
+                {
+                  "source": "src/modelos.py|src.modelos.build_motor",
+                  "target": "src/calculos/motor.py|src.calculos.motor.derivar_motor",
+                  "call_sites": [
+                    {
+                      "line": 88,
+                      "column": 9
+                    }
+                  ],
+                  "description": ""
+                }
+              ]
+            },
+            {
+              "relation": "configures rocket models from specs in",
+              "src_name": "RocketPy Assembly and Resolution",
+              "dst_name": "Rocket Specification Schemas",
+              "evidence": "",
+              "key_edges": [
+                {
+                  "source": "src/modelos.py|src.modelos.build_rocket",
+                  "target": "src/specs.py|src.specs.GeometriaMedidaSpec",
+                  "call_sites": [
+                    {
+                      "line": 165,
+                      "column": 34
+                    },
+                    {
+                      "line": 169,
+                      "column": 28
+                    },
+                    {
+                      "line": 191,
+                      "column": 50
+                    }
+                  ],
+                  "description": "Extracts aerodynamic geometry and measured parameters to configure RocketPy rocket models."
+                }
+              ],
+              "src_id": "1.1.2",
+              "dst_id": "1.1.4",
+              "is_static": true,
+              "all_edges": [
+                {
+                  "source": "src/modelos.py|src.modelos.build_rocket",
+                  "target": "src/specs.py|src.specs.GeometriaMedidaSpec",
+                  "call_sites": [
+                    {
+                      "line": 165,
+                      "column": 34
+                    },
+                    {
+                      "line": 169,
+                      "column": 28
+                    },
+                    {
+                      "line": 191,
+                      "column": 50
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/modelos.py|src.modelos.build_rocket",
+                  "target": "src/specs.py|src.specs.GeometriaMedidaSpec.dict_aletas_freeform",
+                  "call_sites": [
+                    {
+                      "line": 191,
+                      "column": 50
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/modelos.py|src.modelos.build_rocket",
+                  "target": "src/specs.py|src.specs.GeometriaMedidaSpec.dict_coifa",
+                  "call_sites": [
+                    {
+                      "line": 169,
+                      "column": 28
+                    }
+                  ],
+                  "description": ""
+                },
+                {
+                  "source": "src/modelos.py|src.modelos.build_rocket",
+                  "target": "src/specs.py|src.specs.GeometriaMedidaSpec.dict_rocket",
+                  "call_sites": [
+                    {
+                      "line": 165,
+                      "column": 34
+                    }
+                  ],
+                  "description": ""
+                }
+              ]
+            },
+            {
+              "relation": "constructs grain instances defined by",
+              "src_name": "OpenMotor Ballistic Simulation Adapter",
+              "dst_name": "Rocket Specification Schemas",
+              "evidence": "",
+              "key_edges": [
+                {
+                  "source": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.extrair_geometria_props",
+                  "target": "src/specs.py|src.specs.GrainSpec",
+                  "call_sites": [
+                    {
+                      "line": 176,
+                      "column": 13
+                    }
+                  ],
+                  "description": "Constructs grain specification objects from extracted OpenMotor motor properties."
+                }
+              ],
+              "src_id": "1.1.3",
+              "dst_id": "1.1.4",
+              "is_static": true,
+              "all_edges": [
+                {
+                  "source": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.extrair_geometria_props",
+                  "target": "src/specs.py|src.specs.GrainSpec",
+                  "call_sites": [
+                    {
+                      "line": 176,
+                      "column": 13
+                    }
+                  ],
+                  "description": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Component and Nose Cone Analysis",
+          "description": "Calculates mass and inertia for structural components and nose cones while providing environment configurations and visualization utilities.",
+          "key_entities": [
+            {
+              "qualified_name": "src.calculos.componentes.derivar_todos",
+              "reference_file": "src/calculos/componentes.py",
+              "reference_start_line": 70,
+              "reference_end_line": 73
+            },
+            {
+              "qualified_name": "src.calculos.componentes.derivar",
+              "reference_file": "src/calculos/componentes.py",
+              "reference_start_line": 62,
+              "reference_end_line": 67
+            },
+            {
+              "qualified_name": "src.calculos.componentes.ComponenteDerivado",
+              "reference_file": "src/calculos/componentes.py",
+              "reference_start_line": 17,
+              "reference_end_line": 22
+            },
+            {
+              "qualified_name": "src.calculos.coifa.calcular_coifa",
+              "reference_file": "src/calculos/coifa.py",
+              "reference_start_line": 63,
+              "reference_end_line": 116
+            },
+            {
+              "qualified_name": "src.calculos.coifa.CoifaDerivada",
+              "reference_file": "src/calculos/coifa.py",
+              "reference_start_line": 55,
+              "reference_end_line": 60
+            }
+          ],
+          "source_cluster_ids": [
+            "1.0",
+            "1.1",
+            "1.4",
+            "1.5",
+            "1.13",
+            "1.15"
+          ],
+          "file_methods": [
+            {
+              "file_path": "src/ambiente.py",
+              "methods": [
+                "src.ambiente.build_irec",
+                "src.ambiente.build_irec_ensemble"
+              ]
+            },
+            {
+              "file_path": "src/c4_gerador.py",
+              "methods": [
+                "src.c4_gerador.CampoInfo",
+                "src.c4_gerador.MetodoInfo",
+                "src.c4_gerador.ClasseInfo",
+                "src.c4_gerador.FuncaoInfo",
+                "src.c4_gerador.obter_binario_a2m",
+                "src.c4_gerador.os_is_executable",
+                "src.c4_gerador._limpar_tipo_mermaid",
+                "src.c4_gerador._resumo_doc",
+                "src.c4_gerador._formatar_args",
+                "src.c4_gerador._extrair_chamadas",
+                "src.c4_gerador._c4_filename",
+                "src.c4_gerador.construir_mapa_modulos_c4",
+                "src.c4_gerador.analisar_arquivo",
+                "src.c4_gerador._sub_c3_relacionado",
+                "src.c4_gerador.extrair_analise_impacto_a2m",
+                "src.c4_gerador.gerar_markdown_c4",
+                "src.c4_gerador.gerar_arquivo_c4",
+                "src.c4_gerador.gerar_todos",
+                "src.c4_gerador.main"
+              ]
+            },
+            {
+              "file_path": "src/calculos/coifa.py",
+              "methods": [
+                "src.calculos.coifa._perfil_conico",
+                "src.calculos.coifa._perfil_lvhaack",
+                "src.calculos.coifa._perfil_ogive",
+                "src.calculos.coifa.perfil",
+                "src.calculos.coifa._derivada_perfil",
+                "src.calculos.coifa.CoifaDerivada",
+                "src.calculos.coifa.calcular_coifa"
+              ]
+            },
+            {
+              "file_path": "src/calculos/componentes.py",
+              "methods": [
+                "src.calculos.componentes.ComponenteDerivado",
+                "src.calculos.componentes.derivar_tubo",
+                "src.calculos.componentes.derivar_massa_pontual",
+                "src.calculos.componentes.derivar",
+                "src.calculos.componentes.derivar_todos"
+              ]
+            },
+            {
+              "file_path": "src/smoke.py",
+              "methods": [
+                "src.smoke.main"
+              ]
+            },
+            {
+              "file_path": "src/viz.py",
+              "methods": [
+                "src.viz._set_backend"
+              ]
+            }
+          ],
+          "component_id": "1.2",
+          "can_expand": false,
+          "components": [],
+          "components_relations": []
+        },
+        {
+          "name": "Fin Geometry and Aerodynamics Calculations",
+          "description": "Derives fin mass, center of gravity, and moments of inertia, and translates fin geometry for aerodynamic analysis tools.",
+          "key_entities": [
+            {
+              "qualified_name": "src.calculos.aletas.calcular_aleta",
+              "reference_file": "src/calculos/aletas.py",
+              "reference_start_line": 48,
+              "reference_end_line": 92
+            },
+            {
+              "qualified_name": "src.calculos.aletas.AletaDerivada",
+              "reference_file": "src/calculos/aletas.py",
+              "reference_start_line": 11,
+              "reference_end_line": 24
+            },
+            {
+              "qualified_name": "src.calculos.aletas_rasaero.aleta_para_rasaero",
+              "reference_file": "src/calculos/aletas_rasaero.py",
+              "reference_start_line": 33,
+              "reference_end_line": 55
+            },
+            {
+              "qualified_name": "src.calculos.aletas_rasaero.AletaRASAero",
+              "reference_file": "src/calculos/aletas_rasaero.py",
+              "reference_start_line": 13,
+              "reference_end_line": 30
+            }
+          ],
+          "source_cluster_ids": [
+            "1.2",
+            "1.3"
+          ],
+          "file_methods": [
+            {
+              "file_path": "src/calculos/aletas.py",
+              "methods": [
+                "src.calculos.aletas.AletaDerivada",
+                "src.calculos.aletas._poligono_propriedades",
+                "src.calculos.aletas.calcular_aleta"
+              ]
+            },
+            {
+              "file_path": "src/calculos/aletas_rasaero.py",
+              "methods": [
+                "src.calculos.aletas_rasaero.AletaRASAero",
+                "src.calculos.aletas_rasaero.AletaRASAero.imprimir",
+                "src.calculos.aletas_rasaero.aleta_para_rasaero"
+              ]
+            }
+          ],
+          "component_id": "1.3",
+          "can_expand": false,
+          "components": [],
+          "components_relations": []
+        }
+      ],
+      "components_relations": [
+        {
+          "relation": "resolves nose cone and structural components via",
+          "src_name": "Rocket Specifications and Motor Modeling",
+          "dst_name": "Component and Nose Cone Analysis",
+          "evidence": "",
+          "key_edges": [
+            {
+              "source": "src/modelo.py|src.modelo.resolver",
+              "target": "src/calculos/coifa.py|src.calculos.coifa.calcular_coifa",
+              "call_sites": [
+                {
+                  "line": 114,
+                  "column": 13
+                }
+              ],
+              "description": "Resolves nose cone geometry and mass properties during rocket assembly"
+            },
+            {
+              "source": "src/modelo.py|src.modelo.resolver",
+              "target": "src/calculos/componentes.py|src.calculos.componentes.derivar_todos",
+              "call_sites": [
+                {
+                  "line": 112,
+                  "column": 17
+                }
+              ],
+              "description": "Derives all structural component masses and moments during rocket assembly"
+            }
+          ],
+          "src_id": "1.1",
+          "dst_id": "1.2",
+          "is_static": true,
+          "all_edges": [
+            {
+              "source": "src/modelo.py|src.modelo.resolver",
+              "target": "src/calculos/coifa.py|src.calculos.coifa.calcular_coifa",
+              "call_sites": [
+                {
+                  "line": 114,
+                  "column": 13
+                }
+              ],
+              "description": ""
+            },
+            {
+              "source": "src/modelo.py|src.modelo.resolver",
+              "target": "src/calculos/componentes.py|src.calculos.componentes.derivar_todos",
+              "call_sites": [
+                {
+                  "line": 112,
+                  "column": 17
+                }
+              ],
+              "description": ""
+            }
+          ]
+        },
+        {
+          "relation": "resolves fin properties via",
+          "src_name": "Rocket Specifications and Motor Modeling",
+          "dst_name": "Fin Geometry and Aerodynamics Calculations",
+          "evidence": "",
+          "key_edges": [
+            {
+              "source": "src/modelo.py|src.modelo.resolver",
+              "target": "src/calculos/aletas.py|src.calculos.aletas.calcular_aleta",
+              "call_sites": [
+                {
+                  "line": 113,
+                  "column": 13
+                }
+              ],
+              "description": "Calculates fin mass, center of gravity, and inertia to assemble resolved rocket properties"
+            }
+          ],
+          "src_id": "1.1",
+          "dst_id": "1.3",
+          "is_static": true,
+          "all_edges": [
+            {
+              "source": "src/modelo.py|src.modelo.resolver",
+              "target": "src/calculos/aletas.py|src.calculos.aletas.calcular_aleta",
+              "call_sites": [
+                {
+                  "line": 113,
+                  "column": 13
+                }
+              ],
+              "description": ""
+            }
+          ]
+        },
+        {
+          "relation": "derives structural properties from specs in",
+          "src_name": "Component and Nose Cone Analysis",
+          "dst_name": "Rocket Specifications and Motor Modeling",
+          "evidence": "",
+          "key_edges": [
+            {
+              "source": "src/calculos/componentes.py|src.calculos.componentes.derivar",
+              "target": "src/specs.py|src.specs.MassaPontualSpec",
+              "call_sites": [
+                {
+                  "line": 65,
+                  "column": 31
+                }
+              ],
+              "description": "Reads point mass specifications to derive equivalent inertial properties"
+            },
+            {
+              "source": "src/calculos/componentes.py|src.calculos.componentes.derivar",
+              "target": "src/specs.py|src.specs.TuboSpec",
+              "call_sites": [
+                {
+                  "line": 63,
+                  "column": 31
+                }
+              ],
+              "description": "Reads tube component specifications to compute cylinder mass and inertia"
+            }
+          ],
+          "src_id": "1.2",
+          "dst_id": "1.1",
+          "is_static": true,
+          "all_edges": [
+            {
+              "source": "src/calculos/componentes.py|src.calculos.componentes.derivar",
+              "target": "src/specs.py|src.specs.MassaPontualSpec",
+              "call_sites": [
+                {
+                  "line": 65,
+                  "column": 31
+                }
+              ],
+              "description": ""
+            },
+            {
+              "source": "src/calculos/componentes.py|src.calculos.componentes.derivar",
+              "target": "src/specs.py|src.specs.TuboSpec",
+              "call_sites": [
+                {
+                  "line": 63,
+                  "column": 31
+                }
+              ],
+              "description": ""
+            },
+            {
+              "source": "src/calculos/componentes.py|src.calculos.componentes.derivar_tubo",
+              "target": "src/specs.py|src.specs.TuboSpec",
+              "call_sites": [
+                {
+                  "line": 27,
+                  "column": 43
+                }
+              ],
+              "description": ""
+            },
+            {
+              "source": "src/calculos/componentes.py|src.calculos.componentes.derivar_tubo",
+              "target": "src/specs.py|src.specs.TuboSpec.raio_interno",
+              "call_sites": [
+                {
+                  "line": 27,
+                  "column": 43
+                }
+              ],
+              "description": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Simulation and Analysis Scripts",
+      "description": "Standalone simulation workflows including deterministic flights, sweeps, and Monte Carlo runs.",
+      "key_entities": [
+        {
+          "qualified_name": "scripts.simDeterministica.main",
+          "reference_file": "scripts/simDeterministica.py",
+          "reference_start_line": 47,
+          "reference_end_line": 125
+        },
+        {
+          "qualified_name": "scripts.monteCarloIrec.main",
+          "reference_file": "scripts/monteCarloIrec.py",
+          "reference_start_line": 38,
+          "reference_end_line": 103
+        },
+        {
+          "qualified_name": "scripts.varredura.main",
+          "reference_file": "scripts/varredura.py",
+          "reference_start_line": 47,
+          "reference_end_line": 90
+        },
+        {
+          "qualified_name": "scripts.analisar_motor.main",
+          "reference_file": "scripts/analisar_motor.py",
+          "reference_start_line": 391,
+          "reference_end_line": 427
+        }
+      ],
+      "source_cluster_ids": [
+        "3",
+        "4",
+        "5",
+        "6",
+        "7"
+      ],
+      "file_methods": [
+        {
+          "file_path": "scripts/analisar_motor.py",
+          "methods": [
+            "scripts.analisar_motor._ultimo_csv",
+            "scripts.analisar_motor.carregar_varredura",
+            "scripts.analisar_motor.params_do_registro",
+            "scripts.analisar_motor.filtrar",
+            "scripts.analisar_motor.rankear",
+            "scripts.analisar_motor.achar_otimo",
+            "scripts.analisar_motor.resumo",
+            "scripts.analisar_motor.plotar_1d",
+            "scripts.analisar_motor.plotar_2d",
+            "scripts.analisar_motor.imprimir_top",
+            "scripts.analisar_motor.main"
+          ]
+        },
+        {
+          "file_path": "scripts/monteCarloIrec.py",
+          "methods": [
+            "scripts.monteCarloIrec.main"
+          ]
+        },
+        {
+          "file_path": "scripts/simDeterministica.py",
+          "methods": [
+            "scripts.simDeterministica._resolver_motor",
+            "scripts.simDeterministica.main"
+          ]
+        },
+        {
+          "file_path": "scripts/varredura.py",
+          "methods": [
+            "scripts.varredura.simular",
+            "scripts.varredura.main"
+          ]
+        },
+        {
+          "file_path": "scripts/varredura_motor.py",
+          "methods": [
+            "scripts.varredura_motor._parse_valores",
+            "scripts.varredura_motor._parse_param",
+            "scripts.varredura_motor._gerar_grid",
+            "scripts.varredura_motor.LinhaVarredura",
+            "scripts.varredura_motor._simular_um",
+            "scripts.varredura_motor.varrer_motor",
+            "scripts.varredura_motor._salvar_resultados",
+            "scripts.varredura_motor.imprimir_tabela",
+            "scripts.varredura_motor.main"
+          ]
+        }
+      ],
+      "component_id": "2",
+      "can_expand": false,
+      "components": [],
+      "components_relations": []
+    },
+    {
+      "name": "Rocket Motor Variant Configurations",
+      "description": "Rocket motor variation definitions and custom parameter configuration factories.",
+      "key_entities": [
+        {
+          "qualified_name": "configs.foguetes.hefesto.motor_variacoes.criar_variacao",
+          "reference_file": "configs/foguetes/hefesto/motor_variacoes.py",
+          "reference_start_line": 35,
+          "reference_end_line": 47
+        }
+      ],
+      "source_cluster_ids": [
+        "2",
+        "8"
+      ],
+      "file_methods": [
+        {
+          "file_path": "configs/foguetes/hefesto/motor_variacoes.py",
+          "methods": [
+            "configs.foguetes.hefesto.motor_variacoes.criar_variacao"
+          ]
+        },
+        {
+          "file_path": "sitecustomize.py",
+          "methods": [
+            "sitecustomize._safe_use"
+          ]
+        }
+      ],
+      "component_id": "3",
+      "can_expand": false,
+      "components": [],
+      "components_relations": []
+    },
+    {
+      "name": "Central Control CLI",
+      "description": "Unified command-line interface and dispatch center for inspections, flight runs, and tooling.",
+      "key_entities": [
+        {
+          "qualified_name": "centralControle.rodar.main",
+          "reference_file": "centralControle/rodar.py",
+          "reference_start_line": 219,
+          "reference_end_line": 288
+        },
+        {
+          "qualified_name": "centralControle.inspecionar.main",
+          "reference_file": "centralControle/inspecionar.py",
+          "reference_start_line": 81,
+          "reference_end_line": 93
+        }
+      ],
+      "source_cluster_ids": [
+        "0",
+        "1"
+      ],
+      "file_methods": [
+        {
+          "file_path": "centralControle/inspecionar.py",
+          "methods": [
+            "centralControle.inspecionar.inspecionar_motor",
+            "centralControle.inspecionar.inspecionar_motor_variacoes",
+            "centralControle.inspecionar.inspecionar_estrutura",
+            "centralControle.inspecionar.inspecionar_seguranca",
+            "centralControle.inspecionar.inspecionar_voo",
+            "centralControle.inspecionar.inspecionar_tudo",
+            "centralControle.inspecionar.main"
+          ]
+        },
+        {
+          "file_path": "centralControle/rodar.py",
+          "methods": [
+            "centralControle.rodar.cmd_sim",
+            "centralControle.rodar.cmd_fs",
+            "centralControle.rodar.cmd_varrer",
+            "centralControle.rodar.cmd_dump",
+            "centralControle.rodar.cmd_motor",
+            "centralControle.rodar.cmd_estrutura",
+            "centralControle.rodar.cmd_smoke",
+            "centralControle.rodar.cmd_varrer_motor",
+            "centralControle.rodar.cmd_analisar_motor",
+            "centralControle.rodar.cmd_setup",
+            "centralControle.rodar.cmd_c4",
+            "centralControle.rodar.cmd_guia_c4",
+            "centralControle.rodar.main"
+          ]
+        }
+      ],
+      "component_id": "4",
+      "can_expand": false,
+      "components": [],
+      "components_relations": []
+    }
+  ],
+  "components_relations": [
+    {
+      "relation": "inspects structural properties of",
+      "src_name": "Motor Derivation and Structural Inspection",
+      "dst_name": "RocketPy Assembly and Resolution",
+      "evidence": "",
+      "key_edges": [
+        {
+          "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+          "target": "src/modelo.py|src.modelo.FogueteResolvido",
+          "call_sites": [
+            {
+              "line": 183,
+              "column": 37
+            },
+            {
+              "line": 184,
+              "column": 39
+            },
+            {
+              "line": 185,
+              "column": 50
+            },
+            {
+              "line": 186,
+              "column": 38
+            }
+          ],
+          "description": "Inspects resolved rocket structural properties including center of gravity and moments of inertia."
+        }
+      ],
+      "src_id": "1.1.1",
+      "dst_id": "1.1.2",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+          "target": "src/modelo.py|src.modelo.FogueteResolvido",
+          "call_sites": [
+            {
+              "line": 183,
+              "column": 37
+            },
+            {
+              "line": 184,
+              "column": 39
+            },
+            {
+              "line": 185,
+              "column": 50
+            },
+            {
+              "line": 186,
+              "column": 38
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+          "target": "src/modelo.py|src.modelo.FogueteResolvido.cg_sem_motor",
+          "call_sites": [
+            {
+              "line": 184,
+              "column": 39
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+          "target": "src/modelo.py|src.modelo.FogueteResolvido.inercia_longitudinal",
+          "call_sites": [
+            {
+              "line": 186,
+              "column": 38
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+          "target": "src/modelo.py|src.modelo.FogueteResolvido.inercia_transversal",
+          "call_sites": [
+            {
+              "line": 185,
+              "column": 50
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+          "target": "src/modelo.py|src.modelo.FogueteResolvido.massa_seca",
+          "call_sites": [
+            {
+              "line": 183,
+              "column": 37
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+          "target": "src/modelo.py|src.modelo.resolver",
+          "call_sites": [
+            {
+              "line": 176,
+              "column": 13
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "delegates internal ballistic simulation to",
+      "src_name": "Motor Derivation and Structural Inspection",
+      "dst_name": "OpenMotor Ballistic Simulation Adapter",
+      "evidence": "",
+      "key_edges": [
+        {
+          "source": "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria",
+          "target": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.simular_props",
+          "call_sites": [
+            {
+              "line": 212,
+              "column": 13
+            }
+          ],
+          "description": "Applies parameter overrides and runs OpenMotor simulation to obtain thrust curves and internal ballistics."
+        }
+      ],
+      "src_id": "1.1.1",
+      "dst_id": "1.1.3",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria",
+          "target": "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes.aplicar_overrides",
+          "call_sites": [
+            {
+              "line": 209,
+              "column": 21
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria",
+          "target": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.MotorResultado",
+          "call_sites": [
+            {
+              "line": 227,
+              "column": 37
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria",
+          "target": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.MotorResultado.curva_empuxo",
+          "call_sites": [
+            {
+              "line": 227,
+              "column": 37
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria",
+          "target": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.carregar_props",
+          "call_sites": [
+            {
+              "line": 207,
+              "column": 17
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria",
+          "target": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.extrair_geometria_props",
+          "call_sites": [
+            {
+              "line": 211,
+              "column": 57
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/calculos/motor.py|src.calculos.motor._resolver_fonte_e_geometria",
+          "target": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.simular_props",
+          "call_sites": [
+            {
+              "line": 212,
+              "column": 13
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "derives properties from specs in",
+      "src_name": "Motor Derivation and Structural Inspection",
+      "dst_name": "Rocket Specification Schemas",
+      "evidence": "",
+      "key_edges": [
+        {
+          "source": "src/calculos/motor.py|src.calculos.motor.MotorDerivado.to_dict",
+          "target": "src/specs.py|src.specs.GrainSpec",
+          "call_sites": [
+            {
+              "line": 171,
+              "column": 26
+            }
+          ],
+          "description": "Extracts grain geometry and component specifications during motor derivation and inspection."
+        }
+      ],
+      "src_id": "1.1.1",
+      "dst_id": "1.1.4",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "src/calculos/motor.py|src.calculos.motor.MotorDerivado.to_dict",
+          "target": "src/specs.py|src.specs.GrainSpec",
+          "call_sites": [
+            {
+              "line": 171,
+              "column": 26
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/calculos/motor.py|src.calculos.motor.MotorDerivado.to_dict",
+          "target": "src/specs.py|src.specs.GrainSpec.to_dict",
+          "call_sites": [
+            {
+              "line": 171,
+              "column": 26
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+          "target": "src/specs.py|src.specs.TuboSpec",
+          "call_sites": [
+            {
+              "line": 223,
+              "column": 33
+            },
+            {
+              "line": 225,
+              "column": 27
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+          "target": "src/specs.py|src.specs.TuboSpec.raio_interno",
+          "call_sites": [
+            {
+              "line": 225,
+              "column": 27
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "derives motor ballistics using",
+      "src_name": "RocketPy Assembly and Resolution",
+      "dst_name": "Motor Derivation and Structural Inspection",
+      "evidence": "",
+      "key_edges": [
+        {
+          "source": "src/modelos.py|src.modelos.build_motor",
+          "target": "src/calculos/motor.py|src.calculos.motor.derivar_motor",
+          "call_sites": [
+            {
+              "line": 88,
+              "column": 9
+            }
+          ],
+          "description": "Derives motor properties and internal ballistics before assembling RocketPy SolidMotor instances."
+        }
+      ],
+      "src_id": "1.1.2",
+      "dst_id": "1.1.1",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "src/modelos.py|src.modelos.build_motor",
+          "target": "src/calculos/motor.py|src.calculos.motor.derivar_motor",
+          "call_sites": [
+            {
+              "line": 88,
+              "column": 9
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "configures rocket models from specs in",
+      "src_name": "RocketPy Assembly and Resolution",
+      "dst_name": "Rocket Specification Schemas",
+      "evidence": "",
+      "key_edges": [
+        {
+          "source": "src/modelos.py|src.modelos.build_rocket",
+          "target": "src/specs.py|src.specs.GeometriaMedidaSpec",
+          "call_sites": [
+            {
+              "line": 165,
+              "column": 34
+            },
+            {
+              "line": 169,
+              "column": 28
+            },
+            {
+              "line": 191,
+              "column": 50
+            }
+          ],
+          "description": "Extracts aerodynamic geometry and measured parameters to configure RocketPy rocket models."
+        }
+      ],
+      "src_id": "1.1.2",
+      "dst_id": "1.1.4",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "src/modelos.py|src.modelos.build_rocket",
+          "target": "src/specs.py|src.specs.GeometriaMedidaSpec",
+          "call_sites": [
+            {
+              "line": 165,
+              "column": 34
+            },
+            {
+              "line": 169,
+              "column": 28
+            },
+            {
+              "line": 191,
+              "column": 50
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/modelos.py|src.modelos.build_rocket",
+          "target": "src/specs.py|src.specs.GeometriaMedidaSpec.dict_aletas_freeform",
+          "call_sites": [
+            {
+              "line": 191,
+              "column": 50
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/modelos.py|src.modelos.build_rocket",
+          "target": "src/specs.py|src.specs.GeometriaMedidaSpec.dict_coifa",
+          "call_sites": [
+            {
+              "line": 169,
+              "column": 28
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/modelos.py|src.modelos.build_rocket",
+          "target": "src/specs.py|src.specs.GeometriaMedidaSpec.dict_rocket",
+          "call_sites": [
+            {
+              "line": 165,
+              "column": 34
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "resolves nose cone and structural components via",
+      "src_name": "RocketPy Assembly and Resolution",
+      "dst_name": "Component and Nose Cone Analysis",
+      "evidence": "",
+      "key_edges": [
+        {
+          "source": "src/modelo.py|src.modelo.resolver",
+          "target": "src/calculos/coifa.py|src.calculos.coifa.calcular_coifa",
+          "call_sites": [
+            {
+              "line": 114,
+              "column": 13
+            }
+          ],
+          "description": "Resolves nose cone geometry and mass properties during rocket assembly"
+        },
+        {
+          "source": "src/modelo.py|src.modelo.resolver",
+          "target": "src/calculos/componentes.py|src.calculos.componentes.derivar_todos",
+          "call_sites": [
+            {
+              "line": 112,
+              "column": 17
+            }
+          ],
+          "description": "Derives all structural component masses and moments during rocket assembly"
+        }
+      ],
+      "src_id": "1.1.2",
+      "dst_id": "1.2",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "src/modelo.py|src.modelo.resolver",
+          "target": "src/calculos/coifa.py|src.calculos.coifa.calcular_coifa",
+          "call_sites": [
+            {
+              "line": 114,
+              "column": 13
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/modelo.py|src.modelo.resolver",
+          "target": "src/calculos/componentes.py|src.calculos.componentes.derivar_todos",
+          "call_sites": [
+            {
+              "line": 112,
+              "column": 17
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "resolves fin properties via",
+      "src_name": "RocketPy Assembly and Resolution",
+      "dst_name": "Fin Geometry and Aerodynamics Calculations",
+      "evidence": "",
+      "key_edges": [
+        {
+          "source": "src/modelo.py|src.modelo.resolver",
+          "target": "src/calculos/aletas.py|src.calculos.aletas.calcular_aleta",
+          "call_sites": [
+            {
+              "line": 113,
+              "column": 13
+            }
+          ],
+          "description": "Calculates fin mass, center of gravity, and inertia to assemble resolved rocket properties"
+        }
+      ],
+      "src_id": "1.1.2",
+      "dst_id": "1.3",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "src/modelo.py|src.modelo.resolver",
+          "target": "src/calculos/aletas.py|src.calculos.aletas.calcular_aleta",
+          "call_sites": [
+            {
+              "line": 113,
+              "column": 13
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "constructs grain instances defined by",
+      "src_name": "OpenMotor Ballistic Simulation Adapter",
+      "dst_name": "Rocket Specification Schemas",
+      "evidence": "",
+      "key_edges": [
+        {
+          "source": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.extrair_geometria_props",
+          "target": "src/specs.py|src.specs.GrainSpec",
+          "call_sites": [
+            {
+              "line": 176,
+              "column": 13
+            }
+          ],
+          "description": "Constructs grain specification objects from extracted OpenMotor motor properties."
+        }
+      ],
+      "src_id": "1.1.3",
+      "dst_id": "1.1.4",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "src/calculos/motorlib_wrapper.py|src.calculos.motorlib_wrapper.extrair_geometria_props",
+          "target": "src/specs.py|src.specs.GrainSpec",
+          "call_sites": [
+            {
+              "line": 176,
+              "column": 13
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "derives structural properties from specs in",
+      "src_name": "Component and Nose Cone Analysis",
+      "dst_name": "Rocket Specification Schemas",
+      "evidence": "",
+      "key_edges": [
+        {
+          "source": "src/calculos/componentes.py|src.calculos.componentes.derivar",
+          "target": "src/specs.py|src.specs.MassaPontualSpec",
+          "call_sites": [
+            {
+              "line": 65,
+              "column": 31
+            }
+          ],
+          "description": "Reads point mass specifications to derive equivalent inertial properties"
+        },
+        {
+          "source": "src/calculos/componentes.py|src.calculos.componentes.derivar",
+          "target": "src/specs.py|src.specs.TuboSpec",
+          "call_sites": [
+            {
+              "line": 63,
+              "column": 31
+            }
+          ],
+          "description": "Reads tube component specifications to compute cylinder mass and inertia"
+        }
+      ],
+      "src_id": "1.2",
+      "dst_id": "1.1.4",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "src/calculos/componentes.py|src.calculos.componentes.derivar",
+          "target": "src/specs.py|src.specs.MassaPontualSpec",
+          "call_sites": [
+            {
+              "line": 65,
+              "column": 31
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/calculos/componentes.py|src.calculos.componentes.derivar",
+          "target": "src/specs.py|src.specs.TuboSpec",
+          "call_sites": [
+            {
+              "line": 63,
+              "column": 31
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/calculos/componentes.py|src.calculos.componentes.derivar_tubo",
+          "target": "src/specs.py|src.specs.TuboSpec",
+          "call_sites": [
+            {
+              "line": 27,
+              "column": 43
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "src/calculos/componentes.py|src.calculos.componentes.derivar_tubo",
+          "target": "src/specs.py|src.specs.TuboSpec.raio_interno",
+          "call_sites": [
+            {
+              "line": 27,
+              "column": 43
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "invokes domain modeling and environments in",
+      "src_name": "Simulation and Analysis Scripts",
+      "dst_name": "Motor Derivation and Structural Inspection",
+      "evidence": "",
+      "key_edges": [],
+      "src_id": "2",
+      "dst_id": "1.1.1",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "scripts/simDeterministica.py|scripts.simDeterministica.main",
+          "target": "src/calculos/motor.py|src.calculos.motor.MotorDerivado",
+          "call_sites": [
+            {
+              "line": 111,
+              "column": 54
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "scripts/simDeterministica.py|scripts.simDeterministica.main",
+          "target": "src/calculos/motor.py|src.calculos.motor.MotorDerivado.to_dict",
+          "call_sites": [
+            {
+              "line": 111,
+              "column": 54
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "scripts/varredura.py|scripts.varredura.main",
+          "target": "src/calculos/motor.py|src.calculos.motor.MotorDerivado",
+          "call_sites": [
+            {
+              "line": 83,
+              "column": 53
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "scripts/varredura.py|scripts.varredura.main",
+          "target": "src/calculos/motor.py|src.calculos.motor.MotorDerivado.to_dict",
+          "call_sites": [
+            {
+              "line": 83,
+              "column": 53
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "scripts/varredura.py|scripts.varredura.main",
+          "target": "src/calculos/motor.py|src.calculos.motor.derivar_motor",
+          "call_sites": [
+            {
+              "line": 83,
+              "column": 27
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "scripts/varredura_motor.py|scripts.varredura_motor._simular_um",
+          "target": "src/calculos/motor.py|src.calculos.motor.derivar_motor",
+          "call_sites": [
+            {
+              "line": 108,
+              "column": 13
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "invokes domain modeling and environments in",
+      "src_name": "Simulation and Analysis Scripts",
+      "dst_name": "RocketPy Assembly and Resolution",
+      "evidence": "",
+      "key_edges": [
+        {
+          "source": "scripts/simDeterministica.py|scripts.simDeterministica.main",
+          "target": "src/modelos.py|src.modelos.build_rocket",
+          "call_sites": [
+            {
+              "line": 63,
+              "column": 15
+            }
+          ],
+          "description": "Assembles rocket instances for simulation runs"
+        }
+      ],
+      "src_id": "2",
+      "dst_id": "1.1.2",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "scripts/monteCarloIrec.py|scripts.monteCarloIrec.main",
+          "target": "src/modelos.py|src.modelos.build_rocket",
+          "call_sites": [
+            {
+              "line": 42,
+              "column": 11
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "scripts/simDeterministica.py|scripts.simDeterministica.main",
+          "target": "src/modelos.py|src.modelos.build_rocket",
+          "call_sites": [
+            {
+              "line": 63,
+              "column": 15
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "scripts/varredura.py|scripts.varredura.simular",
+          "target": "src/modelos.py|src.modelos.build_rocket",
+          "call_sites": [
+            {
+              "line": 31,
+              "column": 15
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "invokes domain modeling and environments in",
+      "src_name": "Simulation and Analysis Scripts",
+      "dst_name": "OpenMotor Ballistic Simulation Adapter",
+      "evidence": "",
+      "key_edges": [],
+      "src_id": "2",
+      "dst_id": "1.1.3",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "scripts/varredura_motor.py|scripts.varredura_motor._simular_um",
+          "target": "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes.validar_overrides",
+          "call_sites": [
+            {
+              "line": 100,
+              "column": 9
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "scripts/varredura_motor.py|scripts.varredura_motor.varrer_motor",
+          "target": "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes.validar_overrides",
+          "call_sites": [
+            {
+              "line": 176,
+              "column": 9
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "invokes domain modeling and environments in",
+      "src_name": "Simulation and Analysis Scripts",
+      "dst_name": "Rocket Specification Schemas",
+      "evidence": "",
+      "key_edges": [],
+      "src_id": "2",
+      "dst_id": "1.1.4",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "scripts/simDeterministica.py|scripts.simDeterministica.main",
+          "target": "src/specs.py|src.specs.MotorSpec",
+          "call_sites": [
+            {
+              "line": 110,
+              "column": 38
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "scripts/simDeterministica.py|scripts.simDeterministica.main",
+          "target": "src/specs.py|src.specs.MotorSpec.to_dict",
+          "call_sites": [
+            {
+              "line": 110,
+              "column": 38
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "scripts/varredura.py|scripts.varredura.main",
+          "target": "src/specs.py|src.specs.MotorSpec",
+          "call_sites": [
+            {
+              "line": 82,
+              "column": 34
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "scripts/varredura.py|scripts.varredura.main",
+          "target": "src/specs.py|src.specs.MotorSpec.to_dict",
+          "call_sites": [
+            {
+              "line": 82,
+              "column": 34
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "invokes domain modeling and environments in",
+      "src_name": "Simulation and Analysis Scripts",
+      "dst_name": "Component and Nose Cone Analysis",
+      "evidence": "",
+      "key_edges": [
+        {
+          "source": "scripts/monteCarloIrec.py|scripts.monteCarloIrec.main",
+          "target": "src/ambiente.py|src.ambiente.build_irec",
+          "call_sites": [
+            {
+              "line": 43,
+              "column": 15
+            }
+          ],
+          "description": "Configures and runs flight simulations and retrieves atmospheric environments"
+        }
+      ],
+      "src_id": "2",
+      "dst_id": "1.2",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "scripts/monteCarloIrec.py|scripts.monteCarloIrec.main",
+          "target": "src/ambiente.py|src.ambiente.build_irec",
+          "call_sites": [
+            {
+              "line": 43,
+              "column": 15
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "scripts/monteCarloIrec.py|scripts.monteCarloIrec.main",
+          "target": "src/ambiente.py|src.ambiente.build_irec_ensemble",
+          "call_sites": [
+            {
+              "line": 73,
+              "column": 15
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "scripts/simDeterministica.py|scripts.simDeterministica.main",
+          "target": "src/ambiente.py|src.ambiente.build_irec",
+          "call_sites": [
+            {
+              "line": 71,
+              "column": 11
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "scripts/varredura.py|scripts.varredura.simular",
+          "target": "src/ambiente.py|src.ambiente.build_irec",
+          "call_sites": [
+            {
+              "line": 38,
+              "column": 53
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "validates motor variations against",
+      "src_name": "Rocket Motor Variant Configurations",
+      "dst_name": "OpenMotor Ballistic Simulation Adapter",
+      "evidence": "",
+      "key_edges": [
+        {
+          "source": "configs/foguetes/hefesto/motor_variacoes.py|configs.foguetes.hefesto.motor_variacoes.criar_variacao",
+          "target": "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes.validar_overrides",
+          "call_sites": [
+            {
+              "line": 41,
+              "column": 5
+            }
+          ],
+          "description": "Validates motor override parameters against permitted variable sets"
+        }
+      ],
+      "src_id": "3",
+      "dst_id": "1.1.3",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "configs/foguetes/hefesto/motor_variacoes.py|configs.foguetes.hefesto.motor_variacoes.criar_variacao",
+          "target": "src/calculos/motorlib_variacoes.py|src.calculos.motorlib_variacoes.validar_overrides",
+          "call_sites": [
+            {
+              "line": 41,
+              "column": 5
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "delegates inspection and reporting to",
+      "src_name": "Central Control CLI",
+      "dst_name": "Motor Derivation and Structural Inspection",
+      "evidence": "",
+      "key_edges": [
+        {
+          "source": "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_estrutura",
+          "target": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+          "call_sites": [
+            {
+              "line": 46,
+              "column": 5
+            }
+          ],
+          "description": "Executes structural, motor, and safety inspection routines"
+        }
+      ],
+      "src_id": "4",
+      "dst_id": "1.1.1",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_estrutura",
+          "target": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+          "call_sites": [
+            {
+              "line": 46,
+              "column": 5
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_motor",
+          "target": "src/inspecao.py|src.inspecao.relatorio_motor",
+          "call_sites": [
+            {
+              "line": 38,
+              "column": 5
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_motor_variacoes",
+          "target": "src/inspecao.py|src.inspecao.relatorio_motor_variacoes",
+          "call_sites": [
+            {
+              "line": 42,
+              "column": 5
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_seguranca",
+          "target": "src/inspecao.py|src.inspecao.relatorio_seguranca",
+          "call_sites": [
+            {
+              "line": 50,
+              "column": 5
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_tudo",
+          "target": "src/inspecao.py|src.inspecao.relatorio_estrutura",
+          "call_sites": [
+            {
+              "line": 65,
+              "column": 5
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_tudo",
+          "target": "src/inspecao.py|src.inspecao.relatorio_motor",
+          "call_sites": [
+            {
+              "line": 63,
+              "column": 9
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_tudo",
+          "target": "src/inspecao.py|src.inspecao.relatorio_motor_variacoes",
+          "call_sites": [
+            {
+              "line": 64,
+              "column": 5
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_tudo",
+          "target": "src/inspecao.py|src.inspecao.relatorio_seguranca",
+          "call_sites": [
+            {
+              "line": 66,
+              "column": 5
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_voo",
+          "target": "src/inspecao.py|src.inspecao.relatorio_voo",
+          "call_sites": [
+            {
+              "line": 54,
+              "column": 5
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "delegates inspection and reporting to",
+      "src_name": "Central Control CLI",
+      "dst_name": "Component and Nose Cone Analysis",
+      "evidence": "",
+      "key_edges": [],
+      "src_id": "4",
+      "dst_id": "1.2",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "centralControle/inspecionar.py|centralControle.inspecionar.inspecionar_voo",
+          "target": "src/ambiente.py|src.ambiente.build_irec",
+          "call_sites": [
+            {
+              "line": 58,
+              "column": 18
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/rodar.py|centralControle.rodar.cmd_c4",
+          "target": "src/c4_gerador.py|src.c4_gerador.gerar_arquivo_c4",
+          "call_sites": [
+            {
+              "line": 194,
+              "column": 19
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/rodar.py|centralControle.rodar.cmd_c4",
+          "target": "src/c4_gerador.py|src.c4_gerador.gerar_todos",
+          "call_sites": [
+            {
+              "line": 189,
+              "column": 19
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/rodar.py|centralControle.rodar.cmd_smoke",
+          "target": "src/smoke.py|src.smoke.main",
+          "call_sites": [
+            {
+              "line": 113,
+              "column": 5
+            }
+          ],
+          "description": ""
+        }
+      ]
+    },
+    {
+      "relation": "dispatches CLI execution workflows to",
+      "src_name": "Central Control CLI",
+      "dst_name": "Simulation and Analysis Scripts",
+      "evidence": "",
+      "key_edges": [
+        {
+          "source": "centralControle/rodar.py|centralControle.rodar.cmd_analisar_motor",
+          "target": "scripts/analisar_motor.py|scripts.analisar_motor.main",
+          "call_sites": [
+            {
+              "line": 137,
+              "column": 5
+            }
+          ],
+          "description": "Dispatches sweep executions and parametric motor analyses"
+        },
+        {
+          "source": "centralControle/rodar.py|centralControle.rodar.cmd_sim",
+          "target": "scripts/simDeterministica.py|scripts.simDeterministica.main",
+          "call_sites": [
+            {
+              "line": 71,
+              "column": 8
+            }
+          ],
+          "description": "Dispatches deterministic flight runs"
+        }
+      ],
+      "src_id": "4",
+      "dst_id": "2",
+      "is_static": true,
+      "all_edges": [
+        {
+          "source": "centralControle/rodar.py|centralControle.rodar.cmd_analisar_motor",
+          "target": "scripts/analisar_motor.py|scripts.analisar_motor.main",
+          "call_sites": [
+            {
+              "line": 137,
+              "column": 5
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/rodar.py|centralControle.rodar.cmd_sim",
+          "target": "scripts/simDeterministica.py|scripts.simDeterministica.main",
+          "call_sites": [
+            {
+              "line": 71,
+              "column": 8
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/rodar.py|centralControle.rodar.cmd_varrer",
+          "target": "scripts/varredura.py|scripts.varredura.main",
+          "call_sites": [
+            {
+              "line": 89,
+              "column": 7
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/rodar.py|centralControle.rodar.cmd_varrer_motor",
+          "target": "scripts/varredura_motor.py|scripts.varredura_motor._parse_param",
+          "call_sites": [
+            {
+              "line": 121,
+              "column": 25
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/rodar.py|centralControle.rodar.cmd_varrer_motor",
+          "target": "scripts/varredura_motor.py|scripts.varredura_motor.imprimir_tabela",
+          "call_sites": [
+            {
+              "line": 130,
+              "column": 5
+            }
+          ],
+          "description": ""
+        },
+        {
+          "source": "centralControle/rodar.py|centralControle.rodar.cmd_varrer_motor",
+          "target": "scripts/varredura_motor.py|scripts.varredura_motor.varrer_motor",
+          "call_sites": [
+            {
+              "line": 124,
+              "column": 18
+            }
+          ],
+          "description": ""
+        }
+      ]
+    }
+  ]
+}

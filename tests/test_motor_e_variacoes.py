@@ -69,3 +69,50 @@ def test_fallback_eng_sem_ric() -> None:
     assert d.total_impulse > 10000.0
     assert d.p0_pico is None
     assert d.diagnosticos == ()
+
+
+def test_resolver_motor_cli() -> None:
+    """Verifica a resolução de presets de motor pela CLI `centralControle.rodar`."""
+    from centralControle.rodar import _resolver_motor
+
+    assert _resolver_motor(None) is None
+    assert _resolver_motor("oficial") is None
+    assert _resolver_motor("throat_estreito") is VARIACOES["throat_estreito"]
+    assert _resolver_motor(MOTOR_IREC) is MOTOR_IREC
+
+    with pytest.raises(ValueError, match="não existe"):
+        _resolver_motor("inexistente")
+
+
+def test_grao_medio_heterogeneo_conservacao_massa() -> None:
+    """Verifica que grãos heterogêneos usam o grão médio equivalente e conservam massa no RocketPy."""
+    import math
+    from configs import ENG_MEDUSA
+    from src.construtor_foguete import build_motor
+    from src.specs import GrainSpec, MotorSpec
+
+    graos = (
+        GrainSpec(length=0.10, outer_radius=0.049, inner_radius=0.020),
+        GrainSpec(length=0.15, outer_radius=0.049, inner_radius=0.022),
+        GrainSpec(length=0.20, outer_radius=0.049, inner_radius=0.018),
+    )
+    spec = MotorSpec(
+        nome="MotorHeterogeneo",
+        case_inner_radius=0.05,
+        case_wall_thickness=0.003,
+        thrust_curve_path=ENG_MEDUSA,
+        grains=graos,
+        propellant_density=1841.0,
+        nozzle_exit_radius=0.039,
+        throat_radius=0.017,
+    )
+    motor_rkt, d = build_motor(spec)
+
+    assert d.grain_height_effective == pytest.approx((0.10 + 0.15 + 0.20) / 3.0)
+    assert d.grain_outer_radius_effective == pytest.approx(0.049)
+    assert d.curva_empuxo is not None
+
+    massa_rkt = motor_rkt.propellant_mass(0)
+    assert math.isclose(massa_rkt, d.propellant_mass, rel_tol=1e-5)
+    assert math.isfinite(motor_rkt.total_impulse)
+

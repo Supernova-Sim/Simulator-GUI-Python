@@ -10,7 +10,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Any
 
-from configs.foguetes.hefesto.motor import MOTOR_IREC
+from configs.foguetes.hefesto.motor_cfg import MOTOR_IREC
 from src.calculos.motorlib_variacoes import validar_overrides
 from src.specs import MotorSpec
 

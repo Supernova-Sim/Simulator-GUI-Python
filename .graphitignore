@@ -1,0 +1,7 @@
+# Arquivos ignorados pelo Graph-It-Live para despoluir a visualização de dependências
+**/paths.py
+paths.py
+**/specs.py
+specs.py
+**configs/foguetes/hefesto/__init__.py
+configs/foguetes/hefesto/__init__.py

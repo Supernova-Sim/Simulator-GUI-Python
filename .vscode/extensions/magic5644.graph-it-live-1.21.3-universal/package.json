@@ -1,0 +1,1704 @@
+{
+	"name": "graph-it-live",
+	"displayName": "Graph-It-Live",
+	"description": "AI-first dependency graph & code intelligence for VS Code. Visualize file imports, symbol call hierarchies, and cross-file call graphs. Detect circular dependencies, dead code, and breaking changes. Built-in MCP Server with 24 tools for GitHub Copilot, Cursor, Claude, Windsurf, and Antigravity. Generate AI-friendly codemaps. TypeScript, JavaScript, C#, Go, Java, Python, Rust, Vue, Svelte, GraphQL.",
+	"version": "1.21.3",
+	"publisher": "magic5644",
+	"author": {
+		"name": "magic56"
+	},
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/magic5644/Graph-It-Live.git"
+	},
+	"homepage": "https://magic5644.github.io/Graph-It-Live/",
+	"bugs": {
+		"url": "https://github.com/magic5644/Graph-It-Live/issues"
+	},
+	"qna": "https://github.com/magic5644/Graph-It-Live/discussions",
+	"icon": "media/Graph-It-Live-Logo-256.png",
+	"galleryBanner": {
+		"color": "#2D3748",
+		"theme": "dark"
+	},
+	"keywords": [
+		"dependency graph",
+		"dependency",
+		"graph",
+		"visualization",
+		"import",
+		"typescript",
+		"javascript",
+		"python",
+		"java",
+		"go",
+		"csharp",
+		"rust",
+		"vue",
+		"svelte",
+		"graphql",
+		"circular dependency",
+		"cycle detection",
+		"architecture",
+		"code analysis",
+		"code map",
+		"codemap",
+		"call graph",
+		"call hierarchy",
+		"symbol",
+		"dead code",
+		"unused exports",
+		"breaking changes",
+		"impact analysis",
+		"reverse dependency",
+		"refactoring",
+		"code navigation",
+		"project structure",
+		"mcp",
+		"mcp server",
+		"model context protocol",
+		"copilot",
+		"cursor",
+		"claude",
+		"windsurf",
+		"antigravity",
+		"ai",
+		"llm",
+		"ai agent"
+	],
+	"engines": {
+		"vscode": "^1.96.0",
+		"node": ">=22.0.0"
+	},
+	"categories": [
+		"Visualization",
+		"Programming Languages",
+		"AI",
+		"Other"
+	],
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"main": "./dist/extension.js",
+	"contributes": {
+		"mcpServerDefinitionProviders": [
+			{
+				"id": "graphItLiveMcp",
+				"label": "Graph-It-Live Dependency Analyzer"
+			}
+		],
+		"viewsContainers": {
+			"panel": [
+				{
+					"id": "graph-it-live-explorer",
+					"title": "Graph-It-Live",
+					"icon": "$(type-hierarchy-sub)"
+				}
+			]
+		},
+		"views": {
+			"graph-it-live-explorer": [
+				{
+					"type": "webview",
+					"id": "graph-it-live.graphView",
+					"name": "Dependency Graph",
+					"icon": "$(type-hierarchy-sub)"
+				},
+				{
+					"id": "graph-it-live.branchWatchView",
+					"name": "Branch status",
+					"icon": "$(git-branch)",
+					"visibility": "collapsed"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "graph-it-live.showGraph",
+				"title": "Show Dependency Graph",
+				"category": "Graph-It-Live",
+				"icon": "$(type-hierarchy-sub)"
+			},
+			{
+				"command": "graph-it-live.forceReindex",
+				"title": "Force Graph-It-Live re-index",
+				"category": "Graph-It-Live"
+			},
+			{
+				"command": "graph-it-live.setWorkspace",
+				"title": "Set Workspace Folder",
+				"category": "Graph-It-Live",
+				"icon": "$(folder-opened)"
+			},
+			{
+				"command": "graph-it-live.showIndexStatus",
+				"title": "Show Graph-It-Live index status",
+				"category": "Graph-It-Live"
+			},
+			{
+				"command": "graph-it-live.expandAllNodes",
+				"title": "Toggle Expand/Collapse All Nodes",
+				"icon": "$(expand-all)",
+				"category": "Graph-It-Live"
+			},
+			{
+				"command": "graph-it-live.refreshGraph",
+				"title": "Refresh Graph",
+				"icon": "$(refresh)",
+				"category": "Graph-It-Live"
+			},
+			{
+				"command": "graph-it-live.toggleViewMode",
+				"title": "Toggle View Mode (File ↔ Symbol)",
+				"icon": "$(split-vertical)",
+				"category": "Graph-It-Live"
+			},
+			{
+				"command": "graph-it-live.setViewModeFile",
+				"title": "Switch to Graph View",
+				"icon": "$(type-hierarchy-sub)",
+				"category": "Graph-It-Live"
+			},
+			{
+				"command": "graph-it-live.setViewModeList",
+				"title": "Switch to List View",
+				"icon": "$(list-flat)",
+				"category": "Graph-It-Live"
+			},
+			{
+				"command": "graph-it-live.setViewModeSymbol",
+				"title": "Switch to Symbol View",
+				"icon": "$(symbol-method)",
+				"category": "Graph-It-Live"
+			},
+			{
+				"command": "graph-it-live.setViewModeArchitecture",
+				"title": "Switch to Architecture View",
+				"icon": "$(type-hierarchy)",
+				"category": "Graph-It-Live"
+			},
+			{
+				"command": "graph-it-live.showReverseDependencies",
+				"title": "Show Reverse Dependencies",
+				"icon": "$(references)",
+				"category": "Graph-It-Live"
+			},
+			{
+				"command": "graph-it-live.hideReverseDependencies",
+				"title": "Hide Reverse Dependencies",
+				"icon": "$(close)",
+				"category": "Graph-It-Live"
+			},
+			{
+				"command": "graph-it-live.enableUnusedFilter",
+				"title": "Filter Unused Dependencies",
+				"icon": "$(eye)",
+				"category": "Graph-It-Live"
+			},
+			{
+				"command": "graph-it-live.disableUnusedFilter",
+				"title": "Show All Dependencies",
+				"icon": "$(eye-closed)",
+				"category": "Graph-It-Live"
+			},
+			{
+				"command": "graph-it-live.showCallGraph",
+				"title": "Show Call Graph",
+				"category": "Graph-It-Live",
+				"icon": "$(call-incoming)"
+			},
+			{
+				"command": "graph-it-live.reviewCallGraph",
+				"title": "Open Review Call Graph",
+				"category": "Graph-It-Live"
+			},
+			{
+				"command": "graph-it-live.branchWatch.enable",
+				"title": "Enable Branch Watch",
+				"category": "Graph-It-Live",
+				"icon": "$(play)",
+				"enablement": "graph-it-live.branchWatch.available"
+			},
+			{
+				"command": "graph-it-live.branchWatch.disable",
+				"title": "Disable Branch Watch",
+				"category": "Graph-It-Live",
+				"icon": "$(circle-slash)"
+			},
+			{
+				"command": "graph-it-live.branchWatch.pause",
+				"title": "Pause Branch Watch",
+				"category": "Graph-It-Live",
+				"icon": "$(debug-pause)"
+			},
+			{
+				"command": "graph-it-live.branchWatch.resume",
+				"title": "Resume Branch Watch",
+				"category": "Graph-It-Live",
+				"icon": "$(play)"
+			},
+			{
+				"command": "graph-it-live.branchWatch.refresh",
+				"title": "Refresh Branch Watch",
+				"category": "Graph-It-Live",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "graph-it-live.branchWatch.selectBase",
+				"title": "Select Base Branch",
+				"category": "Graph-It-Live",
+				"icon": "$(git-branch)"
+			},
+			{
+				"command": "graph-it-live.branchWatch.selectHead",
+				"title": "Select Head Branch",
+				"category": "Graph-It-Live",
+				"icon": "$(git-compare)"
+			},
+			{
+				"command": "graph-it-live.branchWatch.reveal",
+				"title": "Show Branch Status",
+				"category": "Graph-It-Live",
+				"icon": "$(git-branch)"
+			},
+			{
+				"command": "graph-it-live.branchWatch.openFile",
+				"title": "Open File",
+				"category": "Graph-It-Live",
+				"icon": "$(go-to-file)"
+			},
+			{
+				"command": "graph-it-live.branchWatch.copyMessage",
+				"title": "Copy Message",
+				"category": "Graph-It-Live",
+				"icon": "$(clippy)"
+			},
+			{
+				"command": "graph-it-live.branchWatch.copyStatus",
+				"title": "Copy Branch Status",
+				"category": "Graph-It-Live",
+				"icon": "$(copy)"
+			},
+			{
+				"command": "graph-it-live.branchWatch.openCallGraph",
+				"title": "Open Call Graph",
+				"category": "Graph-It-Live",
+				"icon": "$(call-incoming)"
+			},
+			{
+				"command": "graph-it-live.branchWatch.openCycle",
+				"title": "Open Cycle in Graph",
+				"category": "Graph-It-Live",
+				"icon": "$(type-hierarchy-sub)"
+			},
+			{
+				"command": "graph-it-live.branchWatch.retryDetection",
+				"title": "Retry Branch Detection",
+				"category": "Graph-It-Live",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "graph-it-live.branchWatch.openSettings",
+				"title": "Branch Watch Settings",
+				"category": "Graph-It-Live",
+				"icon": "$(settings-gear)"
+			}
+		],
+		"menus": {
+			"editor/title": [
+				{
+					"command": "graph-it-live.showGraph",
+					"when": "resourceExtname =~ /\\.(ts|tsx|js|jsx|vue|svelte|mjs|cjs|gql|graphql)$/",
+					"group": "navigation"
+				}
+			],
+			"view/title": [
+				{
+					"command": "graph-it-live.branchWatch.copyStatus",
+					"when": "view == graph-it-live.branchWatchView",
+					"group": "navigation@1",
+					"icon": "$(copy)"
+				},
+				{
+					"command": "graph-it-live.branchWatch.openSettings",
+					"when": "view == graph-it-live.branchWatchView",
+					"group": "navigation@2",
+					"icon": "$(settings-gear)"
+				},
+				{
+					"command": "graph-it-live.setWorkspace",
+					"when": "view == graph-it-live.graphView || view == graph-it-live.branchWatchView",
+					"group": "navigation@0",
+					"icon": "$(folder-opened)"
+				},
+				{
+					"command": "workbench.action.navigateBack",
+					"when": "view == graph-it-live.graphView",
+					"group": "navigation@1"
+				},
+				{
+					"command": "workbench.action.navigateForward",
+					"when": "view == graph-it-live.graphView",
+					"group": "navigation@2"
+				},
+				{
+					"command": "graph-it-live.refreshGraph",
+					"when": "view == graph-it-live.graphView",
+					"group": "navigation@3"
+				},
+				{
+					"command": "graph-it-live.setViewModeFile",
+					"when": "view == graph-it-live.graphView && graph-it-live.viewMode != 'file'",
+					"group": "navigation@4",
+					"icon": "$(graph)"
+				},
+				{
+					"command": "graph-it-live.setViewModeFile",
+					"when": "view == graph-it-live.graphView && graph-it-live.viewMode == 'file'",
+					"group": "navigation@4",
+					"icon": "$(type-hierarchy)"
+				},
+				{
+					"command": "graph-it-live.setViewModeList",
+					"when": "view == graph-it-live.graphView && graph-it-live.viewMode != 'list'",
+					"group": "navigation@5",
+					"icon": "$(list-flat)"
+				},
+				{
+					"command": "graph-it-live.setViewModeList",
+					"when": "view == graph-it-live.graphView && graph-it-live.viewMode == 'list'",
+					"group": "navigation@5",
+					"icon": "$(list-selection)"
+				},
+				{
+					"command": "graph-it-live.setViewModeSymbol",
+					"when": "view == graph-it-live.graphView && graph-it-live.viewMode != 'symbol'",
+					"group": "navigation@6",
+					"icon": "$(symbol-method)"
+				},
+				{
+					"command": "graph-it-live.setViewModeSymbol",
+					"when": "view == graph-it-live.graphView && graph-it-live.viewMode == 'symbol'",
+					"group": "navigation@6",
+					"icon": "$(symbol-class)"
+				},
+				{
+					"command": "graph-it-live.setViewModeArchitecture",
+					"when": "view == graph-it-live.graphView && graph-it-live.viewMode != 'architecture'",
+					"group": "navigation@6"
+				},
+				{
+					"command": "graph-it-live.showCallGraph",
+					"when": "view == graph-it-live.graphView",
+					"group": "navigation@7"
+				},
+				{
+					"command": "graph-it-live.showReverseDependencies",
+					"when": "view == graph-it-live.graphView && graph-it-live.viewMode == 'file' && !graph-it-live.reverseDependenciesVisible",
+					"group": "navigation@8"
+				},
+				{
+					"command": "graph-it-live.hideReverseDependencies",
+					"when": "view == graph-it-live.graphView && graph-it-live.viewMode == 'file' && graph-it-live.reverseDependenciesVisible",
+					"group": "navigation@8"
+				},
+				{
+					"command": "graph-it-live.enableUnusedFilter",
+					"when": "view == graph-it-live.graphView && graph-it-live.viewMode == 'file' && !graph-it-live.unusedFilterActive",
+					"group": "navigation@9"
+				},
+				{
+					"command": "graph-it-live.disableUnusedFilter",
+					"when": "view == graph-it-live.graphView && graph-it-live.viewMode == 'file' && graph-it-live.unusedFilterActive",
+					"group": "navigation@9"
+				},
+				{
+					"command": "graph-it-live.expandAllNodes",
+					"when": "view == graph-it-live.graphView && graph-it-live.viewMode == 'file'",
+					"group": "navigation@10"
+				},
+				{
+					"command": "graph-it-live.branchWatch.enable",
+					"when": "view == graph-it-live.branchWatchView && !graph-it-live.branchWatch.enabled",
+					"group": "navigation@1"
+				},
+				{
+					"command": "graph-it-live.branchWatch.pause",
+					"when": "view == graph-it-live.branchWatchView && graph-it-live.branchWatch.enabled && !graph-it-live.branchWatch.paused",
+					"group": "navigation@2"
+				},
+				{
+					"command": "graph-it-live.branchWatch.resume",
+					"when": "view == graph-it-live.branchWatchView && graph-it-live.branchWatch.enabled && graph-it-live.branchWatch.paused",
+					"group": "navigation@3"
+				},
+				{
+					"command": "graph-it-live.branchWatch.refresh",
+					"when": "view == graph-it-live.branchWatchView && graph-it-live.branchWatch.enabled",
+					"group": "navigation@4"
+				},
+				{
+					"command": "graph-it-live.branchWatch.selectBase",
+					"when": "view == graph-it-live.branchWatchView && graph-it-live.branchWatch.enabled",
+					"group": "navigation@5"
+				},
+				{
+					"command": "graph-it-live.branchWatch.selectHead",
+					"when": "view == graph-it-live.branchWatchView && graph-it-live.branchWatch.enabled",
+					"group": "navigation@6"
+				},
+				{
+					"command": "graph-it-live.branchWatch.retryDetection",
+					"when": "view == graph-it-live.branchWatchView && !graph-it-live.branchWatch.available",
+					"group": "navigation@7"
+				},
+				{
+					"command": "graph-it-live.branchWatch.openSettings",
+					"when": "view == graph-it-live.branchWatchView",
+					"group": "settings"
+				},
+				{
+					"command": "graph-it-live.branchWatch.reveal",
+					"when": "view == graph-it-live.graphView",
+					"group": "navigation@10"
+				}
+			],
+			"editor/context": [
+				{
+					"command": "graph-it-live.showCallGraph",
+					"when": "editorTextFocus",
+					"group": "navigation@99"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "graph-it-live.branchWatch.copyMessage",
+					"when": "view == graph-it-live.branchWatchView && viewItem == branchWatchMessage",
+					"group": "inline"
+				},
+				{
+					"command": "graph-it-live.branchWatch.openCallGraph",
+					"when": "view == graph-it-live.branchWatchView && viewItem == branchWatchFile",
+					"group": "inline"
+				},
+				{
+					"command": "graph-it-live.branchWatch.openCycle",
+					"when": "view == graph-it-live.branchWatchView && viewItem == branchWatchCycle",
+					"group": "inline"
+				}
+			]
+		},
+		"languageModelTools": [
+			{
+				"name": "graph-it-live_graph_context",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphContext",
+				"tags": [
+					"graph-it-live",
+					"context",
+					"dependencies",
+					"calls"
+				],
+				"displayName": "Graph-It-Live: Graph Context",
+				"icon": "$(symbol-misc)",
+				"userDescription": "Retrieve bounded unified graph context for codebase questions and paths",
+				"modelDescription": "Returns a token-bounded subgraph answering a question about the codebase - the default entry point for graph questions.\n\nWHEN: any question spanning file dependencies, symbol calls, implementations, tests or impact; reach for a specialised tool only when this cannot express the cut you need.\nWHY: one deterministic gateway over the same index the specialised tools use, with an explicit token budget so large graphs come back bounded instead of truncated arbitrarily.\nMODES: search, neighbors, path, impact, refactor, overview.\nRETURNS: nodes and edges with workspace-relative paths, an index revision and a freshness flag, and a cursor when results are paginated.\nLIMITS: needs the call graph index, built in the background when the Graph-It-Live view first loads (graph-it-live.preIndexCallGraph) or when the Call Graph panel opens; until then the tool returns an error.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"question": {
+							"type": "string"
+						},
+						"seeds": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									},
+									"label": {
+										"type": "string"
+									},
+									"filePath": {
+										"type": "string"
+									},
+									"symbolName": {
+										"type": "string"
+									}
+								}
+							}
+						},
+						"mode": {
+							"type": "string",
+							"enum": [
+								"search",
+								"neighbors",
+								"path",
+								"impact",
+								"refactor",
+								"overview"
+							]
+						},
+						"from": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"label": {
+									"type": "string"
+								},
+								"filePath": {
+									"type": "string"
+								},
+								"symbolName": {
+									"type": "string"
+								}
+							}
+						},
+						"to": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"label": {
+									"type": "string"
+								},
+								"filePath": {
+									"type": "string"
+								},
+								"symbolName": {
+									"type": "string"
+								}
+							}
+						},
+						"relations": {
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						},
+						"scope": {
+							"type": "string"
+						},
+						"depth": {
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 5
+						},
+						"maxNodes": {
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 500
+						},
+						"tokenBudget": {
+							"type": "integer",
+							"minimum": 500,
+							"maximum": 16000
+						},
+						"directed": {
+							"type": "boolean"
+						},
+						"cursor": {
+							"type": "string"
+						},
+						"format": {
+							"type": "string",
+							"enum": [
+								"toon",
+								"json"
+							]
+						},
+						"detail": {
+							"type": "string",
+							"enum": [
+								"compact",
+								"standard",
+								"full"
+							],
+							"description": "Output detail; use compact for token-efficient agent context"
+						}
+					}
+				}
+			},
+			{
+				"name": "graph-it-live_find_referencing_files",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphFindRefs",
+				"tags": [
+					"graph-it-live",
+					"dependencies",
+					"references"
+				],
+				"displayName": "Graph-It-Live: Find Files Referencing",
+				"icon": "$(references)",
+				"userDescription": "Find all files that import or depend on a specific file",
+				"modelDescription": "Lists every file that imports or references a given file (reverse dependency lookup).\n\nWHEN: impact analysis, \"who uses this file\", refactoring-safety checks before changing or deleting a file.\nWHY: served from a prebuilt reverse index, so it covers the whole workspace rather than the files already in context.\nRETURNS: workspace-relative path, import type, line and module specifier of each referencing file.\nBARRELS: files that import the target's exports through re-export barrels (export { x } from, export *, chained) are listed after the direct importers, with via = the barrel they import.\nFor an open-ended question, start with graph-it-live_graph_context and come here when you need this specific cut.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"targetPath": {
+							"type": "string",
+							"description": "The absolute path to the file to find references for"
+						}
+					},
+					"required": [
+						"targetPath"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_analyze_dependencies",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphDeps",
+				"tags": [
+					"graph-it-live",
+					"dependencies",
+					"imports"
+				],
+				"displayName": "Graph-It-Live: Analyze Dependencies",
+				"icon": "$(package)",
+				"userDescription": "List all dependencies and imports of a file, with resolved paths and metadata",
+				"modelDescription": "Lists the import/export statements of one file, with each specifier resolved to a path on disk.\n\nWHEN: \"what does this file import\", \"what are this file's dependencies\".\nWHY: read from the parsed source, so tsconfig path aliases, implicit extensions and index files are already resolved.\nRETURNS: one entry per resolved workspace file - module specifier, workspace-relative path, import type (import, require, export, dynamic, side-effect), line number. Unresolved and external imports are left out.\nSUPPORTS: TypeScript, JavaScript, Vue, Svelte, GraphQL.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"filePath": {
+							"type": "string",
+							"description": "The absolute path to the file to analyze"
+						}
+					},
+					"required": [
+						"filePath"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_crawl_dependency_graph",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphCrawl",
+				"tags": [
+					"graph-it-live",
+					"dependencies",
+					"graph"
+				],
+				"displayName": "Graph-It-Live: Crawl Dependency Graph",
+				"icon": "$(type-hierarchy)",
+				"userDescription": "Traverse the full transitive dependency graph from an entry file",
+				"modelDescription": "Builds the transitive file dependency graph reachable from one entry file.\n\nWHEN: project architecture, full dependency tree from an entry point.\nWHY: crawls real import edges across the workspace rather than inferring structure from file names.\nRETURNS: nodes (workspace-relative path) and edges (import relations, source and target). maxDepth defaults to the configured graph-it-live.maxDepth, else 3.\nFor an open-ended question, start with graph-it-live_graph_context and come here when you need this specific cut.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"entryFile": {
+							"type": "string",
+							"description": "The absolute path to the entry file from which to start crawling"
+						},
+						"maxDepth": {
+							"type": "number",
+							"description": "Maximum depth to crawl (optional, defaults to the configured maxDepth setting)"
+						}
+					},
+					"required": [
+						"entryFile"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_get_symbol_graph",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphSymbols",
+				"tags": [
+					"graph-it-live",
+					"symbols",
+					"ast"
+				],
+				"displayName": "Graph-It-Live: Get Symbol Graph",
+				"icon": "$(symbol-structure)",
+				"userDescription": "Get all symbols (functions, classes, variables) defined in a file and their relationships",
+				"modelDescription": "Lists the symbols a file exports and the symbols OUTSIDE the file that each of them depends on.\n\nWHEN: \"which function in this file calls the database / uses X\", scoping a refactor to one symbol rather than the whole file.\nWHY: ts-morph AST parsing, so import aliases are tracked back to their original names and type-only imports are separated from runtime ones.\nRETURNS: every symbol of the file (name, kind, line, category, internal ones included) and symbol-to-symbol edges tagged runtime or type-only.\nNOT THIS TOOL: for calls between symbols defined in the same file, use graph-it-live_generate_codemap (its call flow section). This tool crosses the file boundary outward; that one stays inside it.\nFor an open-ended question, start with graph-it-live_graph_context and come here when you need this specific cut.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"filePath": {
+							"type": "string",
+							"description": "The absolute path to the file to inspect"
+						}
+					},
+					"required": [
+						"filePath"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_find_unused_symbols",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphUnused",
+				"tags": [
+					"graph-it-live",
+					"symbols",
+					"dead-code"
+				],
+				"displayName": "Graph-It-Live: Find Unused Exported Symbols",
+				"icon": "$(trash)",
+				"userDescription": "Find exported symbols that are not used anywhere in the project (dead code)",
+				"modelDescription": "Lists the symbols a file exports that nothing else in the workspace imports.\n\nWHEN: dead-code cleanup in one file, or checking which parts of an API are consumed.\nWHY: cross-references the file's exports against the reverse index, then widens the used set through the file's internal call graph so a symbol reached only indirectly is not reported.\nRETURNS: unused exported symbols (name, kind, line, category), unused and total counts, unused percentage.\nLIMITS: an export reached only through a dynamic or string-keyed lookup can still be reported as unused; confirm before deleting.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"filePath": {
+							"type": "string",
+							"description": "The absolute path to the file to check for unused exports"
+						}
+					},
+					"required": [
+						"filePath"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_get_symbol_callers",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphCallers",
+				"tags": [
+					"graph-it-live",
+					"symbols",
+					"references"
+				],
+				"displayName": "Graph-It-Live: Get Symbol Callers",
+				"icon": "$(call-incoming)",
+				"userDescription": "Find all symbols across the project that call or use a given exported symbol",
+				"modelDescription": "Lists the call sites of one given symbol - one hop, from the call graph index.\n\nWHEN: the plain question \"who calls X\"; finding call sites before a rename; spotting a symbol with no callers.\nWHY: reads CALLS edges from the indexed call graph, so it returns only symbols that call X. File-level imports and other references are not callers; use graph-it-live_get_symbol_dependents for those.\nRETURNS: one entry per caller symbol with workspace-relative path, line of the first call and a type-only flag, plus runtime and type-only counts. Type-only references are added only with includeTypeOnly. The source field says whether the call graph or the symbol dependents fallback answered (the call graph is used once indexed; line is null in the fallback).\nPICKING BETWEEN THE THREE: this one for call sites; graph-it-live_get_symbol_dependents for every reference (imports included) computed fresh from source; graph-it-live_query_call_graph when you need more than one hop, callees as well as callers, or relation types such as INHERITS and IMPLEMENTS.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"filePath": {
+							"type": "string",
+							"description": "The absolute path to the file containing the symbol"
+						},
+						"symbolName": {
+							"type": "string",
+							"description": "The name of the symbol to find callers for (e.g. 'MyClass', 'handleRequest')"
+						},
+						"includeTypeOnly": {
+							"type": "boolean",
+							"description": "Also include type-only references (interfaces, type aliases). Default is false: only call sites are returned."
+						}
+					},
+					"required": [
+						"filePath",
+						"symbolName"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_get_impact_analysis",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphImpact",
+				"tags": [
+					"graph-it-live",
+					"symbols",
+					"refactoring"
+				],
+				"displayName": "Graph-It-Live: Get Impact Analysis",
+				"icon": "$(report)",
+				"userDescription": "Analyze the scope and risk of changing a symbol — shows affected files and symbols",
+				"modelDescription": "Reports everything affected by changing one symbol, direct and transitive.\n\nWHEN: assessing a refactor before starting it, or prioritising which call sites to update first.\nWHY: walks the symbol reverse index outward, keeping runtime and type-only impact separate and aggregating per file.\nRETURNS: impact level (high, medium, low), total impact count, runtime versus type-only breakdown, impacted symbols with depth (1 = direct) and affected files. Transitive impact only with includeTransitive. An unknown symbol returns an error listing close name matches.\nFor an open-ended question, start with graph-it-live_graph_context and come here when you need this specific cut.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"filePath": {
+							"type": "string",
+							"description": "The absolute path to the file containing the symbol"
+						},
+						"symbolName": {
+							"type": "string",
+							"description": "The name of the symbol to analyze impact for"
+						},
+						"includeTransitive": {
+							"type": "boolean",
+							"description": "Whether to include transitive (indirect) dependents (default: false)"
+						},
+						"maxDepth": {
+							"type": "number",
+							"description": "Maximum transitive depth to traverse when includeTransitive is true (default: 3)"
+						}
+					},
+					"required": [
+						"filePath",
+						"symbolName"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_get_index_status",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphIndexStatus",
+				"tags": [
+					"graph-it-live",
+					"index",
+					"status"
+				],
+				"displayName": "Graph-It-Live: Get Index Status",
+				"icon": "$(pulse)",
+				"userDescription": "Check if the dependency index is ready and get cache statistics",
+				"modelDescription": "Reports the state of the dependency index backing the other tools.\n\nWHEN: checking readiness before a large analysis, or explaining unexpectedly empty or incomplete results.\nWHY: distinguishes \"no results\" from \"index not built yet\", and tells whether imports were skipped because they resolve outside the workspace root (a monorepo sub-package misses its sibling packages).\nRETURNS: index state, readiness flag, whether the reverse index exists, cache size, reverse-index statistics (files indexed included), cacheFiles (on-disk bytes of the cached reverse index and call graph), and outOfRootImports (with examples, the relative monorepoRoot and a warning when above 0).",
+				"inputSchema": {
+					"type": "object",
+					"properties": {}
+				}
+			},
+			{
+				"name": "graph-it-live_parse_imports",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphImports",
+				"tags": [
+					"graph-it-live",
+					"imports",
+					"parsing"
+				],
+				"displayName": "Graph-It-Live: Parse Imports",
+				"icon": "$(list-tree)",
+				"userDescription": "Parse and list all import statements in a file with resolved paths",
+				"modelDescription": "Returns the import statements of one file: module specifier, import type and line.\n\nWHEN: inspecting import style or alias usage, without the resolved paths.\nWHY: uses the language-aware parser pipeline, so it is more accurate than a text search.\nRETURNS: module specifier as written, import type, line number.\nLIMITS: lists only imports that resolve to a workspace file, once per file - use graph-it-live_resolve_module_path to debug one that does not.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"filePath": {
+							"type": "string",
+							"description": "The absolute path to the file to parse imports from"
+						}
+					},
+					"required": [
+						"filePath"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_generate_codemap",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphCodemap",
+				"tags": [
+					"graph-it-live",
+					"symbols",
+					"codemap"
+				],
+				"displayName": "Graph-It-Live: Generate Code Map",
+				"icon": "$(file-code)",
+				"userDescription": "Generate an AI-friendly code map summarizing a file's structure, symbols, and call flow",
+				"modelDescription": "Returns one file's exports, internals, dependencies, dependents and internal call flow in a single call.\n\nWHEN: getting oriented in an unfamiliar file, or gathering the full context of a file before refactoring it.\nWHY: one call in place of analyze_dependencies, get_symbol_graph and find_referencing_files together, plus the calls between the file's own symbols.\nRETURNS: path, language, line count, exported and internal symbols, dependencies, dependents, intra-file call flow, cycle detection.\nSUPPORTS: TypeScript, JavaScript, Python, Rust, Vue, Svelte.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"filePath": {
+							"type": "string",
+							"description": "The absolute path to the file to generate a code map for"
+						}
+					},
+					"required": [
+						"filePath"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_expand_node",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphExpand",
+				"tags": [
+					"graph-it-live",
+					"dependencies",
+					"graph"
+				],
+				"displayName": "Graph-It-Live: Expand Node Dependencies",
+				"icon": "$(expand-all)",
+				"userDescription": "Discover new dependencies from a file, excluding an already-known set (incremental graph exploration)",
+				"modelDescription": "Returns the dependencies of one file that are not already in a set of paths you provide.\n\nWHEN: exploring a large graph incrementally, or lazily loading one node at a time.\nWHY: crawls the file's transitive dependencies and drops what you already hold, so only newly discovered files come back.\nRETURNS: the new nodes and edges only, with the same fields as crawl_dependency_graph.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"filePath": {
+							"type": "string",
+							"description": "The absolute path to the file to expand from"
+						},
+						"knownPaths": {
+							"type": "array",
+							"items": {
+								"type": "string"
+							},
+							"description": "List of file paths already known — newly discovered nodes will exclude these"
+						}
+					},
+					"required": [
+						"filePath"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_verify_dependency_usage",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphVerifyUsage",
+				"tags": [
+					"graph-it-live",
+					"dependencies",
+					"dead-code"
+				],
+				"displayName": "Graph-It-Live: Verify Dependency Usage",
+				"icon": "$(check)",
+				"userDescription": "Check if an import between two files is actually used or is a dead import",
+				"modelDescription": "Reports whether a source file actually uses any symbol from a target file it imports.\n\nWHEN: identifying unused imports, or confirming a dependency edge is real before acting on it.\nWHY: AST analysis of actual references, so an import that is never used is distinguished from one that is.\nRETURNS: boolean.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"sourceFile": {
+							"type": "string",
+							"description": "The absolute path to the file that imports the target"
+						},
+						"targetFile": {
+							"type": "string",
+							"description": "The absolute path to the imported file"
+						}
+					},
+					"required": [
+						"sourceFile",
+						"targetFile"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_invalidate_files",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphInvalidate",
+				"tags": [
+					"graph-it-live",
+					"index",
+					"cache"
+				],
+				"displayName": "Graph-It-Live: Invalidate File Cache",
+				"icon": "$(discard)",
+				"userDescription": "Flush cached dependency data for specific files so the next analysis re-reads them",
+				"modelDescription": "Drops the cached analysis for specific files so the next query re-reads them.\n\nWHEN: results look stale after edits the file watcher missed. Paths must lie inside an open workspace folder.\nWHY: analysis is cached per file; the cache is otherwise refreshed by the file watcher.\nRETURNS: how many files were invalidated, which were cleared, and which held no cache entry.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"filePaths": {
+							"type": "array",
+							"items": {
+								"type": "string"
+							},
+							"description": "Absolute paths of the files to invalidate from the cache"
+						}
+					},
+					"required": [
+						"filePaths"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_rebuild_index",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphRebuildIndex",
+				"tags": [
+					"graph-it-live",
+					"index",
+					"cache"
+				],
+				"displayName": "Graph-It-Live: Rebuild Full Index",
+				"icon": "$(sync)",
+				"userDescription": "Clear all cached dependency data and rebuild the full project index from scratch",
+				"modelDescription": "Clears all cached analysis and re-indexes the whole workspace.\n\nWHEN: after a branch switch or large refactor when the index no longer matches the tree; invalidate_files is enough for a few files.\nWHY: restores a graph that is consistent with what is on disk.\nRETURNS: rebuild duration and new cache size.\nLIMITS: takes seconds on a large workspace.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {}
+				}
+			},
+			{
+				"name": "graph-it-live_get_symbol_dependents",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphDependents",
+				"tags": [
+					"graph-it-live",
+					"symbols",
+					"references"
+				],
+				"displayName": "Graph-It-Live: Get Symbol Dependents",
+				"icon": "$(call-outgoing)",
+				"userDescription": "Find all symbols across the codebase that directly depend on (use) a specific symbol",
+				"modelDescription": "Lists the symbols that use one given symbol - one hop, computed from source at call time.\n\nWHEN: changing a signature and needing every call site, or assessing the blast radius of a symbol-level change.\nWHY: walks the symbol graphs of every file that references the target, so file-level imports count as well as calls.\nRETURNS: caller symbol id, file path and workspace-relative path per dependent, plus a total count.\nPICKING BETWEEN THE THREE: this one for every reference, including file-level imports, computed fresh; graph-it-live_get_symbol_callers for call sites only; graph-it-live_query_call_graph for multi-hop traversal, callees, or relation types.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"filePath": {
+							"type": "string",
+							"description": "The absolute path to the file containing the symbol"
+						},
+						"symbolName": {
+							"type": "string",
+							"description": "The name of the symbol to find dependents for"
+						}
+					},
+					"required": [
+						"filePath",
+						"symbolName"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_trace_function_execution",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphTrace",
+				"tags": [
+					"graph-it-live",
+					"symbols",
+					"execution"
+				],
+				"displayName": "Graph-It-Live: Trace Function Execution",
+				"icon": "$(type-hierarchy-sub)",
+				"userDescription": "Trace the full recursive call chain starting from a function or method",
+				"modelDescription": "Follows the call chain outward from one symbol, recursively, across files.\n\nWHEN: tracing a request through controller, service and repository, or mapping what a feature actually reaches.\nWHY: follows calls through multiple files instead of stopping at direct dependencies; stops at external modules, at maxDepth, or on a cycle.\nRETURNS: root symbol, call chain entries (depth, caller, callee, resolved path), visited symbols, and whether maxDepth was hit.\nFor an open-ended question, start with graph-it-live_graph_context and come here when you need this specific cut.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"filePath": {
+							"type": "string",
+							"description": "The absolute path to the file containing the function"
+						},
+						"symbolName": {
+							"type": "string",
+							"description": "The name of the function or method to trace"
+						},
+						"maxDepth": {
+							"type": "number",
+							"description": "Maximum call chain depth to follow (default: 10)"
+						}
+					},
+					"required": [
+						"filePath",
+						"symbolName"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_analyze_file_logic",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphFileLogic",
+				"tags": [
+					"graph-it-live",
+					"symbols",
+					"ast"
+				],
+				"displayName": "Graph-It-Live: Analyze File Logic",
+				"icon": "$(code)",
+				"userDescription": "Analyze the intra-file call hierarchy — which functions call which within a single file",
+				"modelDescription": "Returns the call hierarchy among the symbols defined INSIDE one file, ignoring anything it imports.\n\nWHEN: understanding how a file works internally, or spotting recursion before a refactor.\nWHY: built from the file's AST, so no language server is needed. Calls are matched by name within the file.\nRETURNS: nodes (symbol id, LSP SymbolKind number, type, export status, start/end line range), call edges with call-site line numbers, and cycle detection with the symbols involved.\nNOT THIS TOOL: for what this file's symbols reach in OTHER files, use graph-it-live_get_symbol_graph.\nSUPPORTS: TypeScript, JavaScript, Python, Rust.\nFor an open-ended question, start with graph-it-live_graph_context and come here when you need this specific cut.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"filePath": {
+							"type": "string",
+							"description": "The absolute path to the file to analyze"
+						}
+					},
+					"required": [
+						"filePath"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_resolve_module_path",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphResolve",
+				"tags": [
+					"graph-it-live",
+					"imports",
+					"resolution"
+				],
+				"displayName": "Graph-It-Live: Resolve Module Path",
+				"icon": "$(link)",
+				"userDescription": "Resolve a module specifier (e.g. './utils', '@/components/Button') to its absolute file path",
+				"modelDescription": "Resolves one module specifier, as seen from a given file, to a path on disk.\n\nWHEN: \"where does this import point\", or debugging alias and extension resolution.\nWHY: applies tsconfig path aliases, implicit extensions (.ts, .tsx, .js, .jsx, .vue, .svelte, .gql) and index-file resolution.\nRETURNS: whether resolution succeeded and the resolved workspace-relative path.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"fromFile": {
+							"type": "string",
+							"description": "Absolute path of the file containing the import statement"
+						},
+						"moduleSpecifier": {
+							"type": "string",
+							"description": "The module specifier to resolve (e.g. './utils', '@/components/Button', 'lodash')"
+						}
+					},
+					"required": [
+						"fromFile",
+						"moduleSpecifier"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_analyze_breaking_changes",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphBreaking",
+				"tags": [
+					"graph-it-live",
+					"symbols",
+					"refactoring"
+				],
+				"displayName": "Graph-It-Live: Analyze Breaking Changes",
+				"icon": "$(warning)",
+				"userDescription": "Detect breaking changes when modifying function signatures, interface members, or type aliases",
+				"modelDescription": "Compares two versions of a file and reports which signature changes break callers.\n\nWHEN: validating an edit before committing, or writing migration notes for an API change.\nWHY: diffs the parsed signatures rather than the text, so added optional parameters are separated from breaking ones.\nRETURNS: breaking changes (type, symbol, description, severity, old and new value, line) and non-breaking changes. Without newContent the current file on disk is used.\nDETECTS: added required parameter, removed parameter, changed parameter or return type, optional made required, reduced visibility, removed or changed interface member, changed type alias.\nINPUT: oldContent must be the full previous file content, not a placeholder. With symbolName, an unknown symbol returns an error listing close name matches, a symbol missing from a non-empty oldContent that declares nothing returns an error, and a symbol new in newContent is reported as a non-breaking change.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"filePath": {
+							"type": "string",
+							"description": "Absolute path to the file being modified"
+						},
+						"oldContent": {
+							"type": "string",
+							"description": "The previous file content to compare against"
+						},
+						"symbolName": {
+							"type": "string",
+							"description": "Optional: restrict analysis to a specific symbol name"
+						},
+						"newContent": {
+							"type": "string",
+							"description": "The new file content (if omitted, reads the current file from disk)"
+						}
+					},
+					"required": [
+						"filePath",
+						"oldContent"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_query_call_graph",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphCallGraph",
+				"tags": [
+					"graph-it-live",
+					"callgraph",
+					"symbols"
+				],
+				"displayName": "Graph-It-Live: Query Call Graph",
+				"icon": "$(type-hierarchy)",
+				"userDescription": "Query cross-file callers and callees of a symbol via BFS traversal on the indexed call graph database",
+				"modelDescription": "Traces calls across files for several hops, in either direction, from a SQLite-backed call graph.\n\nWHEN: \"who calls X\" (direction=callers, depth=1), \"what does X call\" (direction=callees), multi-hop traversal (\"three levels deep\"), or cycle detection across modules.\nWHY: built from tree-sitter AST analysis, so it holds real call edges (CALLS, INHERITS, IMPLEMENTS) and type-only references (USES) rather than import edges. Every relation type is returned unless relationTypes narrows it.\nRETURNS: the matched symbol, its callers and callees with file and call-site line, relation type, and a cyclic flag per edge. Defaults: direction=both, depth=2.\nSELECTING: two same-name methods in one file return reason=ambiguous with candidates; pass one candidate's symbolId or startLine to select it exactly. A stale selector returns reason=stale_selector (ids embed the line and change after edits); 'Class.method' names are not supported.\nNOT THIS TOOL: for every file that imports a file, use graph-it-live_find_referencing_files.\nLIMITS: needs the call graph index, built in the background when the Graph-It-Live view first loads (graph-it-live.preIndexCallGraph) or when the Call Graph panel opens; until then the tool returns an error.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"filePath": {
+							"type": "string",
+							"description": "Absolute path to the file containing the target symbol"
+						},
+						"symbolName": {
+							"type": "string",
+							"description": "Name of the symbol to query (function, class, method). A bare name shared by several symbols in the file returns reason 'ambiguous' with candidates; qualified names such as 'Class.method' are not supported"
+						},
+						"symbolId": {
+							"type": "string",
+							"description": "Exact node id from a previous result or candidate, valid for the current index only (ids embed the line). A stale id returns reason 'stale_selector'"
+						},
+						"startLine": {
+							"type": "number",
+							"description": "Declaration line of the symbol, 0-based like startLine in results and candidates (editor line 3 is 2). Selects one of several same-name symbols"
+						},
+						"direction": {
+							"type": "string",
+							"enum": [
+								"callers",
+								"callees",
+								"both"
+							],
+							"description": "Traversal direction: 'callers' (who calls this), 'callees' (what it calls), or 'both' (default)"
+						},
+						"depth": {
+							"type": "number",
+							"description": "Maximum BFS traversal depth (default: 2, max: 10)"
+						},
+						"relationTypes": {
+							"type": "array",
+							"items": {
+								"type": "string",
+								"enum": [
+									"CALLS",
+									"INHERITS",
+									"IMPLEMENTS",
+									"USES"
+								]
+							},
+							"description": "Filter by relation types (default: all types included)"
+						}
+					},
+					"required": [
+						"filePath",
+						"symbolName"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_scan_dead_code",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphDeadCode",
+				"tags": [
+					"graph-it-live",
+					"symbols",
+					"dead-code"
+				],
+				"displayName": "Graph-It-Live: Scan Dead Code",
+				"icon": "$(trash)",
+				"userDescription": "Workspace-wide scan for unused exported symbols (dead code) across the entire project or a scoped directory",
+				"modelDescription": "Lists the unused exported symbols across a whole workspace or directory.\n\nWHEN: auditing code quality, or cleaning up before a refactor; use find_unused_symbols for a single file.\nWHY: combines the reverse index with per-file symbol analysis, so the scan stays linear instead of comparing every file against every other.\nRETURNS: files scanned, files holding dead code, total unused symbols, per-file unused symbol lists, scan duration, and truncated with filesBeyondLimit when maxFiles stopped the scan.\nLIMITS: scopePath must be an absolute path inside the workspace; results are incomplete while background indexing runs; an export reached only through a dynamic lookup can still be listed.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"scopePath": {
+							"type": "string",
+							"description": "Optional absolute path to a directory to restrict the scan scope (defaults to entire workspace)"
+						},
+						"maxFiles": {
+							"type": "number",
+							"description": "Optional maximum number of files to process (defaults to no limit)"
+						}
+					}
+				}
+			},
+			{
+				"name": "graph-it-live_review_pr",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphReviewPr",
+				"tags": [
+					"graph-it-live",
+					"review",
+					"git"
+				],
+				"displayName": "Graph-It-Live: Review PR",
+				"icon": "$(git-pull-request)",
+				"userDescription": "Review a local Git diff against a base ref and report its risk with per-symbol evidence",
+				"modelDescription": "Reviews a local Git diff and reports the risk it carries, with per-symbol evidence.\n\nWHEN: before opening a pull request, or as a CI gate.\nWHY: combines the parsed signatures of both revisions with the workspace index, so signature changes are scored against their real callers.\nRETURNS: deterministic risk level, per-symbol evidence, impact counts, and an explicit list of what could not be analysed.\nLIMITS: runs git in the first workspace folder; impact counts are incomplete while background indexing runs.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"baseRef": {
+							"type": "string",
+							"description": "Git base ref to compare against, for example origin/main"
+						},
+						"headRef": {
+							"type": "string",
+							"description": "Optional Git head ref; defaults to the checked-out worktree"
+						},
+						"maxFiles": {
+							"type": "number",
+							"description": "Optional maximum number of changed files to analyse (1-1000, default 200)"
+						},
+						"maxDepth": {
+							"type": "number",
+							"description": "Optional impact traversal depth (1-10, default 3)"
+						}
+					},
+					"required": [
+						"baseRef"
+					]
+				}
+			},
+			{
+				"name": "graph-it-live_query_natural_language",
+				"canBeReferencedInPrompt": true,
+				"toolReferenceName": "graphQuery",
+				"tags": [
+					"graph-it-live",
+					"search",
+					"call-graph"
+				],
+				"displayName": "Graph-It-Live: Natural Language Query",
+				"icon": "$(search)",
+				"userDescription": "Return the call-graph subgraph relevant to a plain-language question about the codebase",
+				"modelDescription": "Returns the subgraph relevant to a plain-language question, for you to turn into an answer.\n\nWHEN: exploring a codebase from a concept rather than a known file or symbol name.\nWHY: extracts keywords (English, French, German, Spanish, Chinese or Russian questions, mapped to English identifier stems), scores seed nodes by keyword specificity and file path over the call graph index, then traverses outward from them. English identifier-like keywords in the question (\"reference compute python\") give the most precise seeds.\nRETURNS: the question, the extracted keywords, the subgraph, and timing and truncation metadata.\nLIMITS: returns graph data, not prose - you write the answer from it; needs the call graph index, built in the background when the Graph-It-Live view first loads (graph-it-live.preIndexCallGraph) or when the Call Graph panel opens; until then the tool returns an error.",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"question": {
+							"type": "string",
+							"description": "Plain-language question about the codebase"
+						},
+						"depth": {
+							"type": "number",
+							"description": "Optional traversal depth from the matched symbols (1-5, default 2)"
+						},
+						"tokenBudget": {
+							"type": "number",
+							"description": "Optional token budget for the subgraph (500-16000, default 4000)"
+						},
+						"fileFilter": {
+							"type": "string",
+							"description": "Optional workspace-relative glob restricting the search, for example src/**"
+						}
+					},
+					"required": [
+						"question"
+					]
+				}
+			}
+		],
+		"configuration": [
+			{
+				"title": "Graph-It-Live",
+				"properties": {
+					"graph-it-live.maxDepth": {
+						"type": "number",
+						"default": 50,
+						"description": "Maximum dependency depth to analyze",
+						"minimum": 1,
+						"maximum": 100
+					},
+					"graph-it-live.excludeNodeModules": {
+						"type": "boolean",
+						"default": true,
+						"description": "Exclude node_modules from graph"
+					},
+					"graph-it-live.ignoreTypeImports": {
+						"type": "boolean",
+						"default": false,
+						"description": "Ignore TypeScript type-only imports and exports in the dependency graph. You might need to restart VS Code for this setting to take effect."
+					},
+					"graph-it-live.enableMcpServer": {
+						"type": "boolean",
+						"default": false,
+						"description": "Enable MCP (Model Context Protocol) server for LLM integration. When enabled, exposes dependency analysis tools to GitHub Copilot and other MCP-compatible AI assistants.",
+						"markdownDescription": "Enable **MCP (Model Context Protocol)** server for LLM integration. When enabled, exposes dependency analysis tools to GitHub Copilot and other MCP-compatible AI assistants.\n\n[Learn more about MCP](https://code.visualstudio.com/api/extension-guides/ai/mcp)"
+					},
+					"graph-it-live.enableMcpDebugLogging": {
+						"type": "boolean",
+						"default": false,
+						"description": "Enable detailed debug logging for MCP server. Creates ~/mcp-debug.log with automatic rotation (5MB limit per file, keeps 2 files). Only enable for troubleshooting.",
+						"markdownDescription": "**[Privacy Notice]** Enable detailed debug logging for MCP server. Creates `~/mcp-debug.log` with automatic rotation (5MB limit per file, keeps last 2 files). Log file may contain project paths and file names. Only enable temporarily for troubleshooting, then disable to prevent unnecessary data accumulation."
+					},
+					"graph-it-live.enableBackgroundIndexing": {
+						"type": "boolean",
+						"default": true,
+						"description": "Enable background indexing for faster reverse dependency lookups. When enabled, the extension will index all files in the workspace at startup."
+					},
+					"graph-it-live.preIndexCallGraph": {
+						"type": "boolean",
+						"default": true,
+						"description": "Pre-index the call graph database at startup alongside background indexing. When enabled, the first 'Show Call Graph' command is near-instant because the symbol-level index is already built."
+					},
+					"graph-it-live.indexingStartDelay": {
+						"type": "number",
+						"default": 1000,
+						"description": "Delay in milliseconds before starting background indexing after extension activation. Allows VS Code to finish startup first.",
+						"minimum": 0,
+						"maximum": 30000
+					},
+					"graph-it-live.logLevel": {
+						"type": "string",
+						"enum": [
+							"debug",
+							"info",
+							"warn",
+							"error",
+							"none"
+						],
+						"default": "info",
+						"description": "Logging level for the extension. Debug shows all logs, none disables logging.",
+						"markdownDescription": "Logging level for the extension output channel.\n\n- **debug**: Verbose output for troubleshooting\n- **info**: Standard operation logs\n- **warn**: Warnings only\n- **error**: Errors only\n- **none**: Disable logging"
+					},
+					"graph-it-live.unusedDependencyMode": {
+						"type": "string",
+						"enum": [
+							"hide",
+							"dim"
+						],
+						"default": "hide",
+						"description": "Choose how to display unused dependencies in the graph. 'hide' removes them, 'dim' reduces their opacity.",
+						"markdownDescription": "Choose how to display unused dependencies in the graph.\n\n- **hide**: Remove edges for imports that are not actually used in the code\n- **dim**: Show unused edges with reduced opacity"
+					},
+					"graph-it-live.showCommunities": {
+						"type": "boolean",
+						"default": true,
+						"markdownDescription": "Show community clustering on the dependency graph (background tint on nodes + community legend). Disable to hide community visualization."
+					},
+					"graph-it-live.communityMode": {
+						"type": "string",
+						"enum": [
+							"path",
+							"louvain"
+						],
+						"enumDescriptions": [
+							"Group files by their first functional folder (src/analyzer, src/webview, ...)",
+							"Group files by import structure (deterministic Louvain), named after their dominant folder"
+						],
+						"default": "path",
+						"markdownDescription": "How the dependency graph groups files into communities (node tint and legend). **path** groups by folder; **louvain** groups files that import each other, which shows coupling that folders hide."
+					},
+					"graph-it-live.performanceProfile": {
+						"type": "string",
+						"enum": [
+							"default",
+							"low-memory",
+							"high-performance",
+							"custom"
+						],
+						"default": "default",
+						"description": "Performance profile preset that sets cache sizes, concurrency, and unused-analysis limits.",
+						"markdownDescription": "Performance profile preset:\n\n- **default**: Balanced settings (4GB-8GB RAM)\n- **low-memory**: Optimized for machines with <4GB RAM\n- **high-performance**: Maximizes speed on powerful machines (16GB+ RAM)\n- **custom**: Use the values in the **Advanced: Performance overrides** section",
+						"order": 0
+					},
+					"graph-it-live.symbolViewLayout": {
+						"type": "string",
+						"enum": [
+							"hierarchical",
+							"force-directed",
+							"radial"
+						],
+						"default": "hierarchical",
+						"description": "Layout algorithm for symbol-level drill-down view.",
+						"markdownDescription": "Layout algorithm for symbol-level drill-down view:\n\n- **hierarchical**: Top-to-bottom layout (Sugiyama/Dagre). Best for call flows\n- **force-directed**: Interactive physics-based layout. Best for exploring relationships\n- **radial**: Concentric circles with the current file at center. Experimental"
+					},
+					"graph-it-live.branchWatch.enabled": {
+						"type": "boolean",
+						"default": false,
+						"scope": "resource",
+						"description": "Automatically review saved branch changes against a Git base branch. Structural analysis only; tests must pass before delivery."
+					},
+					"graph-it-live.branchWatch.baseRef": {
+						"type": "string",
+						"default": "",
+						"scope": "resource",
+						"description": "Git branch reference used as the base. Local and remote-tracking branches are supported; no fetch is performed."
+					},
+					"graph-it-live.branchWatch.headRef": {
+						"type": "string",
+						"default": "",
+						"scope": "resource",
+						"description": "Git branch reference used as the head. Empty or the checked-out branch uses the current branch and its final on-disk state, untracked files included."
+					},
+					"graph-it-live.branchWatch.maxFiles": {
+						"type": "integer",
+						"default": 200,
+						"minimum": 1,
+						"maximum": 1000,
+						"scope": "resource",
+						"description": "Maximum number of files analyzed by Branch Watch. Higher values improve coverage but increase analysis time and memory usage. Range: 1–1000."
+					},
+					"graph-it-live.workspaceFolder": {
+						"type": "string",
+						"default": "",
+						"scope": "window",
+						"description": "Workspace folder analyzed by Graph-It-Live in a multi-root workspace. Empty uses the active editor folder, then the first folder."
+					}
+				}
+			},
+			{
+				"title": "Advanced: Performance overrides",
+				"order": 100,
+				"properties": {
+					"graph-it-live.indexingConcurrency": {
+						"type": "number",
+						"default": 4,
+						"description": "Number of files to process in parallel during background indexing. Lower values reduce CPU usage but increase indexing time.",
+						"markdownDescription": "Number of files to process in parallel during background indexing.\n\nOverride used only when `#graph-it-live.performanceProfile#` is `custom`; other profiles set this value.",
+						"minimum": 1,
+						"maximum": 16,
+						"order": 0,
+						"tags": [
+							"advanced"
+						]
+					},
+					"graph-it-live.unusedAnalysisConcurrency": {
+						"type": "number",
+						"default": 4,
+						"minimum": 1,
+						"maximum": 16,
+						"description": "Number of source files to analyze in parallel for unused dependency detection. Lower values use less memory but are slower. Adjust based on your machine's capabilities.",
+						"markdownDescription": "Number of source files to analyze in parallel for unused dependency detection.\n\n- **1-2**: Low-memory machines (<4GB RAM)\n- **4**: Default, balanced\n- **8-16**: High-performance machines (16GB+ RAM)\n\nOverride used only when `#graph-it-live.performanceProfile#` is `custom`; other profiles set this value.",
+						"order": 1,
+						"tags": [
+							"advanced"
+						]
+					},
+					"graph-it-live.unusedAnalysisMaxEdges": {
+						"type": "number",
+						"default": 2000,
+						"minimum": 0,
+						"description": "Skip automatic unused dependency analysis if the graph has more edges than this threshold. Set to 0 to disable the limit. Manual analysis via toolbar button still works.",
+						"markdownDescription": "Skip automatic unused dependency analysis if the graph exceeds this edge count.\n\n- **0**: No limit (always analyze)\n- **1000-2000**: Recommended for low-memory machines\n- **5000+**: High-performance machines\n\nOverride used only when `#graph-it-live.performanceProfile#` is `custom`; other profiles set this value.",
+						"order": 2,
+						"tags": [
+							"advanced"
+						]
+					},
+					"graph-it-live.persistUnusedAnalysisCache": {
+						"type": "boolean",
+						"default": false,
+						"description": "Cache unused dependency analysis results to disk for faster subsequent loads. Results are invalidated when files change.",
+						"markdownDescription": "Cache unused dependency analysis results to disk.\n\n⚠️ **Experimental**: Enable for large projects with stable dependencies. Disable if you experience stale results.\n\nOverride used only when `#graph-it-live.performanceProfile#` is `custom`; other profiles set this value.",
+						"tags": [
+							"advanced"
+						],
+						"order": 3
+					},
+					"graph-it-live.maxUnusedAnalysisCacheSize": {
+						"type": "number",
+						"default": 200,
+						"minimum": 10,
+						"maximum": 1000,
+						"description": "Maximum number of source files to cache for unused dependency analysis. Uses LRU (Least Recently Used) eviction when limit is reached.",
+						"markdownDescription": "Maximum number of source files to cache for unused dependency analysis.\n\n- **Lower values** (50-100): Reduce memory usage on constrained systems\n- **Higher values** (500-1000): Better cache hit rate on large projects\n\nUses **LRU eviction** - least recently accessed entries are removed when limit is reached.\n\nOverride used only when `#graph-it-live.performanceProfile#` is `custom`; other profiles set this value.",
+						"tags": [
+							"advanced"
+						],
+						"order": 4
+					},
+					"graph-it-live.maxCacheSize": {
+						"type": "number",
+						"default": 500,
+						"minimum": 50,
+						"maximum": 2000,
+						"description": "Maximum number of file dependency analyses to keep in memory cache. Lower values reduce memory usage.",
+						"markdownDescription": "Maximum number of file dependency analyses to keep in memory cache.\n\nOverride used only when `#graph-it-live.performanceProfile#` is `custom`; other profiles set this value.",
+						"order": 5,
+						"tags": [
+							"advanced"
+						]
+					},
+					"graph-it-live.maxSymbolCacheSize": {
+						"type": "number",
+						"default": 200,
+						"minimum": 50,
+						"maximum": 1000,
+						"description": "Maximum number of symbol analysis results to keep in memory cache. Lower values reduce memory usage.",
+						"markdownDescription": "Maximum number of symbol analysis results to keep in memory cache.\n\nOverride used only when `#graph-it-live.performanceProfile#` is `custom`; other profiles set this value.",
+						"order": 6,
+						"tags": [
+							"advanced"
+						]
+					}
+				}
+			}
+		],
+		"viewsWelcome": [
+			{
+				"view": "graph-it-live.branchWatchView",
+				"contents": "Review the structural impact between Git branches.\n[Enable branch watch](command:graph-it-live.branchWatch.enable)",
+				"when": "!graph-it-live.branchWatch.enabled && graph-it-live.branchWatch.available"
+			}
+		]
+	},
+	"bin": {
+		"graph-it": "./dist/graph-it.js"
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run build -- --production",
+		"build": "node esbuild.js",
+		"build:cli": "node esbuild.js --cli-only",
+		"watch": "node esbuild.js --watch",
+		"compile": "npm run build",
+		"compile:tests": "tsc -p tsconfig.vscode-e2e.json",
+		"test": "vitest --run",
+		"test:watch": "vitest --watch",
+		"test:unit": "vitest run --run",
+		"test:cli": "vitest run tests/cli",
+		"test:coverage": "vitest run --coverage",
+		"test:vscode": "npm run compile:tests && npm run compile && node ./tests/vscode-e2e/runTests.js",
+		"test:vscode:vsix": "npm run package && npm run compile:tests && node ./tests/vscode-e2e/runTests.js --vsix",
+		"test:all": "npm run test:unit",
+		"test:bench": "node scripts/run-benchmarks.mjs",
+		"test:bench:memory": "node scripts/run-memory-bench.mjs",
+		"bench:e2e": "npm run build && npm run compile:tests && node scripts/bench-e2e.mjs",
+		"test:context-economy": "npm run build:cli && node scripts/context-economy-corpus.mjs",
+		"sync:tool-descriptions": "node scripts/sync-tool-descriptions.mjs",
+		"test:mcp": "vitest run tests/cli/serveTools.e2e.test.ts",
+		"test:cli:e2e": "bash scripts/test-cli-e2e.sh",
+		"lint": "eslint src",
+		"lint:fix": "eslint src --fix",
+		"check:types": "npm run check:types:clean",
+		"check:types:clean": "node -e \"require('node:fs').rmSync('out', { recursive: true, force: true });\" && tsc --noEmit && npm run check:types:fixtures",
+		"check:types:fixtures": "tsc --project tsconfig.type-fixtures.json",
+		"audit": "npm audit",
+		"audit:fix": "npm audit fix",
+		"package": "vsce package",
+		"package:vsix": "vsce package",
+		"package:verify": "node scripts/verify-package.mjs",
+		"publish": "vsce publish"
+	},
+	"dependencies": {
+		"@dagrejs/dagre": "^2.0.4",
+		"@modelcontextprotocol/server": "^2.4.0",
+		"chokidar": "^5.0.0",
+		"cytoscape": "^3.34.4",
+		"cytoscape-fcose": "^2.2.0",
+		"elkjs": "^0.12.1",
+		"gpt-tokenizer": "^4.1.0",
+		"ignore": "^7.0.14",
+		"ink": "^8.0.0",
+		"react": "^19.3.1",
+		"react-dom": "^19.3.1",
+		"reactflow": "^11.11.4",
+		"sql.js": "^1.15.2",
+		"tree-sitter-wasms": "^0.1.13",
+		"ts-morph": "^27.0.2",
+		"vis-network": "^10.1.4",
+		"web-tree-sitter": "^0.26.13",
+		"wrap-ansi": "^10.0.2",
+		"zod": "^4.6.7"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"@testing-library/react": "^16.3.3",
+		"@types/mocha": "^10.0.10",
+		"@types/node": "^25.9.9",
+		"@types/react": "^19.3.0",
+		"@types/react-dom": "^19.3.0",
+		"@types/sql.js": "^1.4.11",
+		"@types/vscode": "^1.96.0",
+		"@vitest/coverage-v8": "^4.1.12",
+		"@vitest/ui": "^4.1.12",
+		"@vscode/test-electron": "^3.1.0",
+		"@vscode/vsce": "^4.1.0",
+		"ajv": "^8.20.0",
+		"esbuild": "^0.28.2",
+		"esbuild-css-modules-plugin": "^3.1.5",
+		"eslint": "^10.14.0",
+		"fast-check": "^4.10.2",
+		"glob": "^14.0.3",
+		"globals": "^17.13.0",
+		"happy-dom": "^21.0.4",
+		"mocha": "^11.8.0",
+		"ovsx": "^1.3.0",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.72.1",
+		"vitest": "^4.1.12"
+	},
+	"overrides": {
+		"@hono/node-server": "2.0.10",
+		"picomatch": "^4.0.4",
+		"minimatch": ">=10.2.1",
+		"flatted": ">=3.4.2",
+		"mocha": {
+			"diff": ">=8.0.3",
+			"serialize-javascript": ">=7.0.3"
+		},
+		"ovsx": {
+			"@vscode/vsce": "$@vscode/vsce"
+		}
+	},
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org"
+	},
+	"allowScripts": {
+		"@vscode/vsce-sign@2.1.0": true,
+		"esbuild@0.28.2": true,
+		"fsevents@2.3.3": true
+	},
+	"__metadata": {
+		"installedTimestamp": 1793567586741,
+		"targetPlatform": "universal",
+		"size": 49904061
+	}
+}

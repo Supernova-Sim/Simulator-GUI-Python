@@ -9,7 +9,7 @@ from src.calculos.aletas_rasaero import aleta_para_rasaero
 from src.calculos.coifa import calcular_coifa
 from src.calculos.componentes import derivar_todos
 from src.calculos.seguranca import check_kn, check_mass_flux, check_p0, fs_carcaca
-from src.modelo import resolver
+from src.agregador_estrutural import resolver
 
 
 def test_componentes_hefesto() -> None:
@@ -47,6 +47,23 @@ def test_seguranca_medusa_referencia() -> None:
     assert check_p0(2.9122e6, limites=LIMITES_IREC).ok
     assert check_kn(232.7390, limites=LIMITES_IREC).ok
     assert check_mass_flux(1249.4661, limites=LIMITES_IREC).ok
+
+
+def test_seguranca_fail_closed() -> None:
+    """Verifica que entradas inválidas ou nulas retornam ok=False e valor=nan."""
+    import math
+
+    assert not fs_carcaca(0.0, 0.05, 0.003).ok
+    assert not fs_carcaca(-1e6, 0.05, 0.003).ok
+    assert not fs_carcaca(1e6, 0.0, 0.003).ok
+    assert not fs_carcaca(1e6, 0.05, 0.0).ok
+    assert not fs_carcaca(float("nan"), 0.05, 0.003).ok
+    assert math.isnan(fs_carcaca(float("nan"), 0.05, 0.003).valor)
+
+    assert not check_p0(None).ok
+    assert not check_kn(None).ok
+    assert not check_mass_flux(None).ok
+    assert not check_p0(float("nan")).ok
 
 
 def test_resolver_convencao_inercia_rocketpy() -> None:

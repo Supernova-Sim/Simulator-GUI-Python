@@ -15,6 +15,12 @@ Uso pela CLI:
 from __future__ import annotations
 
 import argparse
+import sys
+from pathlib import Path
+
+_RAIZ = str(Path(__file__).resolve().parents[1])
+if _RAIZ not in sys.path:
+    sys.path.insert(0, _RAIZ)
 
 from configs import HEFESTO, IREC, IREC_E, IREC_ENSEMBLE_E, MOTOR_IREC
 from configs.foguetes.hefesto.motor_variacoes import PARAMS_LIVRES, VARIACOES

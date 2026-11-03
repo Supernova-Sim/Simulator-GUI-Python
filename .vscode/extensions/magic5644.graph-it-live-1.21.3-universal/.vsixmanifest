@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+	<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+		<Metadata>
+			<Identity Language="en-US" Id="graph-it-live" Version="1.21.3" Publisher="magic5644" />
+			<DisplayName>Graph-It-Live</DisplayName>
+			<Description xml:space="preserve">AI-first dependency graph &amp; code intelligence for VS Code. Visualize file imports, symbol call hierarchies, and cross-file call graphs. Detect circular dependencies, dead code, and breaking changes. Built-in MCP Server with 24 tools for GitHub Copilot, Cursor, Claude, Windsurf, and Antigravity. Generate AI-friendly codemaps. TypeScript, JavaScript, C#, Go, Java, Python, Rust, Vue, Svelte, GraphQL.</Description>
+			<Tags>dependency graph,dependency,graph,visualization,import,typescript,javascript,python,java,go,csharp,rust,vue,svelte,graphql,circular dependency,cycle detection,architecture,code analysis,code map,codemap,call graph,call hierarchy,symbol,dead code,unused exports,breaking changes,impact analysis,reverse dependency,refactoring,code navigation,project structure,mcp,mcp server,model context protocol,copilot,cursor,claude,windsurf,antigravity,ai,llm,ai agent,tools,language-model-tools,c#</Tags>
+			<Categories>Visualization,Programming Languages,AI,Other</Categories>
+			<GalleryFlags>Public</GalleryFlags>
+			
+			<Properties>
+				<Property Id="Microsoft.VisualStudio.Code.Engine" Value="^1.96.0" />
+				<Property Id="Microsoft.VisualStudio.Code.ExtensionDependencies" Value="" />
+				<Property Id="Microsoft.VisualStudio.Code.ExtensionPack" Value="" />
+				<Property Id="Microsoft.VisualStudio.Code.ExtensionKind" Value="workspace" />
+				<Property Id="Microsoft.VisualStudio.Code.LocalizedLanguages" Value="" />
+				<Property Id="Microsoft.VisualStudio.Code.EnabledApiProposals" Value="" />
+				
+				<Property Id="Microsoft.VisualStudio.Code.ExecutesCode" Value="true" />
+				
+				<Property Id="Microsoft.VisualStudio.Services.Links.Source" Value="https://github.com/magic5644/Graph-It-Live.git" />
+				<Property Id="Microsoft.VisualStudio.Services.Links.Getstarted" Value="https://github.com/magic5644/Graph-It-Live.git" />
+				<Property Id="Microsoft.VisualStudio.Services.Links.GitHub" Value="https://github.com/magic5644/Graph-It-Live.git" />
+				<Property Id="Microsoft.VisualStudio.Services.Links.Support" Value="https://github.com/magic5644/Graph-It-Live/issues" />
+				<Property Id="Microsoft.VisualStudio.Services.Links.Learn" Value="https://magic5644.github.io/Graph-It-Live/" />
+				<Property Id="Microsoft.VisualStudio.Services.Branding.Color" Value="#2D3748" />
+				<Property Id="Microsoft.VisualStudio.Services.Branding.Theme" Value="dark" />
+				<Property Id="Microsoft.VisualStudio.Services.GitHubFlavoredMarkdown" Value="true" />
+				<Property Id="Microsoft.VisualStudio.Services.Content.Pricing" Value="Free"/>
+
+				
+				<Property Id="Microsoft.VisualStudio.Services.CustomerQnALink" Value="https://github.com/magic5644/Graph-It-Live/discussions" />
+			</Properties>
+			<License>extension/LICENSE.txt</License>
+			<Icon>extension/media/Graph-It-Live-Logo-256.png</Icon>
+		</Metadata>
+		<Installation>
+			<InstallationTarget Id="Microsoft.VisualStudio.Code"/>
+		</Installation>
+		<Dependencies/>
+		<Assets>
+			<Asset Type="Microsoft.VisualStudio.Code.Manifest" Path="extension/package.json" Addressable="true" />
+			<Asset Type="Microsoft.VisualStudio.Services.Content.Details" Path="extension/readme.md" Addressable="true" />
+<Asset Type="Microsoft.VisualStudio.Services.Content.Changelog" Path="extension/changelog.md" Addressable="true" />
+<Asset Type="Microsoft.VisualStudio.Services.Content.License" Path="extension/LICENSE.txt" Addressable="true" />
+<Asset Type="Microsoft.VisualStudio.Services.Icons.Default" Path="extension/media/Graph-It-Live-Logo-256.png" Addressable="true" />
+		</Assets>
+	</PackageManifest>

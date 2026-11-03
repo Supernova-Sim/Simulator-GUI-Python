@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from configs.foguetes.hefesto.motor import MOTOR_IREC, RIC_MEDUSA
+from configs.foguetes.hefesto.motor_cfg import MOTOR_IREC, RIC_MEDUSA
 from configs.foguetes.hefesto.motor_variacoes import PARAMS_LIVRES
 from src.calculos.motor import derivar_motor
 from src.calculos.motorlib_variacoes import validar_overrides
@@ -108,7 +108,7 @@ def _simular_um(
         d = derivar_motor(spec_var)
 
         fs = d.diagnosticos[0].valor if d.diagnosticos else float("nan")
-        ok_geral = all(x.ok for x in d.diagnosticos)
+        ok_geral = bool(d.diagnosticos) and all(x.ok for x in d.diagnosticos)
         dur = d.burn_time[1] - d.burn_time[0]
         empuxo_medio = d.total_impulse / dur if dur > 0 else 0.0
 

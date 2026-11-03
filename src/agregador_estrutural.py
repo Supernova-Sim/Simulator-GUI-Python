@@ -1,4 +1,4 @@
-# src/modelo.py
+# src/agregador_estrutural.py
 """Combina specs e derivados num `FogueteResolvido` (Modo Calculado).
 
 Agrega massa seca, CG sem motor e momentos de inércia pelo Teorema de Steiner,

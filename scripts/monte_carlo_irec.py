@@ -31,7 +31,7 @@ from configs import (
     UNREEFED_E,
 )
 from src.ambiente import build_irec, build_irec_ensemble
-from src.modelos import build_rocket
+from src.construtor_foguete import build_rocket
 from src.paths import RESULTADOS
 
 

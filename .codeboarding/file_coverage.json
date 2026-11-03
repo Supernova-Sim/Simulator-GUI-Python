@@ -1,0 +1,402 @@
+{
+  "version": 1,
+  "generated_at": "2026-10-30T21:27:34.359220+00:00",
+  "analyzed_files": [
+    "centralControle/inspecionar.py",
+    "centralControle/rodar.py",
+    "configs/__init__.py",
+    "configs/foguetes/__init__.py",
+    "configs/foguetes/hefesto/__init__.py",
+    "configs/foguetes/hefesto/aletas.py",
+    "configs/foguetes/hefesto/coifa.py",
+    "configs/foguetes/hefesto/corpo.py",
+    "configs/foguetes/hefesto/estocastico.py",
+    "configs/foguetes/hefesto/geometria.py",
+    "configs/foguetes/hefesto/motor.py",
+    "configs/foguetes/hefesto/motor_variacoes.py",
+    "configs/foguetes/hefesto/recuperacao.py",
+    "configs/foguetes/hefesto/voo.py",
+    "configs/limites.py",
+    "configs/material.py",
+    "debug.py",
+    "scripts/analisar_motor.py",
+    "scripts/monteCarloIrec.py",
+    "scripts/simDeterministica.py",
+    "scripts/varredura.py",
+    "scripts/varredura_motor.py",
+    "sitecustomize.py",
+    "src/__init__.py",
+    "src/ambiente.py",
+    "src/c4_gerador.py",
+    "src/calculos/__init__.py",
+    "src/calculos/aletas.py",
+    "src/calculos/aletas_rasaero.py",
+    "src/calculos/coifa.py",
+    "src/calculos/componentes.py",
+    "src/calculos/motor.py",
+    "src/calculos/motorlib_variacoes.py",
+    "src/calculos/motorlib_wrapper.py",
+    "src/calculos/seguranca.py",
+    "src/inspecao.py",
+    "src/modelo.py",
+    "src/modelos.py",
+    "src/paths.py",
+    "src/smoke.py",
+    "src/specs.py",
+    "src/viz.py"
+  ],
+  "not_analyzed_files": [
+    {
+      "path": "GLOSSARY.md",
+      "reason": "other"
+    },
+    {
+      "path": "README.md",
+      "reason": "other"
+    },
+    {
+      "path": "centralControle/GUIA_VISUALIZACAO.md",
+      "reason": "other"
+    },
+    {
+      "path": "centralControle/README.md",
+      "reason": "other"
+    },
+    {
+      "path": "centralControle/TODO.md",
+      "reason": "other"
+    },
+    {
+      "path": "centralControle/checklists.md",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_132157.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_140225.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_155244.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_160032.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_160139.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_160148.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_160203.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_160401.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_160436.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_234444.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_234518.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_234849.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_234943.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_235117.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_235234.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_235403.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_235420.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261008_235643.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261009_000048.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261009_000604.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261009_005358.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261009_005518.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261009_005539.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261009_010427.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261009_214344.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261012_173042.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261012_173102.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261012_173130.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261012_174625.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261012_175044.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261012_175316.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261012_175440.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261012_175729.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261012_180022.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261027_163822.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261027_163825.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261027_164337.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261027_164338.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/sim_20261027_164436.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/varreduras/varredura_motor_20261009_010228_meta.json",
+      "reason": "other"
+    },
+    {
+      "path": "data/saida/varreduras/varredura_motor_20261009_011035_meta.json",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/centralControle__inspecionar.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/centralControle__rodar.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/configs.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/configs__foguetes__hefesto.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/configs__foguetes__hefesto__aletas.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/configs__foguetes__hefesto__coifa.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/configs__foguetes__hefesto__corpo.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/configs__foguetes__hefesto__estocastico.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/configs__foguetes__hefesto__geometria.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/configs__foguetes__hefesto__motor.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/configs__foguetes__hefesto__motor_variacoes.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/configs__foguetes__hefesto__recuperacao.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/configs__foguetes__hefesto__voo.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/configs__limites.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/configs__material.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__ambiente.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__c4_gerador.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__calculos__aletas.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__calculos__aletas_rasaero.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__calculos__coifa.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__calculos__componentes.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__calculos__motor.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__calculos__motorlib_variacoes.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__calculos__motorlib_wrapper.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__calculos__seguranca.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__inspecao.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__modelo.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__modelos.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__paths.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__smoke.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__specs.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/_gerados_c4/src__viz.c4.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/c1-contexto.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/c2-containers.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/c3-execucao-voo.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/arquitetura/c3-subsistema-motor.md",
+      "reason": "other"
+    },
+    {
+      "path": "docs/openmotor_api.md",
+      "reason": "other"
+    },
+    {
+      "path": "pyproject.toml",
+      "reason": "other"
+    },
+    {
+      "path": "setup_ide.sh",
+      "reason": "other"
+    }
+  ],
+  "summary": {
+    "total_files": 128,
+    "analyzed": 42,
+    "not_analyzed": 86,
+    "not_analyzed_by_reason": {
+      "other": 86
+    }
+  }
+}

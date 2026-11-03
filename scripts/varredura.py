@@ -11,7 +11,7 @@ from rocketpy import Flight
 from configs import HEFESTO, IREC, MOTOR_IREC
 from src.ambiente import build_irec
 from src.calculos.motor import derivar_motor
-from src.modelos import ModoFoguete, build_rocket
+from src.construtor_foguete import ModoFoguete, build_rocket
 from src.paths import RESULTADOS
 
 # ============================================================

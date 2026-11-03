@@ -6,6 +6,7 @@ status OK/alerta e detalhamento legível. Não importa nada de `configs/`.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 from src.specs import LimitesSeguranca
@@ -50,6 +51,24 @@ def fs_carcaca(
         σ_circ = P0 · r / t
         FS     = σ_lim / σ_circ
     """
+    from math import isfinite
+
+    if p0_pico <= 0 or case_inner_radius <= 0 or case_wall_thickness <= 0 or (
+        sigma_lim if sigma_lim is not None else limites.sigma_lim_carcaca
+    ) <= 0 or not isfinite(p0_pico) or not isfinite(case_inner_radius) or not isfinite(
+        case_wall_thickness
+    ) or not isfinite(sigma_lim if sigma_lim is not None else limites.sigma_lim_carcaca):
+        sigma = (sigma_lim if sigma_lim is not None else limites.sigma_lim_carcaca)
+        return DiagnosticoFS(
+            nome="FS carcaça",
+            valor=float("nan"),
+            limite_min=limites.fs_min_carcaca,
+            limite_max=None,
+            unidade="—",
+            ok=False,
+            detalhe="dados de entrada inválidos (não positivos ou nan)",
+        )
+
     sigma = sigma_lim if sigma_lim is not None else limites.sigma_lim_carcaca
     sigma_circ = p0_pico * case_inner_radius / case_wall_thickness
     fs = sigma / sigma_circ if sigma_circ > 0 else float("inf")
@@ -69,6 +88,18 @@ def check_p0(
     *,
     limites: LimitesSeguranca = LIMITES_PADRAO,
 ) -> DiagnosticoFS:
+    from math import isfinite
+
+    if p0_pico is None or not isfinite(p0_pico):
+        return DiagnosticoFS(
+            nome="P0 pico",
+            valor=float("nan"),
+            limite_min=None,
+            limite_max=limites.p0_max / 1e6,
+            unidade="MPa",
+            ok=False,
+            detalhe="dados de entrada inválidos (None ou nan)",
+        )
     return DiagnosticoFS(
         nome="P0 pico",
         valor=p0_pico / 1e6,
@@ -85,6 +116,18 @@ def check_kn(
     *,
     limites: LimitesSeguranca = LIMITES_PADRAO,
 ) -> DiagnosticoFS:
+    from math import isfinite
+
+    if kn_pico is None or not isfinite(kn_pico):
+        return DiagnosticoFS(
+            nome="Kn pico",
+            valor=float("nan"),
+            limite_min=None,
+            limite_max=limites.kn_max,
+            unidade="—",
+            ok=False,
+            detalhe="dados de entrada inválidos (None ou nan)",
+        )
     return DiagnosticoFS(
         nome="Kn pico",
         valor=kn_pico,
@@ -101,6 +144,18 @@ def check_mass_flux(
     *,
     limites: LimitesSeguranca = LIMITES_PADRAO,
 ) -> DiagnosticoFS:
+    from math import isfinite
+
+    if mass_flux_pico is None or not isfinite(mass_flux_pico):
+        return DiagnosticoFS(
+            nome="mass flux pico",
+            valor=float("nan"),
+            limite_min=None,
+            limite_max=limites.mass_flux_max,
+            unidade="kg/(m²·s)",
+            ok=False,
+            detalhe="dados de entrada inválidos (None ou nan)",
+        )
     return DiagnosticoFS(
         nome="mass flux pico",
         valor=mass_flux_pico,

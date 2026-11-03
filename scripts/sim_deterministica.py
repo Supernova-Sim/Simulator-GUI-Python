@@ -9,7 +9,7 @@ from rocketpy import Flight
 import src.viz  # noqa: F401 — configura backend antes de qualquer plot
 from configs import HEFESTO, IREC, MOTOR_IREC
 from src.ambiente import build_irec
-from src.modelos import ModoFoguete, build_rocket
+from src.construtor_foguete import ModoFoguete, build_rocket
 from src.paths import RESULTADOS
 from src.specs import MotorSpec
 
@@ -23,42 +23,24 @@ FATOR_ARRASTO: float = 1.00
 SALVAR_JSON: bool = True
 
 # --- Motor ---
-# None ou "oficial" → MOTOR_IREC puro
-# Presets de motor_variacoes.py: "throat_estreito", "throat_largo", "core_uniforme", "core_fwd_menor"
-USAR_VARIACAO_MOTOR: str | None = None
+# None → usa MOTOR_IREC oficial (ou passe um MotorSpec customizado)
+MOTOR: MotorSpec | None = None
 # ============================================================
-
-
-def _resolver_motor(variacao: str | None) -> MotorSpec:
-    """Retorna o `MotorSpec` correspondente à variação escolhida."""
-    if variacao is None or variacao == "oficial":
-        return MOTOR_IREC
-
-    from configs.foguetes.hefesto.motor_variacoes import VARIACOES
-
-    if variacao not in VARIACOES:
-        disponiveis = ", ".join(VARIACOES.keys())
-        raise ValueError(
-            f"Variação '{variacao}' não existe. Disponíveis: {disponiveis}"
-        )
-    return VARIACOES[variacao]
 
 
 def main(
     *,
     modo: ModoFoguete | None = None,
-    variacao_motor: str | None = None,
+    motor: MotorSpec | None = None,
     fator_empuxo: float | None = None,
     fator_arrasto: float | None = None,
     salvar_json: bool | None = None,
 ) -> None:
     modo_eff: ModoFoguete = modo if modo is not None else MODO_FOGUETE
-    var_eff = variacao_motor if variacao_motor is not None else USAR_VARIACAO_MOTOR
+    motor_spec: MotorSpec = motor if motor is not None else (MOTOR or MOTOR_IREC)
     fe_eff = fator_empuxo if fator_empuxo is not None else FATOR_EMPUXO
     fa_eff = fator_arrasto if fator_arrasto is not None else FATOR_ARRASTO
     salvar_eff = salvar_json if salvar_json is not None else SALVAR_JSON
-
-    motor_spec = _resolver_motor(var_eff)
 
     foguete = build_rocket(
         HEFESTO,
@@ -105,7 +87,7 @@ def main(
                 "tipo_aletas": TIPO_ALETAS,
                 "fator_empuxo": fe_eff,
                 "fator_arrasto": fa_eff,
-                "variacao_motor": var_eff or "oficial",
+                "motor": motor_spec.nome,
             },
             "motor_spec": motor_spec.to_dict(),
             "motor_derivado": foguete.motor_derivado.to_dict(),

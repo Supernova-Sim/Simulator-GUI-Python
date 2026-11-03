@@ -83,4 +83,4 @@ python centralControle/rodar.py analisar-motor
 
 ### Na IDE (`debug.py` ou `scripts/simDeterministica.py`)
 
-Abra `debug.py` ou `scripts/simDeterministica.py`, ajuste as constantes no topo (`MODO_FOGUETE = "calculado" | "medido"`, `USAR_VARIACAO_MOTOR`, etc.) e execute.
+Abra `debug.py` ou `scripts/simDeterministica.py`, ajuste as constantes no topo (`MODO_FOGUETE = "calculado" | "medido"`, `MOTOR`, etc.) e execute. Presets de variação de motor também podem ser acionados diretamente via CLI (`--motor throat_largo`).

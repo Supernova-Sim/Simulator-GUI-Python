@@ -6,7 +6,7 @@ from rocketpy import Flight
 
 from configs import HEFESTO, IREC
 from src.ambiente import build_irec
-from src.modelos import build_rocket
+from src.construtor_foguete import build_rocket
 from src.paths import ATMOSFERA, DATA, ENTRADA, MOTORES, OPENMOTOR, RAIZ, SAIDA
 
 

@@ -1,6 +1,9 @@
 .idea/
 *.iml
-.vscode/
+.vscode/*
+!.vscode/extensions/
+!.vscode/extensions/**
+!.vscode/extensions.json
 *.swp
 *.swo
 __pycache__/
@@ -17,9 +20,11 @@ venv.bak/
 .pytest_cache/
 .coverage
 htmlcov/
-dist/
-build/
+/dist/
+/build/
+!.vscode/extensions/**/dist/
 *.egg-info/
 .DS_Store
 Thumbs.db
 vendor/
+.nogic/

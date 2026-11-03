@@ -10,7 +10,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from src.calculos.motor import MotorDerivado, derivar_motor
-from src.modelo import resolver
+from src.agregador_estrutural import resolver
 from src.specs import FogueteSpec, MotorSpec, TuboSpec
 
 LARGURA = 72
@@ -141,7 +141,7 @@ def relatorio_motor_variacoes(
     for chave, spec in variacoes.items():
         d = derivar_motor(spec)
         fs = d.diagnosticos[0].valor if d.diagnosticos else float("nan")
-        ok_geral = all(x.ok for x in d.diagnosticos) if d.diagnosticos else True
+        ok_geral = bool(d.diagnosticos) and all(x.ok for x in d.diagnosticos)
         status = "✓ OK" if ok_geral else "✗ ALERTA"
         p0_str = f"{d.p0_pico / 1e6:>7.3f}M" if d.p0_pico is not None else "     —  "
         kn_str = f"{d.kn_pico:>7.1f}" if d.kn_pico is not None else "      —"
