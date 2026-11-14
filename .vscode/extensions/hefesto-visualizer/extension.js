@@ -84,7 +84,7 @@ function activate(context) {
                 const pyBin = resolverPython(root);
                 const stdout = cp.execFileSync(
                     pyBin,
-                    ['-m', 'src.c4_gerador', selected.targetPy],
+                    ['-m', 'centralControle.c4_gerador', selected.targetPy],
                     { cwd: root, encoding: 'utf-8' }
                 );
                 mdPath = stdout.trim();

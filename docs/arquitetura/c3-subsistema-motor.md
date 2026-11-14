@@ -18,39 +18,34 @@ flowchart TD
     classDef out fill:#361a29,stroke:#ec4899,stroke-width:2px,color:#f8fafc;
 
     subgraph ENTRADA["1. Especificação Declarativa"]
-        S1["MotorSpec\n(configs/foguetes/hefesto/motor.py)"]:::spec
-        S2["Presets / Variações\n(configs/foguetes/hefesto/motor_variacoes.py)"]:::spec
+        S1["MotorSpec & VARIACOES\n(configs/foguetes/hefesto/motor.py)"]:::spec
+        S2["validar_overrides()\n(src/especificacoes.py)"]:::spec
         S2 -->|"dataclasses.replace(overrides=...)"| S1
     end
 
-    subgraph COSTURA["2. Costura OpenMotor (src/calculos/motorlib_*.py)"]
-        W1["motorlib_wrapper.carregar_props(ric_path)\nLê .ric isolando side-effects do uilib.logger"]:::seam
-        W2["motorlib_variacoes.aplicar_overrides(props, overrides)\nValida whitelist e muta props em memória"]:::seam
-        W3["motorlib_wrapper.extrair_geometria_props(props)\nExtrai GrainSpec[], densidade, garganta e saída"]:::seam
-        W4["motorlib_wrapper.simular_props(props)\nExecuta solver balístico BATES -> F(t), P0, Kn, mflux"]:::seam
-
-        W1 --> W2 --> W3 & W4
+    subgraph ADAPTADOR["2. Adaptador OpenMotor (src/motor/adaptador_openmotor.py)"]
+        W1["executar_ric(ric_path, overrides)\nCarrega .ric isolando logger do uilib,\naplica overrides dot-path/wildcard em memória,\nextrai GrainSpec[] e executa o solver BATES -> ResultadoRic"]:::seam
     end
 
-    subgraph FISICA["3. Física Estrutural & Segurança (src/calculos/)"]
-        G1["motor._derivar_dos_graos()\nMassa propelente, CG local e r_i efetivo"]:::calc
-        G2["motor._derivar_carcaca() & _derivar_inercia_seca()\nTensor RocketPy (I_t, I_t, I_l)"]:::calc
+    subgraph FISICA["3. Derivação & Segurança (src/motor/)"]
+        G1["derivador._derivar_dos_graos()\nMassa propelente, CG local e r_i efetivo"]:::calc
+        G2["derivador._derivar_carcaca() & _derivar_inercia_seca()\nTensor RocketPy (I_t, I_t, I_l)"]:::calc
         G3["seguranca.py\nfs_carcaca (Barlow/Lamé), check_p0, check_kn, check_mass_flux"]:::calc
 
-        W3 --> G1 --> G2
-        W4 --> G3
+        W1 --> G1 --> G2
+        W1 --> G3
     end
 
     subgraph SAIDA["4. Contrato de Saída"]
         MD["MotorDerivado\nObjeto imutável pronto para RocketPy e inspeção"]:::out
-        G1 & G2 & G3 & W4 --> MD
+        G1 & G2 & G3 & W1 --> MD
     end
 
     S1 --> W1
-    click W1 href "_gerados_c4/src__calculos__motorlib_wrapper.c4.md" "Abrir C4 de motorlib_wrapper.py"
-    click W2 href "_gerados_c4/src__calculos__motorlib_variacoes.c4.md" "Abrir C4 de motorlib_variacoes.py"
-    click G1 href "_gerados_c4/src__calculos__motor.c4.md" "Abrir C4 de motor.py"
-    click G3 href "_gerados_c4/src__calculos__seguranca.c4.md" "Abrir C4 de seguranca.py"
+    click S2 href "_gerados_c4/src__especificacoes.c4.md" "Abrir C4 de especificacoes.py"
+    click W1 href "_gerados_c4/src__motor__adaptador_openmotor.c4.md" "Abrir C4 de adaptador_openmotor.py"
+    click G1 href "_gerados_c4/src__motor__derivador.c4.md" "Abrir C4 de derivador.py"
+    click G3 href "_gerados_c4/src__motor__seguranca.c4.md" "Abrir C4 de seguranca.py"
     linkStyle default stroke:#38bdf8,stroke-width:2px;
 ```
 
@@ -60,7 +55,8 @@ flowchart TD
 
 | Componente | Arquivo | Responsabilidade |
 | :--- | :--- | :--- |
-| **Fachada Profunda** | [`src/calculos/motor.py`](../../src/calculos/motor.py) | Coordena a derivação completa (`.ric` ou fallback `.eng`) e produz `MotorDerivado`. |
-| **Costura OpenMotor** | [`src/calculos/motorlib_wrapper.py`](../../src/calculos/motorlib_wrapper.py) | Encapsula `motorlib`/`uilib`, silencia logs intrusivos e extrai geometria/balística de `props`. |
-| **Mutador de Overrides** | [`src/calculos/motorlib_variacoes.py`](../../src/calculos/motorlib_variacoes.py) | Aplica alterações via dot-path (`grains.*.properties.coreDiameter`, `nozzle.throat`) com whitelist. |
-| **Verificador de Segurança** | [`src/calculos/seguranca.py`](../../src/calculos/seguranca.py) | Calcula tensão circunferencial na carcaça ($\text{FS} \ge 2.0$), $P_0 \le 8\text{ MPa}$, $K_n \le 250$ e fluxo de massa. |
+| **Configuração & Presets** | [`configs/foguetes/hefesto/motor.py`](../../configs/foguetes/hefesto/motor.py) | Define `MOTOR_IREC`, `PARAMS_LIVRES`, `criar_variacao()` e o mapa `VARIACOES`. |
+| **Contratos & Whitelist** | [`src/especificacoes.py`](../../src/especificacoes.py) | Define `MotorSpec`, `LimitesSeguranca`, `LIMITES_PADRAO` e `validar_overrides()`. |
+| **Fachada Profunda** | [`src/motor/derivador.py`](../../src/motor/derivador.py) | Coordena a derivação completa (`.ric` ou fallback `.eng`) e produz `MotorDerivado`. |
+| **Adaptador OpenMotor** | [`src/motor/adaptador_openmotor.py`](../../src/motor/adaptador_openmotor.py) | Encapsula `motorlib`/`uilib`, aplica overrides e retorna `ResultadoRic` via `executar_ric()`. |
+| **Verificador de Segurança** | [`src/motor/seguranca.py`](../../src/motor/seguranca.py) | Calcula tensão circunferencial na carcaça ($\text{FS} \ge 2.0$), $P_0 \le 8\text{ MPa}$, $K_n \le 250$ e fluxo de massa. |

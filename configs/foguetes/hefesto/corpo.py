@@ -2,8 +2,8 @@
 """Lista concreta de componentes do corpo do Hefesto (nariz → cauda)."""
 from __future__ import annotations
 
-from configs.material import ALUMINIO_6061, COMPOSITO_EFETIVO
-from src.specs import MassaPontualSpec, TuboSpec
+from configs.limites import ALUMINIO_6061, COMPOSITO_EFETIVO
+from src.especificacoes import MassaPontualSpec, TuboSpec
 
 # ════════════════════════════════════════════════════════════
 #  PARÂMETRO GLOBAL — mexa aqui para mudar a parede do corpo

@@ -12,7 +12,7 @@
 
 ## 1. Propósito do Módulo
 
-Geometria medida / nominal do Hefesto (`modo='medido'`) e acessórios de acoplamento.
+Geometria completa do Hefesto: coifa, aletas, recuperação e medidas de bancada.
 
 ---
 
@@ -22,12 +22,12 @@ Geometria medida / nominal do Hefesto (`modo='medido'`) e acessórios de acoplam
 %%{init: {'theme': 'dark', 'themeVariables': { 'lineColor': '#38bdf8' }}}%%
 flowchart LR
     MOD["📄 configs/foguetes/hefesto/geometria.py"]
-    INT_0["🧩 configs.foguetes.hefesto.aletas_cfg\n(ALETAS_TRAPEZIO_EQUIV)"] --> MOD
-    click INT_0 href "configs__foguetes__hefesto__aletas_cfg.c4.md" "Abrir C4 de configs.foguetes.hefesto.aletas_cfg"
-    INT_1["🧩 src.paths\n(ARRASTO)"] --> MOD
-    click INT_1 href "src__paths.c4.md" "Abrir C4 de src.paths"
-    INT_2["🧩 src.specs\n(GeometriaMedidaSpec)"] --> MOD
-    click INT_2 href "src__specs.c4.md" "Abrir C4 de src.specs"
+    INT_0["🧩 configs.limites\n(ALUMINIO_6061, COIFA_EFETIVA)"] --> MOD
+    click INT_0 href "configs__limites.c4.md" "Abrir C4 de configs.limites"
+    INT_1["🧩 src.caminhos\n(ARRASTO)"] --> MOD
+    click INT_1 href "src__caminhos.c4.md" "Abrir C4 de src.caminhos"
+    INT_2["🧩 src.especificacoes\n(AletaSpec, CoifaSpec, GeometriaMedidaSpec)"] --> MOD
+    click INT_2 href "src__especificacoes.c4.md" "Abrir C4 de src.especificacoes"
     linkStyle default stroke:#38bdf8,stroke-width:2px;
 ```
 
@@ -35,9 +35,9 @@ flowchart LR
 
 | Dependência | Símbolos Importados | Documento C4 |
 | :--- | :--- | :--- |
-| `🧩 configs.foguetes.hefesto.aletas_cfg` | `ALETAS_TRAPEZIO_EQUIV` | [⚡ `configs__foguetes__hefesto__aletas_cfg.c4.md`](configs__foguetes__hefesto__aletas_cfg.c4.md) |
-| `🧩 src.paths` | `ARRASTO` | [⚡ `src__paths.c4.md`](src__paths.c4.md) |
-| `🧩 src.specs` | `GeometriaMedidaSpec` | [⚡ `src__specs.c4.md`](src__specs.c4.md) |
+| `🧩 configs.limites` | `ALUMINIO_6061`, `COIFA_EFETIVA` | [⚡ `configs__limites.c4.md`](configs__limites.c4.md) |
+| `🧩 src.caminhos` | `ARRASTO` | [⚡ `src__caminhos.c4.md`](src__caminhos.c4.md) |
+| `🧩 src.especificacoes` | `AletaSpec`, `CoifaSpec`, `GeometriaMedidaSpec` | [⚡ `src__especificacoes.c4.md`](src__especificacoes.c4.md) |
 
 ---
 

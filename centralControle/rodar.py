@@ -11,8 +11,10 @@ Uso no terminal:
     python centralControle/rodar.py sim                      # simulação determinística
     python centralControle/rodar.py sim --modo medido        # simulação no modo medido
     python centralControle/rodar.py motor                    # relatório do motor
+    python centralControle/rodar.py variacoes                # comparativo das variações do motor
     python centralControle/rodar.py estrutura                # relatório estrutural (calculado vs medido)
     python centralControle/rodar.py fs                       # diagnósticos de segurança
+    python centralControle/rodar.py voo                      # parâmetros de lançamento e atmosfera
     python centralControle/rodar.py dump                     # relatório completo
     python centralControle/rodar.py varrer                   # varredura de voo (empuxo × arrasto)
     python centralControle/rodar.py varrer-motor -p ...      # varredura paramétrica do motor
@@ -22,35 +24,33 @@ Uso no terminal:
 from __future__ import annotations
 
 import argparse
+import shutil
 import sys
 from pathlib import Path
 
-from src.specs import MotorSpec
-
-# Garante que a raiz do repositório esteja no sys.path mesmo se executado de
-# outro diretório ou a partir de outro ambiente virtual (.venv externo).
+# Garante que a raiz do repositório esteja no sys.path antes de importar `src`/`configs`.
 _RAIZ = str(Path(__file__).resolve().parents[1])
 if _RAIZ not in sys.path:
     sys.path.insert(0, _RAIZ)
 
+from src.caminhos import RAIZ
+from src.especificacoes import MotorSpec
+
 # ============================================================
 #  AÇÃO PADRÃO (usada ao clicar em "Run" na IDE sem argumentos)
-#  Opções: "sim", "motor", "estrutura", "fs", "dump", "varrer", "smoke"
+#  Opções: "sim", "motor", "variacoes", "estrutura", "fs", "voo", "dump", "varrer", "smoke"
 # ============================================================
 ACAO_PADRAO: str = "sim"
 
 
 def _resolver_motor(motor: str | MotorSpec | None) -> MotorSpec | None:
-    """Resolve uma string de preset de variação para um `MotorSpec`.
-
-    Retorna None para 'oficial' ou None (sinalizando uso do motor padrão).
-    """
+    """Resolve uma string de preset de variação para um `MotorSpec`."""
     if motor is None or motor == "oficial":
         return None
     if isinstance(motor, MotorSpec):
         return motor
 
-    from configs.foguetes.hefesto.motor_variacoes import VARIACOES
+    from configs.foguetes.hefesto.motor import VARIACOES
 
     if motor not in VARIACOES:
         disponiveis = ", ".join(VARIACOES.keys())
@@ -69,14 +69,7 @@ def cmd_sim(
     fator_arrasto: float | None = None,
     sem_salvar: bool = False,
 ) -> None:
-    """Executa a simulação determinística de voo.
-
-    Funciona tanto como callback do argparse quanto por chamada direta no console:
-        cmd_sim()
-        cmd_sim("calculado")
-        cmd_sim("medido")
-        cmd_sim(modo="medido", motor="throat_estreito")
-    """
+    """Executa a simulação determinística de voo."""
     import scripts.sim_deterministica as sd
 
     if isinstance(args, str):
@@ -101,40 +94,91 @@ def cmd_sim(
     )
 
 
-def cmd_fs(args: argparse.Namespace | None = None) -> None:
-    from centralControle.inspecionar import inspecionar_seguranca
+def cmd_motor(args: argparse.Namespace | None = None) -> None:
+    from configs import MOTOR_IREC
+    from src.relatorios import relatorio_motor
 
-    inspecionar_seguranca()
+    relatorio_motor(MOTOR_IREC)
+
+
+def cmd_variacoes(args: argparse.Namespace | None = None) -> None:
+    from configs import PARAMS_LIVRES, VARIACOES
+    from src.relatorios import relatorio_motor_variacoes
+
+    relatorio_motor_variacoes(VARIACOES, PARAMS_LIVRES)
+
+
+def cmd_estrutura(args: argparse.Namespace | None = None) -> None:
+    from configs import HEFESTO
+    from src.relatorios import relatorio_estrutura
+
+    relatorio_estrutura(HEFESTO)
+
+
+def cmd_fs(args: argparse.Namespace | None = None) -> None:
+    from configs import MOTOR_IREC
+    from src.relatorios import relatorio_seguranca
+
+    relatorio_seguranca(MOTOR_IREC)
+
+
+def cmd_voo(args: argparse.Namespace | None = None) -> None:
+    from configs import IREC, IREC_E, IREC_ENSEMBLE_E
+    from src.relatorios import relatorio_voo
+    from src.simulacao.ambiente import build_irec
+
+    relatorio_voo(
+        voo_nominal=IREC,
+        voo_estocastico=IREC_E,
+        ensemble_estocastico=IREC_ENSEMBLE_E,
+        ambiente=build_irec(),
+    )
+
+
+def cmd_dump(args: argparse.Namespace | None = None) -> None:
+    from configs import (
+        HEFESTO,
+        IREC,
+        IREC_E,
+        IREC_ENSEMBLE_E,
+        MOTOR_IREC,
+        PARAMS_LIVRES,
+        VARIACOES,
+    )
+    from src.relatorios import (
+        relatorio_estrutura,
+        relatorio_motor,
+        relatorio_motor_variacoes,
+        relatorio_seguranca,
+        relatorio_voo,
+    )
+    from src.simulacao.ambiente import build_irec
+
+    derivado = relatorio_motor(MOTOR_IREC)
+    relatorio_motor_variacoes(VARIACOES, PARAMS_LIVRES)
+    relatorio_estrutura(HEFESTO)
+    relatorio_seguranca(MOTOR_IREC, derivado=derivado)
+    relatorio_voo(
+        voo_nominal=IREC,
+        voo_estocastico=IREC_E,
+        ensemble_estocastico=IREC_ENSEMBLE_E,
+        ambiente=build_irec(),
+    )
+    print()
 
 
 def cmd_varrer(args: argparse.Namespace | None = None) -> None:
-    import scripts.varredura as v
+    import scripts.varredura_voo as v
 
     v.main()
 
 
-def cmd_dump(args: argparse.Namespace | None = None) -> None:
-    from centralControle.inspecionar import inspecionar_tudo
-
-    inspecionar_tudo()
-
-
-def cmd_motor(args: argparse.Namespace | None = None) -> None:
-    from centralControle.inspecionar import inspecionar_motor
-
-    inspecionar_motor()
-
-
-def cmd_estrutura(args: argparse.Namespace | None = None) -> None:
-    from centralControle.inspecionar import inspecionar_estrutura
-
-    inspecionar_estrutura()
-
-
 def cmd_smoke(args: argparse.Namespace | None = None) -> None:
-    from src.smoke import main as smoke_main
+    import pytest
 
-    smoke_main()
+    code = pytest.main(["-v", str(RAIZ / "tests")])
+    if code != 0:
+        raise SystemExit(int(code))
 
 
 def cmd_varrer_motor(args: argparse.Namespace) -> None:
@@ -161,67 +205,52 @@ def cmd_analisar_motor(args: argparse.Namespace) -> None:
     analisar_main()
 
 
-def cmd_setup(args: argparse.Namespace | None = None) -> None:
-    """Configura e ativa a extensão do visualizador no Positron local."""
-    import shutil
-    import subprocess
-
-    repo_root = Path(_RAIZ)
-    ext_src = repo_root / ".vscode" / "extensions" / "hefesto-visualizer"
-    ext_dest_dir = Path.home() / ".positron" / "extensions"
-    ext_dest = ext_dest_dir / "hefesto-visualizer"
-
-    ext_dest_dir.mkdir(parents=True, exist_ok=True)
-    if ext_dest.is_symlink() or ext_dest.exists():
-        if ext_dest.is_symlink() or ext_dest.is_file():
-            ext_dest.unlink()
-        else:
-            shutil.rmtree(ext_dest)
-
+def _linkar_extensao(src: Path, dest: Path, nome: str) -> None:
+    if dest.is_symlink() or dest.is_file():
+        dest.unlink()
+    elif dest.exists():
+        shutil.rmtree(dest)
     try:
-        ext_dest.symlink_to(ext_src, target_is_directory=True)
-        print(f"✓ Hefesto Visualizer linkado em: {ext_dest}")
+        dest.symlink_to(src, target_is_directory=True)
+        print(f"✓ {nome} linkado em: {dest}")
     except OSError:
-        shutil.copytree(ext_src, ext_dest)
-        print(f"✓ Hefesto Visualizer copiado em: {ext_dest}")
+        shutil.copytree(src, dest)
+        print(f"✓ {nome} copiado em: {dest}")
 
-    vsix = ext_src / "hefesto-visualizer-1.1.0.vsix"
-    if vsix.exists():
-        positron_bin = shutil.which("positron") or (
-            "/usr/share/positron/bin/positron"
-            if Path("/usr/share/positron/bin/positron").exists()
-            else None
-        )
-        if positron_bin:
-            try:
-                subprocess.run(
-                    [str(positron_bin), "--install-extension", str(vsix), "--force"],
-                    capture_output=True,
-                    check=False,
-                )
-            except (subprocess.SubprocessError, OSError):
-                pass
 
-    graphit_src = repo_root / ".vscode" / "extensions" / "magic5644.graph-it-live-1.21.3-universal"
-    graphit_dest = ext_dest_dir / "magic5644.graph-it-live-1.21.3-universal"
+def cmd_setup(args: argparse.Namespace | None = None) -> None:
+    """Configura e ativa as extensões visuais no Positron local."""
+    ext_dir = RAIZ / ".vscode" / "extensions"
+    ext_dest_dir = Path.home() / ".positron" / "extensions"
+    ext_dest_dir.mkdir(parents=True, exist_ok=True)
+
+    # Remove instalações antigas via .vsix que poderiam sombrear o symlink editável
+    for obsoleta in ext_dest_dir.glob("hefesto.hefesto-visualizer*"):
+        if obsoleta.is_symlink() or obsoleta.is_file():
+            obsoleta.unlink()
+        elif obsoleta.is_dir():
+            shutil.rmtree(obsoleta)
+
+    _linkar_extensao(
+        ext_dir / "hefesto-visualizer",
+        ext_dest_dir / "hefesto-visualizer",
+        "Hefesto Visualizer",
+    )
+
+    graphit_src = ext_dir / "magic5644.graph-it-live-1.21.3-universal"
     if graphit_src.exists():
-        if graphit_dest.is_symlink() or graphit_dest.is_file():
-            graphit_dest.unlink()
-        elif graphit_dest.exists():
-            shutil.rmtree(graphit_dest)
-        try:
-            graphit_dest.symlink_to(graphit_src, target_is_directory=True)
-            print(f"✓ Graph-It-Live (Runtime V2) linkado em: {graphit_dest}")
-        except OSError:
-            shutil.copytree(graphit_src, graphit_dest)
-            print(f"✓ Graph-It-Live copiado em: {graphit_dest}")
+        _linkar_extensao(
+            graphit_src,
+            ext_dest_dir / "magic5644.graph-it-live-1.21.3-universal",
+            "Graph-It-Live (Runtime V2)",
+        )
 
     print("\n🎉 Setup da IDE concluído com sucesso! (C4 e Graph-It-Live Runtime V2 ativados no Positron)")
 
 
 def cmd_c4(args: argparse.Namespace) -> None:
     """Gera sob demanda o documento C4 Nível 4 (Código) via AST para um arquivo `.py` ou em lote."""
-    from src.c4_gerador import gerar_arquivo_c4, gerar_todos
+    from centralControle.c4_gerador import gerar_arquivo_c4, gerar_todos
 
     if getattr(args, "todos", False) or args.arquivo in ("--todos", "todos", "all", None):
         gerados = gerar_todos()
@@ -235,7 +264,7 @@ def cmd_c4(args: argparse.Namespace) -> None:
 
 def cmd_guia_c4(args: argparse.Namespace) -> None:
     """Exibe instruções e caminhos para visualizar a arquitetura C4."""
-    guia_path = Path(_RAIZ) / "centralControle" / "GUIA_VISUALIZACAO.md"
+    guia_path = RAIZ / "centralControle" / "GUIA_VISUALIZACAO.md"
     print("=" * 65)
     print("  🏛️  HEFESTO — ARQUITETURA C4 & VISUALIZAÇÃO EM MERMAID")
     print("=" * 65)
@@ -243,7 +272,7 @@ def cmd_guia_c4(args: argparse.Namespace) -> None:
     print("   Abra qualquer arquivo .py e clique no ícone $(graph)")
     print("   no topo direito da aba para ver o C4 Nível 4 renderizado.")
     print("\n2. Pelo Terminal:")
-    print("   python centralControle/rodar.py c4 src/calculos/motor.py")
+    print("   python centralControle/rodar.py c4 src/motor/derivador.py")
     print("   python centralControle/rodar.py c4 --todos")
     print("\n3. Documentos da Hierarquia C4:")
     print("   - C1 (Contexto):    docs/arquitetura/c1-contexto.md")
@@ -276,10 +305,12 @@ def main(argv: list[str] | None = None) -> None:
     sub_sim.set_defaults(func=cmd_sim)
 
     sub.add_parser("motor", help="Inspeciona o motor (sem voo)").set_defaults(func=cmd_motor)
+    sub.add_parser("variacoes", help="Comparativo das variações de motor").set_defaults(func=cmd_variacoes)
     sub.add_parser("estrutura", help="Inspeciona a estrutura (calculado vs medido)").set_defaults(
         func=cmd_estrutura
     )
     sub.add_parser("fs", help="Diagnósticos de segurança do motor").set_defaults(func=cmd_fs)
+    sub.add_parser("voo", help="Parâmetros de lançamento e atmosfera").set_defaults(func=cmd_voo)
     sub.add_parser("dump", help="Imprime toda a configuração do projeto").set_defaults(func=cmd_dump)
     sub.add_parser("varrer", help="Varredura paramétrica de voo (empuxo × arrasto)").set_defaults(
         func=cmd_varrer
@@ -288,11 +319,11 @@ def main(argv: list[str] | None = None) -> None:
         func=cmd_smoke
     )
     sub.add_parser(
-        "setup", help="Configura a extensão visual C4 no Positron local (novo notebook)"
+        "setup", help="Configura as extensões visuais no Positron local"
     ).set_defaults(func=cmd_setup)
 
     sub_c4 = sub.add_parser("c4", help="Gera diagramas C4 Nível 4 (Código) via AST e a2m")
-    sub_c4.add_argument("arquivo", nargs="?", default=None, help="Caminho do arquivo Python (ex.: src/calculos/motor.py)")
+    sub_c4.add_argument("arquivo", nargs="?", default=None, help="Caminho do arquivo Python (ex.: src/motor/derivador.py)")
     sub_c4.add_argument("--todos", "-t", action="store_true", help="Gera todos os módulos do projeto em lote")
     sub_c4.set_defaults(func=cmd_c4)
 

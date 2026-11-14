@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-"""Varredura paramétrica do motor — 1 a N dimensões.
+"""Varredura paramétrica do motor — 1 a N dimensões (saída tabular em Polars).
 
 Uso Python (IDE):
     from scripts.varredura_motor import varrer_motor
 
-    varrer_motor({"nozzle.throat": [0.030, 0.032, 0.034]})
+    df = varrer_motor({"nozzle.throat": [0.030, 0.032, 0.034]})
 
 Uso CLI (terminal):
     python centralControle/rodar.py varrer-motor \\
@@ -14,20 +14,20 @@ Uso CLI (terminal):
 from __future__ import annotations
 
 import argparse
-import csv
 import dataclasses
 import hashlib
 import itertools
 import json
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
-from configs.foguetes.hefesto.motor_cfg import MOTOR_IREC, RIC_MEDUSA
-from configs.foguetes.hefesto.motor_variacoes import PARAMS_LIVRES
-from src.calculos.motor import derivar_motor
-from src.calculos.motorlib_variacoes import validar_overrides
-from src.paths import SAIDA
+import polars as pl
+
+from configs.foguetes.hefesto.motor import MOTOR_IREC, PARAMS_LIVRES, RIC_MEDUSA
+from src.caminhos import SAIDA
+from src.especificacoes import LimitesSeguranca, validar_overrides
+from src.motor.derivador import derivar_motor
 
 RIC_PADRAO = RIC_MEDUSA
 DIR_VARREDURAS = SAIDA / "varreduras"
@@ -63,98 +63,86 @@ def _parse_param(s: str) -> tuple[str, list[float]]:
     return nome.strip(), _parse_valores(valores)
 
 
-def _gerar_grid(params: dict[str, list[float]]) -> list[dict]:
+def _gerar_grid(params: dict[str, list[float]]) -> list[dict[str, float]]:
     if not params:
         return []
     chaves = list(params.keys())
-    grades = [params[k] for k in chaves]
-    return [dict(zip(chaves, combo)) for combo in itertools.product(*grades)]
-
-
-@dataclass
-class LinhaVarredura:
-    overrides: dict
-    success: bool
-    impulse: float
-    empuxo_max: float
-    empuxo_medio: float
-    isp: float
-    burn_time: float
-    p0_pico: float
-    kn_pico: float
-    mass_flux_pico: float
-    fs_carcaca: float
-    ok_geral: bool
-    erro: str | None = None
-    curva_file: str | None = None
+    return [dict(zip(chaves, combo)) for combo in itertools.product(*(params[k] for k in chaves))]
 
 
 def _simular_um(
     ric_path: Path,
-    overrides: dict,
+    overrides: dict[str, float],
     whitelist: set[str] | None,
     salvar_curva: bool,
     dir_curvas: Path,
-) -> LinhaVarredura:
+    limites: LimitesSeguranca | None = None,
+) -> dict[str, Any]:
+    """Executa uma variação do `.ric` e devolve um registro tabular para DataFrame."""
+    base: dict[str, Any] = dict(overrides)
     try:
         validar_overrides(overrides, whitelist)
-
         spec_var = dataclasses.replace(
             MOTOR_IREC,
             ric_path=ric_path,
             overrides=dict(overrides),
             nome="(varredura)",
         )
-        d = derivar_motor(spec_var)
+        kwargs = {"limites": limites} if limites is not None else {}
+        d = derivar_motor(spec_var, **kwargs)
 
         fs = d.diagnosticos[0].valor if d.diagnosticos else float("nan")
         ok_geral = bool(d.diagnosticos) and all(x.ok for x in d.diagnosticos)
         dur = d.burn_time[1] - d.burn_time[0]
         empuxo_medio = d.total_impulse / dur if dur > 0 else 0.0
 
-        curva_file = None
+        curva_file = ""
         if salvar_curva and d.curva_empuxo is not None:
             h = hashlib.md5(
                 json.dumps(overrides, sort_keys=True).encode()
             ).hexdigest()[:12]
-            curva_file = str(dir_curvas / f"{h}.csv")
+            path_curva = dir_curvas / f"{h}.csv"
             dir_curvas.mkdir(parents=True, exist_ok=True)
-            with open(curva_file, "w", newline="", encoding="utf-8") as fp:
-                w = csv.writer(fp)
-                w.writerow(["t_s", "F_N"])
-                w.writerows(d.curva_empuxo)
+            pl.DataFrame(
+                d.curva_empuxo,
+                schema=["t_s", "F_N"],
+                orient="row",
+            ).write_csv(path_curva)
+            curva_file = str(path_curva)
 
-        return LinhaVarredura(
-            overrides=overrides,
-            success=True,
-            impulse=d.total_impulse,
-            empuxo_max=d.max_thrust,
-            empuxo_medio=empuxo_medio,
-            isp=d.isp_entregue or float("nan"),
-            burn_time=d.burn_time[1],
-            p0_pico=d.p0_pico or float("nan"),
-            kn_pico=d.kn_pico or float("nan"),
-            mass_flux_pico=d.mass_flux_pico or float("nan"),
-            fs_carcaca=fs,
-            ok_geral=ok_geral,
-            curva_file=curva_file,
-        )
+        return {
+            **base,
+            "success": True,
+            "impulse_Ns": d.total_impulse,
+            "empuxo_max_N": d.max_thrust,
+            "empuxo_medio_N": empuxo_medio,
+            "isp_s": d.isp_entregue or float("nan"),
+            "burn_time_s": d.burn_time[1],
+            "p0_MPa": (d.p0_pico / 1e6) if d.p0_pico is not None else float("nan"),
+            "kn": d.kn_pico if d.kn_pico is not None else float("nan"),
+            "mass_flux": d.mass_flux_pico if d.mass_flux_pico is not None else float("nan"),
+            "fs_carcaca": fs,
+            "ok_geral": ok_geral,
+            "erro": "",
+            **({"curva_file": curva_file} if salvar_curva else {}),
+        }
     except (KeyError, RuntimeError, TypeError, ValueError, FileNotFoundError) as e:
-        return LinhaVarredura(
-            overrides=overrides,
-            success=False,
-            impulse=float("nan"),
-            empuxo_max=float("nan"),
-            empuxo_medio=float("nan"),
-            isp=float("nan"),
-            burn_time=float("nan"),
-            p0_pico=float("nan"),
-            kn_pico=float("nan"),
-            mass_flux_pico=float("nan"),
-            fs_carcaca=float("nan"),
-            ok_geral=False,
-            erro=f"{type(e).__name__}: {e}",
-        )
+        return {
+            **base,
+            "success": False,
+            "impulse_Ns": float("nan"),
+            "empuxo_max_N": float("nan"),
+            "empuxo_medio_N": float("nan"),
+            "isp_s": float("nan"),
+            "burn_time_s": float("nan"),
+            "p0_MPa": float("nan"),
+            "kn": float("nan"),
+            "mass_flux": float("nan"),
+            "fs_carcaca": float("nan"),
+            "ok_geral": False,
+            "erro": f"{type(e).__name__}: {e}",
+            **({"curva_file": ""} if salvar_curva else {}),
+        }
 
 
 def varrer_motor(
@@ -166,12 +154,13 @@ def varrer_motor(
     n_jobs: int = 4,
     salvar: bool = True,
     prefixo: str = "varredura_motor",
-) -> list[LinhaVarredura]:
+    limites: LimitesSeguranca | None = None,
+) -> pl.DataFrame:
+    """Executa a grade paramétrica sobre o `.ric` e retorna um `polars.DataFrame`."""
     if not params:
         raise ValueError("Nenhum parâmetro definido para varredura.")
 
     ric_eff = Path(ric_path) if ric_path is not None else RIC_PADRAO
-
     for nome in params:
         validar_overrides({nome: params[nome][0]}, whitelist)
 
@@ -191,29 +180,29 @@ def varrer_motor(
     DIR_VARREDURAS.mkdir(parents=True, exist_ok=True)
 
     if paralelo and n_jobs != 1:
-        resultados = Parallel(n_jobs=n_jobs, verbose=10)(
-            delayed(_simular_um)(ric_eff, ov, whitelist, curvas, DIR_CURVAS)
+        registros = Parallel(n_jobs=n_jobs, verbose=10)(
+            delayed(_simular_um)(ric_eff, ov, whitelist, curvas, DIR_CURVAS, limites)
             for ov in grid
         )
     else:
-        resultados = [
-            _simular_um(ric_eff, ov, whitelist, curvas, DIR_CURVAS)
+        registros = [
+            _simular_um(ric_eff, ov, whitelist, curvas, DIR_CURVAS, limites)
             for ov in grid
         ]
 
-    n_ok = sum(1 for r in resultados if r.ok_geral)
-    n_falha = total - n_ok
-    print(f"\nConcluído: {n_ok}/{total} OK, {n_falha} com alerta/erro")
+    df = pl.DataFrame(registros)
+    n_ok = int(df["ok_geral"].sum())
+    print(f"\nConcluído: {n_ok}/{total} OK, {total - n_ok} com alerta/erro")
 
     if salvar:
-        _salvar_resultados(resultados, params, ric_eff, prefixo, curvas)
+        _salvar_resultados(df, params, ric_eff, prefixo, curvas)
 
-    return resultados
+    return df
 
 
 def _salvar_resultados(
-    resultados: list[LinhaVarredura],
-    params: dict,
+    df: pl.DataFrame,
+    params: dict[str, list[float]],
     ric_base: Path,
     prefixo: str,
     curvas: bool,
@@ -222,56 +211,15 @@ def _salvar_resultados(
     csv_path = DIR_VARREDURAS / f"{prefixo}_{ts}.csv"
     meta_path = DIR_VARREDURAS / f"{prefixo}_{ts}_meta.json"
 
-    chaves_params = list(params.keys())
-    cabecalho = (
-        chaves_params
-        + [
-            "success",
-            "impulse_Ns",
-            "empuxo_max_N",
-            "empuxo_medio_N",
-            "isp_s",
-            "burn_time_s",
-            "p0_MPa",
-            "kn",
-            "mass_flux",
-            "fs_carcaca",
-            "ok_geral",
-            "erro",
-        ]
-        + (["curva_file"] if curvas else [])
-    )
-
-    with csv_path.open("w", newline="", encoding="utf-8") as fp:
-        w = csv.writer(fp)
-        w.writerow(cabecalho)
-        for r in resultados:
-            linha = [r.overrides.get(k, "") for k in chaves_params]
-            linha += [
-                r.success,
-                f"{r.impulse:.4f}",
-                f"{r.empuxo_max:.4f}",
-                f"{r.empuxo_medio:.4f}",
-                f"{r.isp:.4f}",
-                f"{r.burn_time:.4f}",
-                f"{r.p0_pico / 1e6:.6f}",
-                f"{r.kn_pico:.4f}",
-                f"{r.mass_flux_pico:.4f}",
-                f"{r.fs_carcaca:.4f}",
-                r.ok_geral,
-                r.erro or "",
-            ]
-            if curvas:
-                linha.append(r.curva_file or "")
-            w.writerow(linha)
+    df.write_csv(csv_path)
 
     meta = {
         "timestamp": ts,
         "ric_base": str(ric_base),
         "params": dict(params),
-        "n_simulacoes": len(resultados),
+        "n_simulacoes": df.height,
         "curvas_salvas": curvas,
-        "n_ok": sum(1 for r in resultados if r.ok_geral),
+        "n_ok": int(df["ok_geral"].sum()),
     }
     with meta_path.open("w", encoding="utf-8") as fp:
         json.dump(meta, fp, indent=2, ensure_ascii=False)
@@ -282,7 +230,7 @@ def _salvar_resultados(
         print(f"Curvas em: {DIR_CURVAS}")
 
 
-def imprimir_tabela(resultados: list[LinhaVarredura], params: dict) -> None:
+def imprimir_tabela(df: pl.DataFrame, params: dict[str, list[float]]) -> None:
     chaves = list(params.keys())
 
     cab = "  " + "  ".join(f"{k.split('.')[-1]:>8}" for k in chaves)
@@ -290,15 +238,15 @@ def imprimir_tabela(resultados: list[LinhaVarredura], params: dict) -> None:
     print(cab)
     print("  " + "-" * (len(cab) - 2))
 
-    for r in resultados:
-        linha = "  " + "  ".join(f"{r.overrides[k]:>8.4f}" for k in chaves)
-        status = "✓" if r.ok_geral else "✗"
+    for row in df.iter_rows(named=True):
+        linha = "  " + "  ".join(f"{row[k]:>8.4f}" for k in chaves)
+        status = "✓" if row["ok_geral"] else "✗"
         linha += (
-            f"  {r.impulse:>9.2f}  "
-            f"{r.p0_pico / 1e6:>8.3f}  "
-            f"{r.kn_pico:>6.1f}  "
-            f"{r.mass_flux_pico:>7.1f}  "
-            f"{r.fs_carcaca:>6.3f}  "
+            f"  {row['impulse_Ns']:>9.2f}  "
+            f"{row['p0_MPa']:>8.3f}  "
+            f"{row['kn']:>6.1f}  "
+            f"{row['mass_flux']:>7.1f}  "
+            f"{row['fs_carcaca']:>6.3f}  "
             f"{status:>3}"
         )
         print(linha)
@@ -326,7 +274,7 @@ def main() -> None:
         nome, valores = _parse_param(p_str)
         params[nome] = valores
 
-    resultados = varrer_motor(
+    df = varrer_motor(
         params,
         ric_path=args.ric,
         curvas=args.curvas,
@@ -336,7 +284,7 @@ def main() -> None:
     )
 
     print()
-    imprimir_tabela(resultados, params)
+    imprimir_tabela(df, params)
 
 
 if __name__ == "__main__":

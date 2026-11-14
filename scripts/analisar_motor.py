@@ -1,40 +1,22 @@
 #!/usr/bin/env python
-"""Análise de resultados de varredura do motor.
+"""Análise de resultados de varredura do motor sobre `polars.DataFrame`.
 
-Lê o CSV gerado por `varredura_motor.py` e oferece:
-- Carregamento (o mais recente ou específico)
-- Filtros (viável, FS mínimo, P0 máximo, etc.)
-- Ranking por objetivo
-- Ponto ótimo sob restrições
-- Plots 1D (linha) e 2D (mapa de calor)
-- Resumo tabular
-
-Uso IDE:
-    from scripts.analisar_motor import (
-        carregar_varredura, filtrar, rankear, achar_otimo, resumo,
-    )
-    regs = carregar_varredura()          # mais recente
-    resumo(regs)
-
-    viaveis = filtrar(regs, fs_min=2.5)
-    top5 = rankear(viaveis, "impulse_Ns")[:5]
-
-Uso CLI:
-    python centralControle/rodar.py analisar-motor
-    python centralControle/rodar.py analisar-motor --csv <path>
+Lê o CSV gerado por `varredura_motor.py` e oferece filtros, ranking, ponto ótimo
+sob `LIMITES_PADRAO` (ou limites customizados) e plots 1D/2D.
 """
 from __future__ import annotations
 
 import argparse
-import csv
 from pathlib import Path
+from typing import Any
 
 import matplotlib
+import polars as pl
 
-from src.paths import SAIDA
+from src.caminhos import SAIDA
+from src.especificacoes import LIMITES_PADRAO, LimitesSeguranca
 
 matplotlib.use("Agg")   # backend headless — evita Qt
-
 
 DIR_VARREDURAS = SAIDA / "varreduras"
 
@@ -58,44 +40,24 @@ def _ultimo_csv(dir_varreduras: Path = DIR_VARREDURAS) -> Path:
     return arquivos[-1]
 
 
-def carregar_varredura(caminho: Path | str | None = None) -> list[dict]:
-    """Lê o CSV de varredura como lista de dicts.
-
-    Converte automaticamente colunas numéricas para float e
-    `success`/`ok_geral` para bool.
-    """
-    caminho = Path(caminho) if caminho else _ultimo_csv()
-
-    with caminho.open(encoding="utf-8") as fp:
-        reader = csv.DictReader(fp)
-        registros = []
-        for row in reader:
-            for k, v in row.items():
-                if k in ("success", "ok_geral"):
-                    row[k] = v.strip().lower() in ("true", "1", "yes")
-                else:
-                    try:
-                        row[k] = float(v)
-                    except (ValueError, TypeError):
-                        pass  # mantém string
-            registros.append(row)
-
-    print(f"Carregado: {caminho.name}  ({len(registros)} registros)")
-    return registros
+def carregar_varredura(caminho: Path | str | None = None) -> pl.DataFrame:
+    """Lê o CSV de varredura diretamente como `polars.DataFrame`."""
+    path = Path(caminho) if caminho else _ultimo_csv()
+    df = pl.read_csv(path, null_values=["", "nan", "NaN"])
+    print(f"Carregado: {path.name}  ({df.height} registros)")
+    return df
 
 
-def params_do_registro(registros: list[dict]) -> list[str]:
+def params_do_registro(df: pl.DataFrame) -> list[str]:
     """Nomes das colunas que são parâmetros (não fixas)."""
-    if not registros:
-        return []
-    return [k for k in registros[0] if k not in COLUNAS_FIXAS]
+    return [c for c in df.columns if c not in COLUNAS_FIXAS]
 
 
 # ============================================================
 #  Filtros e ranking
 # ============================================================
 def filtrar(
-    registros: list[dict],
+    df: pl.DataFrame,
     *,
     ok_geral: bool | None = True,
     fs_min: float | None = None,
@@ -103,85 +65,71 @@ def filtrar(
     kn_max: float | None = None,
     mass_flux_max: float | None = None,
     success: bool | None = True,
-) -> list[dict]:
-    """Filtro cumulativo. Cada kwarg é opcional."""
-    out = registros
+) -> pl.DataFrame:
+    """Filtro cumulativo sobre o DataFrame. Cada kwarg é opcional."""
+    conds: list[pl.Expr] = []
+    if success is not None and "success" in df.columns:
+        conds.append(pl.col("success") == success)
+    if ok_geral is not None and "ok_geral" in df.columns:
+        conds.append(pl.col("ok_geral") == ok_geral)
 
-    if success is not None:
-        out = [r for r in out if r.get("success") == success]
+    limites_numericos = [
+        ("fs_carcaca", fs_min, ">="),
+        ("p0_MPa", p0_max, "<="),
+        ("kn", kn_max, "<="),
+        ("mass_flux", mass_flux_max, "<="),
+    ]
+    for col, val, op in limites_numericos:
+        if val is not None and col in df.columns:
+            expr = pl.col(col) >= val if op == ">=" else pl.col(col) <= val
+            conds.append(pl.col(col).is_not_null() & expr)
 
-    if ok_geral is not None:
-        out = [r for r in out if r.get("ok_geral") == ok_geral]
-
-    if fs_min is not None:
-        out = [r for r in out
-               if isinstance(r.get("fs_carcaca"), float)
-               and r["fs_carcaca"] >= fs_min]
-
-    if p0_max is not None:
-        out = [r for r in out
-               if isinstance(r.get("p0_MPa"), float)
-               and r["p0_MPa"] <= p0_max]
-
-    if kn_max is not None:
-        out = [r for r in out
-               if isinstance(r.get("kn"), float) and r["kn"] <= kn_max]
-
-    if mass_flux_max is not None:
-        out = [r for r in out
-               if isinstance(r.get("mass_flux"), float)
-               and r["mass_flux"] <= mass_flux_max]
-
-    return out
+    return df.filter(conds) if conds else df
 
 
 def rankear(
-    registros: list[dict],
+    df: pl.DataFrame,
     objetivo: str = "impulse_Ns",
     ascendente: bool = False,
-) -> list[dict]:
-    """Ordena por objetivo (default: impulse decrescente)."""
-    if not registros:
-        return []
-    if objetivo not in registros[0]:
-        raise KeyError(
-            f"Objetivo '{objetivo}' não existe. "
-            f"Disponíveis: {list(registros[0].keys())}"
-        )
-    return sorted(
-        registros,
-        key=lambda r: r.get(objetivo, float("-inf")),
-        reverse=not ascendente,
-    )
+) -> pl.DataFrame:
+    """Ordena por objetivo (default: impulso decrescente)."""
+    if df.is_empty():
+        return df
+    if objetivo not in df.columns:
+        raise KeyError(f"Objetivo '{objetivo}' não existe. Disponíveis: {df.columns}")
+    return df.sort(objetivo, descending=not ascendente, nulls_last=True)
 
 
 def achar_otimo(
-    registros: list[dict],
+    df: pl.DataFrame,
     objetivo: str = "impulse_Ns",
     *,
     ascendente: bool = False,
-    **filtros,
-) -> dict | None:
-    """Filtra + ranqueia + devolve o melhor. None se nada passar."""
-    viaveis = filtrar(registros, **filtros)
-    if not viaveis:
+    **filtros: Any,
+) -> dict[str, Any] | None:
+    """Filtra + ranqueia + devolve a melhor linha como dict, ou None."""
+    viaveis = filtrar(df, **filtros)
+    if viaveis.is_empty():
         return None
-    return rankear(viaveis, objetivo, ascendente)[0]
+    return rankear(viaveis, objetivo, ascendente).row(0, named=True)
 
 
 # ============================================================
 #  Resumo
 # ============================================================
-def resumo(registros: list[dict]) -> None:
-    """Estatísticas gerais da varredura."""
-    total = len(registros)
+def resumo(
+    df: pl.DataFrame,
+    *,
+    limites: LimitesSeguranca = LIMITES_PADRAO,
+) -> None:
+    """Estatísticas gerais da varredura usando os tetos de `limites`."""
+    total = df.height
     if total == 0:
         print("(sem registros)")
         return
 
-    params = params_do_registro(registros)
-    ok = sum(1 for r in registros if r.get("ok_geral"))
-    sucesso = sum(1 for r in registros if r.get("success"))
+    ok = int(df["ok_geral"].sum()) if "ok_geral" in df.columns else 0
+    sucesso = int(df["success"].sum()) if "success" in df.columns else 0
 
     print()
     print("=" * 70)
@@ -190,45 +138,57 @@ def resumo(registros: list[dict]) -> None:
     print(f"  Simulações bem-sucedidas: {sucesso}/{total}")
     print(f"  Passaram TODOS os checks: {ok}/{total}")
 
+    params = params_do_registro(df)
     if params:
         print()
         print("  Parâmetros varridos:")
         for p in params:
-            vals = sorted({r[p] for r in registros
-                           if isinstance(r[p], (int, float))})
-            if vals:
-                print(f"    {p}: {len(vals)} valores  "
-                      f"({vals[0]:.4f} … {vals[-1]:.4f})")
+            serie = df[p].drop_nulls()
+            if serie.dtype.is_numeric() and not serie.is_empty():
+                n_unicos = serie.n_unique()
+                print(f"    {p}: {n_unicos} valores  ({serie.min():.4f} … {serie.max():.4f})")
 
-    # Cada check falhou quantas vezes?
     if ok < total:
         print()
         print("  Checks que falharam:")
-        falhas: dict[str, int] = {}
-        for r in registros:
-            if r.get("ok_geral"):
-                continue
-            # Heurística: testar cada limite contra os valores
-            if isinstance(r.get("fs_carcaca"), float) and r["fs_carcaca"] < 2.0:
-                falhas["FS carcaça < 2.0"] = falhas.get("FS carcaça < 2.0", 0) + 1
-            if isinstance(r.get("p0_MPa"), float) and r["p0_MPa"] > 8.0:
-                falhas["P0 > 8 MPa"] = falhas.get("P0 > 8 MPa", 0) + 1
-            if isinstance(r.get("kn"), float) and r["kn"] > 250.0:
-                falhas["Kn > 250"] = falhas.get("Kn > 250", 0) + 1
-            if isinstance(r.get("mass_flux"), float) and r["mass_flux"] > 1406.0:
-                falhas["mass_flux > 1406"] = falhas.get("mass_flux > 1406", 0) + 1
-            if isinstance(r.get("erro"), str) and r["erro"]:
-                falhas["erro na simulação"] = falhas.get("erro na simulação", 0) + 1
+        regras = [
+            (f"FS carcaça < {limites.fs_min_carcaca:g}", pl.col("fs_carcaca") < limites.fs_min_carcaca),
+            (f"P0 > {limites.p0_max / 1e6:g} MPa", pl.col("p0_MPa") > (limites.p0_max / 1e6)),
+            (f"Kn > {limites.kn_max:g}", pl.col("kn") > limites.kn_max),
+            (f"mass_flux > {limites.mass_flux_max:g}", pl.col("mass_flux") > limites.mass_flux_max),
+        ]
+        falhas: list[tuple[str, int]] = []
+        reprovados = df.filter(~pl.col("ok_geral"))
+        for rotulo, expr in regras:
+            col_nome = expr.meta.root_names()[0]
+            if col_nome in reprovados.columns:
+                n = reprovados.filter(pl.col(col_nome).is_not_null() & expr).height
+                if n > 0:
+                    falhas.append((rotulo, n))
+        if "erro" in reprovados.columns:
+            n_err = reprovados.filter(pl.col("erro").is_not_null() & (pl.col("erro") != "")).height
+            if n_err > 0:
+                falhas.append(("erro na simulação", n_err))
 
-        for k, v in sorted(falhas.items(), key=lambda x: -x[1]):
-            print(f"    {k:<24} {v:>4}×")
+        for rotulo, contagem in sorted(falhas, key=lambda x: -x[1]):
+            print(f"    {rotulo:<24} {contagem:>4}×")
 
 
 # ============================================================
 #  Plots
 # ============================================================
+def _finalizar_plot(salvar_em: Path | str | None) -> None:
+    import matplotlib.pyplot as plt
+
+    if salvar_em:
+        plt.savefig(salvar_em, dpi=100, bbox_inches="tight")
+        print(f"Plot salvo: {salvar_em}")
+    else:
+        plt.show()
+
+
 def plotar_1d(
-    registros: list[dict],
+    df: pl.DataFrame,
     x_param: str,
     y_param: str = "impulse_Ns",
     *,
@@ -238,34 +198,16 @@ def plotar_1d(
     """Plota curva 1D. Requer apenas 1 parâmetro na varredura."""
     import matplotlib.pyplot as plt
 
-    regs = filtrar(registros, success=True) if filtrar_viaveis else registros
-
-    # Ordena por x
-    pontos = sorted(
-        [(r[x_param], r[y_param], r.get("ok_geral", False))
-         for r in regs
-         if isinstance(r.get(x_param), (int, float))
-         and isinstance(r.get(y_param), (int, float))],
-        key=lambda t: t[0],
-    )
-
-    xs = [p[0] for p in pontos]
-    ys = [p[1] for p in pontos]
-    ok = [p[2] for p in pontos]
+    sub = filtrar(df, ok_geral=None, success=True) if filtrar_viaveis else df
+    sub = sub.filter(pl.col(x_param).is_not_null() & pl.col(y_param).is_not_null()).sort(x_param)
 
     fig, ax = plt.subplots(figsize=(9, 5))
+    ax.plot(sub[x_param].to_list(), sub[y_param].to_list(), color="gray", alpha=0.5, zorder=1)
 
-    # Linha cinza conecta tudo
-    ax.plot(xs, ys, color="gray", alpha=0.5, zorder=1)
-
-    # Pontos: verde = OK, vermelho = alerta
-    xs_ok = [x for x, o in zip(xs, ok) if o]
-    ys_ok = [y for y, o in zip(ys, ok) if o]
-    xs_bad = [x for x, o in zip(xs, ok) if not o]
-    ys_bad = [y for y, o in zip(ys, ok) if not o]
-
-    ax.scatter(xs_ok, ys_ok, color="green", s=80, zorder=2, label="OK")
-    ax.scatter(xs_bad, ys_bad, color="red", s=80, zorder=2, label="alerta")
+    ok_df = sub.filter(pl.col("ok_geral"))
+    bad_df = sub.filter(~pl.col("ok_geral"))
+    ax.scatter(ok_df[x_param].to_list(), ok_df[y_param].to_list(), color="green", s=80, zorder=2, label="OK")
+    ax.scatter(bad_df[x_param].to_list(), bad_df[y_param].to_list(), color="red", s=80, zorder=2, label="alerta")
 
     ax.set_xlabel(x_param)
     ax.set_ylabel(y_param)
@@ -273,17 +215,12 @@ def plotar_1d(
     ax.grid(alpha=0.3)
     ax.legend()
 
-    if salvar_em:
-        plt.savefig(salvar_em, dpi=100, bbox_inches="tight")
-        print(f"Plot salvo: {salvar_em}")
-    else:
-        plt.show()
-
+    _finalizar_plot(salvar_em)
     return fig, ax
 
 
 def plotar_2d(
-    registros: list[dict],
+    df: pl.DataFrame,
     x_param: str,
     y_param: str,
     z_param: str = "impulse_Ns",
@@ -293,53 +230,40 @@ def plotar_2d(
 ):
     """Mapa de calor 2D. Requer 2 parâmetros na varredura."""
     import matplotlib.pyplot as plt
-    import numpy as np
 
-    regs = filtrar(registros, success=True) if filtrar_viaveis else registros
+    sub = filtrar(df, ok_geral=None, success=True) if filtrar_viaveis else df
+    sub = sub.filter(
+        pl.col(x_param).is_not_null() & pl.col(y_param).is_not_null() & pl.col(z_param).is_not_null()
+    )
 
-    xs = np.array([r[x_param] for r in regs
-                   if isinstance(r.get(x_param), (int, float))
-                   and isinstance(r.get(y_param), (int, float))
-                   and isinstance(r.get(z_param), (int, float))])
-    ys = np.array([r[y_param] for r in regs
-                   if isinstance(r.get(x_param), (int, float))
-                   and isinstance(r.get(y_param), (int, float))
-                   and isinstance(r.get(z_param), (int, float))])
-    zs = np.array([r[z_param] for r in regs
-                   if isinstance(r.get(x_param), (int, float))
-                   and isinstance(r.get(y_param), (int, float))
-                   and isinstance(r.get(z_param), (int, float))])
-    xs_unique = sorted({r[x_param] for r in regs
-                        if isinstance(r.get(x_param), (int, float))})
-    ys_unique = sorted({r[y_param] for r in regs
-                        if isinstance(r.get(y_param), (int, float))})
-    if len(xs_unique) < 2 or len(ys_unique) < 2:
+    nx = sub[x_param].n_unique()
+    ny = sub[y_param].n_unique()
+    if nx < 2 or ny < 2:
         raise ValueError(
             f"plotar_2d precisa de varredura 2D. "
-            f"'{x_param}' tem {len(xs_unique)} valor(es) único(s), "
-            f"'{y_param}' tem {len(ys_unique)}. "
+            f"'{x_param}' tem {nx} valor(es) único(s), '{y_param}' tem {ny}. "
             f"Rode uma varredura com 2 parâmetros."
         )
 
     fig, ax = plt.subplots(figsize=(9, 7))
-    tcf = ax.tricontourf(xs, ys, zs, levels=15, cmap="viridis")
+    tcf = ax.tricontourf(
+        sub[x_param].to_numpy(),
+        sub[y_param].to_numpy(),
+        sub[z_param].to_numpy(),
+        levels=15,
+        cmap="viridis",
+    )
     fig.colorbar(tcf, ax=ax, label=z_param)
 
-    # Marca os pontos infactíveis com X vermelho
-    for r in regs:
-        if not r.get("ok_geral"):
-            ax.plot(r[x_param], r[y_param], "x", color="red", markersize=8)
+    bad_df = sub.filter(~pl.col("ok_geral"))
+    if not bad_df.is_empty():
+        ax.plot(bad_df[x_param].to_list(), bad_df[y_param].to_list(), "x", color="red", markersize=8)
 
     ax.set_xlabel(x_param)
     ax.set_ylabel(y_param)
     ax.set_title(f"{z_param}  (✗ = alerta)")
 
-    if salvar_em:
-        plt.savefig(salvar_em, dpi=100, bbox_inches="tight")
-        print(f"Plot salvo: {salvar_em}")
-    else:
-        plt.show()
-
+    _finalizar_plot(salvar_em)
     return fig, ax
 
 
@@ -347,40 +271,36 @@ def plotar_2d(
 #  Impressão de top-N
 # ============================================================
 def imprimir_top(
-    registros: list[dict],
+    df: pl.DataFrame,
     objetivo: str = "impulse_Ns",
     n: int = 10,
 ) -> None:
-    if not registros:
+    if df.is_empty():
         print("(sem registros)")
         return
 
-    params = params_do_registro(registros)
+    params = params_do_registro(df)
     print()
     print("=" * 70)
     print(f"  TOP {n}  (objetivo: {objetivo})")
     print("=" * 70)
 
     cab = "  #  " + "  ".join(f"{p.split('.')[-1]:>9}" for p in params)
-    cab += (f"  {objetivo:>10}  {'P0(MPa)':>8}  {'Kn':>6}  "
-            f"{'mflux':>7}  {'FS':>6}")
+    cab += f"  {objetivo:>10}  {'P0(MPa)':>8}  {'Kn':>6}  {'mflux':>7}  {'FS':>6}"
     print(cab)
     print("  " + "-" * (len(cab) - 2))
 
-    for i, r in enumerate(registros[:n], 1):
+    for i, r in enumerate(rankear(df, objetivo).head(n).iter_rows(named=True), 1):
         linha = f"  {i:>2} "
         for p in params:
             v = r.get(p)
-            if isinstance(v, (int, float)):
-                linha += f"  {v:>9.4f}"
-            else:
-                linha += f"  {v!s:>9}"
+            linha += f"  {v:>9.4f}" if isinstance(v, (int, float)) else f"  {v!s:>9}"
         linha += (
-            f"  {r.get(objetivo, float('nan')):>10.2f}  "
-            f"{r.get('p0_MPa', float('nan')):>8.3f}  "
-            f"{r.get('kn', float('nan')):>6.1f}  "
-            f"{r.get('mass_flux', float('nan')):>7.1f}  "
-            f"{r.get('fs_carcaca', float('nan')):>6.3f}"
+            f"  {(r.get(objetivo) or float('nan')):>10.2f}  "
+            f"{(r.get('p0_MPa') or float('nan')):>8.3f}  "
+            f"{(r.get('kn') or float('nan')):>6.1f}  "
+            f"{(r.get('mass_flux') or float('nan')):>7.1f}  "
+            f"{(r.get('fs_carcaca') or float('nan')):>6.3f}"
         )
         print(linha)
 
@@ -389,33 +309,27 @@ def imprimir_top(
 #  CLI
 # ============================================================
 def main() -> None:
-    p = argparse.ArgumentParser(
-        description="Analisa CSV de varredura de motor"
-    )
-    p.add_argument("--csv", type=Path, default=None,
-                   help="CSV específico (default: mais recente)")
-    p.add_argument("--fs-min", type=float, default=None,
-                   help="Filtro FS mínimo")
-    p.add_argument("--objetivo", default="impulse_Ns",
-                   help="Coluna para maximizar (default: impulse_Ns)")
-    p.add_argument("--top", type=int, default=10,
-                   help="Quantos mostrar no top (default: 10)")
+    p = argparse.ArgumentParser(description="Analisa CSV de varredura de motor")
+    p.add_argument("--csv", type=Path, default=None, help="CSV específico (default: mais recente)")
+    p.add_argument("--fs-min", type=float, default=None, help="Filtro FS mínimo")
+    p.add_argument("--objetivo", default="impulse_Ns", help="Coluna para maximizar (default: impulse_Ns)")
+    p.add_argument("--top", type=int, default=10, help="Quantos mostrar no top (default: 10)")
 
     args = p.parse_args()
 
-    regs = carregar_varredura(args.csv)
-    resumo(regs)
+    df = carregar_varredura(args.csv)
+    resumo(df)
 
-    viaveis = filtrar(regs, fs_min=args.fs_min)
+    viaveis = filtrar(df, fs_min=args.fs_min)
     imprimir_top(viaveis, objetivo=args.objetivo, n=args.top)
 
-    otimo = achar_otimo(regs, objetivo=args.objetivo, fs_min=args.fs_min)
+    otimo = achar_otimo(df, objetivo=args.objetivo, fs_min=args.fs_min)
     if otimo:
         print()
         print("=" * 70)
         print(f"  ÓTIMO VIÁVEL  ({args.objetivo})")
         print("=" * 70)
-        for p_name in params_do_registro(regs):
+        for p_name in params_do_registro(df):
             print(f"  {p_name:<40} {otimo[p_name]}")
         print(f"  {'impulse_Ns':<40} {otimo['impulse_Ns']:.2f}")
         print(f"  {'p0_MPa':<40} {otimo['p0_MPa']:.3f}")

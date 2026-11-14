@@ -1,9 +1,18 @@
 # configs/limites.py
-"""Limites de projeto do foguete (IREC + restrições estruturais/operacionais)."""
+"""Materiais e limites de projeto do foguete (IREC + restrições estruturais/operacionais)."""
 from __future__ import annotations
 
-from configs.material import SIGMA_LIM_AL6063_T5
-from src.specs import LimitesSeguranca
+from src.especificacoes import LimitesSeguranca
+
+# ============================================================
+#  Materiais (densidades kg/m³ e resistência Pa)
+# ============================================================
+ALUMINIO_6061 = 2700        # kg/m³ — anéis, anteparos, junções, aletas
+FIBRA_CARBONO = 1600        # kg/m³ — referência estrutural
+COMPOSITO_G10 = 1800        # kg/m³ — referência estrutural (G10)
+COMPOSITO_EFETIVO = 1850    # kg/m³ — densidade efetiva dos módulos do corpo
+COIFA_EFETIVA = 1977        # kg/m³ — densidade efetiva calibrada da casca da coifa
+SIGMA_LIM_AL6063_T5 = 145e6 # Pa — limite de escoamento mínimo do Al 6063-T5
 
 # ============================================================
 #  Fatores de segurança
@@ -23,6 +32,9 @@ MASS_FLUX_MAX = 1406.0      # kg/(m²·s) — 2 lb/(in²·s), do .ric
 PORT_THROAT_MIN = 2.0       # — do .ric
 EROSION_MAX_GARGANTA = 0.02 # 2% de erosão da garganta
 
+# ============================================================
+#  Limites consolidados — instância usada por FogueteSpec
+# ============================================================
 LIMITES_IREC = LimitesSeguranca(
     fs_min_carcaca=FS_MIN_CARCACA,
     fs_alvo_carcaca=FS_ALVO_CARCACA,

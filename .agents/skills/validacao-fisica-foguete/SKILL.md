@@ -4,7 +4,7 @@ description: >
   Estratégia e padrões de validação física, matemática e numérica para simulações de
   foguetemodelismo (propulsão sólida/BATES, vasos de pressão, aerodinâmica de coifa/aletas,
   massa/inércia via Steiner e voo 6-DOF no RocketPy/openMotor). Ative sempre que criar,
-  modificar ou testar métodos em src/calculos/, src/modelo.py, src/modelos.py, src/specs.py
+  modificar ou testar métodos em src/estrutura/, src/motor/, src/simulacao/, src/especificacoes.py
   ou suítes em tests/.
 ---
 
@@ -23,7 +23,7 @@ Para validar um método físico, você nunca deve usar o próprio código testad
 
 ## 2. Os 4 Pilares Obrigatórios por Método Físico
 
-Sempre que criar ou auditar uma função em `src/calculos/` ou `src/modelo.py`, estruture os testes cobrindo estes 4 pilares:
+Sempre que criar ou auditar uma função em `src/estrutura/`, `src/motor/` ou `src/simulacao/`, estruture os testes no arquivo correspondente em `tests/` (`test_especificacoes.py`, `test_estrutura.py`, `test_motor.py`, `test_simulacao.py`) cobrindo estes 4 pilares:
 
 ### Pilar 1 — Limite Analítico Exato (Fórmula Fechada)
 Avalie a função em uma geometria simplificada ou caso degenerado cuja resposta matemática possa ser escrita à mão em 1 linha:
@@ -40,10 +40,10 @@ Perturbe **1 parâmetro físico por vez** e verifique a direção obrigatória d
 Compare a saída com um valor de referência externo (simulação openMotor `.ric` oficial do motor Medusa, tabela RASAero ou medição de bancada) declarando explicitamente a tolerância física esperada no `pytest.approx`.
 
 ### Pilar 4 — Fronteira Física Fail-Fast (`pytest.raises`)
-Entradas fisicamente impossíveis devem falhar imediatamente no contrato (`src/specs.py` ou validação de fronteira) com `ValueError`:
+Entradas fisicamente impossíveis devem falhar imediatamente no contrato (`src/especificacoes.py` ou validação de fronteira) com `ValueError`:
 - Raios, comprimentos, espessuras ou densidades $\le 0$;
 - Geometrias invertidas ($r_{\text{interno}} \ge r_{\text{externo}}$, `espessura >= raio_externo`);
-- Parâmetros de override fora da `WHITELIST` balística.
+- Parâmetros de override fora da `whitelist` balística (`validar_overrides`).
 
 ---
 
@@ -53,15 +53,15 @@ Nunca use `pytest.approx(val)` sem refletir sobre a origem do erro numérico. Us
 
 | Natureza do Cálculo | Tolerância Recomendada | Onde Aplica no Hefesto |
 | :--- | :--- | :--- |
-| **Álgebra exata / Geometria analítica / Conversão SI** | `rel=1e-9` | `TuboSpec`, `MassaPontualSpec`, `aletas.py` (polígono), `aletas_rasaero.py`, `seguranca.py`, Teorema de Steiner em `modelo.py` |
-| **Quadratura numérica de perfil suave (`scipy.integrate.quad`)** | `rel=1e-4` | `coifa.py` (integração de superfície/momentos para perfis Von Kármán, Haack e Ogiva) |
-| **Balística interna discretizada / Integração de voo 6-DOF** | `rel=1e-2` (1%) | `motor.py` (`openMotor` `.ric`/`.eng`), integral da curva $F(t)$, `Flight` no `RocketPy` |
+| **Álgebra exata / Geometria analítica / Conversão SI** | `rel=1e-9` | `TuboSpec`, `MassaPontualSpec`, `aletas.py` (polígono e conversão RASAero), `seguranca.py`, Teorema de Steiner em `agregador.py` |
+| **Quadratura numérica de perfil suave (`scipy.integrate.quad`)** | `rel=1e-4` | `src/estrutura/coifa.py` (integração de superfície/momentos para perfis Von Kármán, Haack e Ogiva) |
+| **Balística interna discretizada / Integração de voo 6-DOF** | `rel=1e-2` (1%) | `src/motor/derivador.py` (`openMotor` `.ric`/`.eng`), integral da curva $F(t)$, `Flight` no `RocketPy` (`src/simulacao/construtor_foguete.py`) |
 
 ---
 
 ## 4. Gabarito de Validação por Subsistema do Foguete
 
-### A. Propulsão e Balística Interna (`src/calculos/motor.py`, `motorlib_*.py`)
+### A. Propulsão e Balística Interna (`tests/test_motor.py` → `src/motor/derivador.py`, `adaptador_openmotor.py`)
 1. **Conservação Geométrica da Massa de Propelente (Grãos BATES Cilíndricos):**
    $$m_{\text{prop}} = \rho_p \sum_{i=1}^{N} \pi \left(r_{e,i}^2 - r_{i,i}^2\right) L_i$$
    - *Teste:* Somar o volume dos `GrainSpec` em `MotorDerivado.grains`, multiplicar por `propellant_density` e exigir igualdade com `d.propellant_mass` (`rel=1e-6`).
@@ -74,14 +74,14 @@ Nunca use `pytest.approx(val)` sem refletir sobre a origem do erro numérico. Us
    - `throat` reduzido $\implies$ `throat_radius` cai exatamente na proporção, `kn_pico` sobe, `p0_pico` sobe.
    - `coreDiameter` aumentado $\implies$ `inner_radius` de todos os grãos sobe, `propellant_mass` cai.
 
-### B. Segurança Estrutural (`src/calculos/seguranca.py`)
+### B. Segurança Estrutural (`tests/test_motor.py` → `src/motor/seguranca.py`)
 1. **Fórmula Analítica de Vaso de Pressão (Tensão Circunferencial / Hoop Stress):**
    $$\sigma_\theta = \frac{P_0 \cdot r_i}{t}, \qquad FS = \frac{\sigma_{\text{escoamento}}}{\sigma_\theta}$$
    - *Teste:* Para $P_0 = 2\,\text{MPa}$, $r_i = 0.05\,\text{m}$, $t = 0.002\,\text{m} \implies \sigma_\theta = 50\,\text{MPa}$. Se $\sigma_{\text{esc}} = 150\,\text{MPa}$, $FS = 3.0$ exato (`rel=1e-9`).
 2. **Transição Exata de Fronteira (`ok=True` vs `ok=False`):**
    - *Teste:* Parametrizar valores exatamente em `limite * 0.999` e `limite * 1.001` para `check_p0`, `check_kn`, `check_mass_flux` e `fs_carcaca`.
 
-### C. Aerodinâmica: Coifa (`src/calculos/coifa.py`)
+### C. Aerodinâmica: Coifa (`tests/test_estrutura.py` → `src/estrutura/coifa.py`)
 1. **Condições de Contorno do Perfil $r(x)$:**
    - *Teste:* Em $x = 0$ (ponta), $r(0) == 0.0$; em $x = L$ (base), $r(L) == R_{\text{base}}$ (`rel=1e-9`) para todos os tipos (`vonkarman`, `lvhaack`, `ogive`, `conical`).
 2. **Limite Analítico Cônico (`kind="conical"`):**
@@ -90,7 +90,7 @@ Nunca use `pytest.approx(val)` sem refletir sobre a origem do erro numérico. Us
    - $0.5 L < X_{\text{cg}} < L$ (toda coifa afilada tem mais área perto da base do que da ponta);
    - Dobrar `densidade` dobra `massa`, `I_xx_local` e `I_yy_local`, mantendo `cg` constante.
 
-### D. Aerodinâmica: Aletas (`src/calculos/aletas.py`, `aletas_rasaero.py`)
+### D. Aerodinâmica: Aletas (`tests/test_estrutura.py` → `src/estrutura/aletas.py`)
 1. **Limite Analítico de Aleta Retangular (`root_chord == tip_chord`, `sweep_length == 0`):**
    - $\text{area\_planform} = b \cdot c_r$ (`rel=1e-9`);
    - $\text{massa\_uma} = b \cdot c_r \cdot t \cdot \rho$, $\text{massa\_total} = n \cdot \text{massa\_uma}$;
@@ -99,7 +99,7 @@ Nunca use `pytest.approx(val)` sem refletir sobre a origem do erro numérico. Us
    - Conversão exata SI para polegadas: `chord_in * 0.0254 == chord_m` (`rel=1e-9`);
    - Sempre que `tip_chord < root_chord` e `sweep_length > 0`, validar geometricamente a relação trigonométrica entre `span_le`, `span_te`, `sweep_length` e as cordas.
 
-### E. Componentes, Inércia Global e Montagem (`src/calculos/componentes.py`, `src/modelo.py`)
+### E. Componentes, Inércia Global e Montagem (`tests/test_estrutura.py` → `src/estrutura/componentes.py`, `agregador.py`)
 1. **Limite Analítico de Cilindro Oco (`derivar_tubo`):**
    - Volume exato $V = \pi (r_e^2 - r_i^2) L$, massa $m = \rho V$;
    - Momento de inércia polar/longitudinal exato: $I_{zz} = \frac{1}{2} m (r_e^2 + r_i^2)$ (`rel=1e-9`);
@@ -107,8 +107,8 @@ Nunca use `pytest.approx(val)` sem refletir sobre a origem do erro numérico. Us
 2. **Teorema dos Eixos Paralelos (Steiner) em `resolver()`:**
    - *Teste:* Montar um foguete mínimo sintético com 2 massas pontuais idênticas $m$ nas posições $z_1 = -d$ e $z_2 = +d$ (com coifa/aleta de massa desprezível): o CG global deve cair em $z = 0$ e a inércia transversal deve somar $\sum m_i d_i^2 = 2 m d^2$.
 3. **Invariância de Permutação:**
-   - `resolver(componentes= list(reversed(COMPONENTES)), ...)` deve produzir `massa_seca`, `cg_sem_motor`, `inercia_transversal` e `inercia_longitudinal` idênticos a `resolver(componentes=COMPONENTES, ...)` (`rel=1e-9`).
-4. **Convenção de Eixos do RocketPy:**
+   - `resolver(componentes=list(reversed(COMPONENTES)), ...)` deve produzir `massa_seca`, `cg_sem_motor`, `inercia_transversal` e `inercia_longitudinal` idênticos a `resolver(componentes=COMPONENTES, ...)` (`rel=1e-9`).
+4. **Convenção de Eixos do RocketPy (`tests/test_simulacao.py` → `src/simulacao/construtor_foguete.py`):**
    - Em `FogueteResolvido.inercia_rocketpy` e `Rocket.I_11_without_motor`:
      $$I_{11} == I_{22} \quad \text{e} \quad I_{11} > 10 \cdot I_{33} > 0$$
 
@@ -134,6 +134,6 @@ Nunca use `pytest.approx(val)` sem refletir sobre a origem do erro numérico. Us
    ```
 3. **Isolamento de Testes Lentos (`@pytest.mark.slow`):**
    - Cálculos geométricos, estruturais e analíticos devem rodar em `< 50 ms`.
-   - Simulações completas de voo 6-DOF (`Flight(rocket=..., environment=...)`) devem ser marcadas com `@pytest.mark.slow` quando houver múltiplas varreduras.
+   - Simulações completas de voo 6-DOF (`Flight(rocket=..., environment=...)`) devem ser marcadas com `@pytest.mark.slow` quando houver múltiplas varreduras (`pytest -m "not slow"` para iteração rápida).
 4. **Sem Dependências Extras:**
-   - Utilize apenas `pytest`, `math` e `numpy` (já presentes no ambiente).
+   - Utilize apenas `pytest`, `math`, `numpy` e `polars` (já presentes no ambiente).

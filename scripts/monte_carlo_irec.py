@@ -30,9 +30,9 @@ from configs import (
     REEFED_E,
     UNREEFED_E,
 )
-from src.ambiente import build_irec, build_irec_ensemble
-from src.construtor_foguete import build_rocket
-from src.paths import RESULTADOS
+from src.caminhos import RESULTADOS
+from src.simulacao.ambiente import build_irec, build_irec_ensemble
+from src.simulacao.construtor_foguete import build_rocket
 
 
 def main(n_simulacoes: int = 100) -> None:

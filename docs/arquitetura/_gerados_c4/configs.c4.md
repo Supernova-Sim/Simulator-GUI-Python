@@ -14,9 +14,8 @@
 
 Fachada pública de configurações do projeto.
 
-Reexporta os tipos de especificação (`src.specs`), recursos globais
-(`configs.material`, `configs.limites`) e a instância concreta do foguete
-`HEFESTO` (`configs.foguetes.hefesto`).
+Reexporta os tipos de especificação (`src.especificacoes`), limites e materiais
+(`configs.limites`) e a instância concreta do foguete `HEFESTO`.
 
 ---
 
@@ -28,12 +27,10 @@ flowchart LR
     MOD["📄 configs/__init__.py"]
     INT_0["🧩 configs.foguetes.hefesto\n(ALETA_IREC, ALETAS, ALETAS_E, ALETAS_POS_E, ...)"] --> MOD
     click INT_0 href "configs__foguetes__hefesto.c4.md" "Abrir C4 de configs.foguetes.hefesto"
-    INT_1["🧩 configs.limites\n(EROSION_MAX_GARGANTA, FS_ALVO_CARCACA, FS_MIN_ALETAS, FS_MIN_CARCACA, ...)"] --> MOD
+    INT_1["🧩 configs.limites\n(ALUMINIO_6061, COIFA_EFETIVA, COMPOSITO_EFETIVO, COMPOSITO_G10, ...)"] --> MOD
     click INT_1 href "configs__limites.c4.md" "Abrir C4 de configs.limites"
-    INT_2["🧩 configs.material\n(ALUMINIO_6061, COIFA_EFETIVA, COMPOSITO_EFETIVO, COMPOSITO_G10, ...)"] --> MOD
-    click INT_2 href "configs__material.c4.md" "Abrir C4 de configs.material"
-    INT_3["🧩 src.specs\n(AletaSpec, CoifaSpec, FogueteSpec, GeometriaMedidaSpec, ...)"] --> MOD
-    click INT_3 href "src__specs.c4.md" "Abrir C4 de src.specs"
+    INT_2["🧩 src.especificacoes\n(LIMITES_PADRAO, AletaSpec, CoifaSpec, FogueteSpec, ...)"] --> MOD
+    click INT_2 href "src__especificacoes.c4.md" "Abrir C4 de src.especificacoes"
     linkStyle default stroke:#38bdf8,stroke-width:2px;
 ```
 
@@ -42,9 +39,8 @@ flowchart LR
 | Dependência | Símbolos Importados | Documento C4 |
 | :--- | :--- | :--- |
 | `🧩 configs.foguetes.hefesto` | `ALETA_IREC`, `ALETAS`, `ALETAS_E`, `ALETAS_POS_E`, `ALETAS_TRAPEZIO_EQUIV`, ... | [⚡ `configs__foguetes__hefesto.c4.md`](configs__foguetes__hefesto.c4.md) |
-| `🧩 configs.limites` | `EROSION_MAX_GARGANTA`, `FS_ALVO_CARCACA`, `FS_MIN_ALETAS`, `FS_MIN_CARCACA`, `FS_MIN_ESTRUTURA`, ... | [⚡ `configs__limites.c4.md`](configs__limites.c4.md) |
-| `🧩 configs.material` | `ALUMINIO_6061`, `COIFA_EFETIVA`, `COMPOSITO_EFETIVO`, `COMPOSITO_G10`, `FIBRA_CARBONO`, ... | [⚡ `configs__material.c4.md`](configs__material.c4.md) |
-| `🧩 src.specs` | `AletaSpec`, `CoifaSpec`, `FogueteSpec`, `GeometriaMedidaSpec`, `GrainSpec`, ... | [⚡ `src__specs.c4.md`](src__specs.c4.md) |
+| `🧩 configs.limites` | `ALUMINIO_6061`, `COIFA_EFETIVA`, `COMPOSITO_EFETIVO`, `COMPOSITO_G10`, `EROSION_MAX_GARGANTA`, ... | [⚡ `configs__limites.c4.md`](configs__limites.c4.md) |
+| `🧩 src.especificacoes` | `LIMITES_PADRAO`, `AletaSpec`, `CoifaSpec`, `FogueteSpec`, `GeometriaMedidaSpec`, ... | [⚡ `src__especificacoes.c4.md`](src__especificacoes.c4.md) |
 
 ---
 

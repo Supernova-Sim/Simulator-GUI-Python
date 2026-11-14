@@ -22,26 +22,20 @@ Instância concreta: foguete Hefesto.
 %%{init: {'theme': 'dark', 'themeVariables': { 'lineColor': '#38bdf8' }}}%%
 flowchart LR
     MOD["📄 configs/foguetes/hefesto/__init__.py"]
-    INT_0["🧩 configs.foguetes.hefesto.aletas_cfg\n(ALETA_IREC, ALETAS_TRAPEZIO_EQUIV)"] --> MOD
-    click INT_0 href "configs__foguetes__hefesto__aletas_cfg.c4.md" "Abrir C4 de configs.foguetes.hefesto.aletas_cfg"
-    INT_1["🧩 configs.foguetes.hefesto.coifa_cfg\n(COIFA_IREC)"] --> MOD
-    click INT_1 href "configs__foguetes__hefesto__coifa_cfg.c4.md" "Abrir C4 de configs.foguetes.hefesto.coifa_cfg"
-    INT_2["🧩 configs.foguetes.hefesto.corpo\n(COMPONENTES)"] --> MOD
-    click INT_2 href "configs__foguetes__hefesto__corpo.c4.md" "Abrir C4 de configs.foguetes.hefesto.corpo"
-    INT_3["🧩 configs.foguetes.hefesto.estocastico\n(ALETAS_E, ALETAS_POS_E, COIFA_E, COIFA_POS_E, ...)"] --> MOD
-    click INT_3 href "configs__foguetes__hefesto__estocastico.c4.md" "Abrir C4 de configs.foguetes.hefesto.estocastico"
-    INT_4["🧩 configs.foguetes.hefesto.geometria\n(ALETAS, COIFA, FOGUETE, GEOMETRIA_MEDIDA_HEFESTO, ...)"] --> MOD
-    click INT_4 href "configs__foguetes__hefesto__geometria.c4.md" "Abrir C4 de configs.foguetes.hefesto.geometria"
-    INT_5["🧩 configs.foguetes.hefesto.motor_cfg\n(ENG_MEDUSA, MOTOR_IREC, RIC_MEDUSA)"] --> MOD
-    click INT_5 href "configs__foguetes__hefesto__motor_cfg.c4.md" "Abrir C4 de configs.foguetes.hefesto.motor_cfg"
-    INT_6["🧩 configs.foguetes.hefesto.recuperacao\n(REEFED, UNREEFED)"] --> MOD
-    click INT_6 href "configs__foguetes__hefesto__recuperacao.c4.md" "Abrir C4 de configs.foguetes.hefesto.recuperacao"
-    INT_7["🧩 configs.foguetes.hefesto.voo\n(IREC, IREC_E, IREC_ENSEMBLE_E)"] --> MOD
-    click INT_7 href "configs__foguetes__hefesto__voo.c4.md" "Abrir C4 de configs.foguetes.hefesto.voo"
-    INT_8["🧩 configs.limites\n(LIMITES_IREC)"] --> MOD
-    click INT_8 href "configs__limites.c4.md" "Abrir C4 de configs.limites"
-    INT_9["🧩 src.specs\n(FogueteSpec)"] --> MOD
-    click INT_9 href "src__specs.c4.md" "Abrir C4 de src.specs"
+    INT_0["🧩 configs.foguetes.hefesto.corpo\n(COMPONENTES)"] --> MOD
+    click INT_0 href "configs__foguetes__hefesto__corpo.c4.md" "Abrir C4 de configs.foguetes.hefesto.corpo"
+    INT_1["🧩 configs.foguetes.hefesto.estocastico\n(ALETAS_E, ALETAS_POS_E, COIFA_E, COIFA_POS_E, ...)"] --> MOD
+    click INT_1 href "configs__foguetes__hefesto__estocastico.c4.md" "Abrir C4 de configs.foguetes.hefesto.estocastico"
+    INT_2["🧩 configs.foguetes.hefesto.geometria\n(ALETA_IREC, ALETAS, ALETAS_TRAPEZIO_EQUIV, COIFA, ...)"] --> MOD
+    click INT_2 href "configs__foguetes__hefesto__geometria.c4.md" "Abrir C4 de configs.foguetes.hefesto.geometria"
+    INT_3["🧩 configs.foguetes.hefesto.motor\n(ENG_MEDUSA, MOTOR_CORE_FWD_MENOR, MOTOR_CORE_UNIFORME, MOTOR_IREC, ...)"] --> MOD
+    click INT_3 href "configs__foguetes__hefesto__motor.c4.md" "Abrir C4 de configs.foguetes.hefesto.motor"
+    INT_4["🧩 configs.foguetes.hefesto.voo\n(IREC, IREC_E, IREC_ENSEMBLE_E)"] --> MOD
+    click INT_4 href "configs__foguetes__hefesto__voo.c4.md" "Abrir C4 de configs.foguetes.hefesto.voo"
+    INT_5["🧩 configs.limites\n(LIMITES_IREC)"] --> MOD
+    click INT_5 href "configs__limites.c4.md" "Abrir C4 de configs.limites"
+    INT_6["🧩 src.especificacoes\n(FogueteSpec)"] --> MOD
+    click INT_6 href "src__especificacoes.c4.md" "Abrir C4 de src.especificacoes"
     linkStyle default stroke:#38bdf8,stroke-width:2px;
 ```
 
@@ -49,16 +43,13 @@ flowchart LR
 
 | Dependência | Símbolos Importados | Documento C4 |
 | :--- | :--- | :--- |
-| `🧩 configs.foguetes.hefesto.aletas_cfg` | `ALETA_IREC`, `ALETAS_TRAPEZIO_EQUIV` | [⚡ `configs__foguetes__hefesto__aletas_cfg.c4.md`](configs__foguetes__hefesto__aletas_cfg.c4.md) |
-| `🧩 configs.foguetes.hefesto.coifa_cfg` | `COIFA_IREC` | [⚡ `configs__foguetes__hefesto__coifa_cfg.c4.md`](configs__foguetes__hefesto__coifa_cfg.c4.md) |
 | `🧩 configs.foguetes.hefesto.corpo` | `COMPONENTES` | [⚡ `configs__foguetes__hefesto__corpo.c4.md`](configs__foguetes__hefesto__corpo.c4.md) |
 | `🧩 configs.foguetes.hefesto.estocastico` | `ALETAS_E`, `ALETAS_POS_E`, `COIFA_E`, `COIFA_POS_E`, `FOGUETE_E`, ... | [⚡ `configs__foguetes__hefesto__estocastico.c4.md`](configs__foguetes__hefesto__estocastico.c4.md) |
-| `🧩 configs.foguetes.hefesto.geometria` | `ALETAS`, `COIFA`, `FOGUETE`, `GEOMETRIA_MEDIDA_HEFESTO`, `MOTOR_POSITION`, ... | [⚡ `configs__foguetes__hefesto__geometria.c4.md`](configs__foguetes__hefesto__geometria.c4.md) |
-| `🧩 configs.foguetes.hefesto.motor_cfg` | `ENG_MEDUSA`, `MOTOR_IREC`, `RIC_MEDUSA` | [⚡ `configs__foguetes__hefesto__motor_cfg.c4.md`](configs__foguetes__hefesto__motor_cfg.c4.md) |
-| `🧩 configs.foguetes.hefesto.recuperacao` | `REEFED`, `UNREEFED` | [⚡ `configs__foguetes__hefesto__recuperacao.c4.md`](configs__foguetes__hefesto__recuperacao.c4.md) |
+| `🧩 configs.foguetes.hefesto.geometria` | `ALETA_IREC`, `ALETAS`, `ALETAS_TRAPEZIO_EQUIV`, `COIFA`, `COIFA_IREC`, ... | [⚡ `configs__foguetes__hefesto__geometria.c4.md`](configs__foguetes__hefesto__geometria.c4.md) |
+| `🧩 configs.foguetes.hefesto.motor` | `ENG_MEDUSA`, `MOTOR_CORE_FWD_MENOR`, `MOTOR_CORE_UNIFORME`, `MOTOR_IREC`, `MOTOR_THROAT_ESTREITO`, ... | [⚡ `configs__foguetes__hefesto__motor.c4.md`](configs__foguetes__hefesto__motor.c4.md) |
 | `🧩 configs.foguetes.hefesto.voo` | `IREC`, `IREC_E`, `IREC_ENSEMBLE_E` | [⚡ `configs__foguetes__hefesto__voo.c4.md`](configs__foguetes__hefesto__voo.c4.md) |
 | `🧩 configs.limites` | `LIMITES_IREC` | [⚡ `configs__limites.c4.md`](configs__limites.c4.md) |
-| `🧩 src.specs` | `FogueteSpec` | [⚡ `src__specs.c4.md`](src__specs.c4.md) |
+| `🧩 src.especificacoes` | `FogueteSpec` | [⚡ `src__especificacoes.c4.md`](src__especificacoes.c4.md) |
 
 ---
 

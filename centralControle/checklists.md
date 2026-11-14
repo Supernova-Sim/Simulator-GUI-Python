@@ -2,10 +2,10 @@
 
 ## Antes de rodar uma simulação oficial
 
-- [ ] `data/entrada/openmotor/MotorNovo.ric` é a versão mais recente?
+- [ ] `data/entrada/openmotor/MotorNovo2.ric` é a versão mais recente?
 - [ ] `data/entrada/atmosfera/` corresponde à data/local do lançamento?
 - [ ] `python centralControle/rodar.py fs` → todos os diagnósticos OK?
-- [ ] A geometria do foguete (`configs/foguete/geometria.py`) está atualizada?
+- [ ] A geometria do foguete (`configs/foguetes/hefesto/geometria.py`) está atualizada?
 - [ ] O JSON anterior de referência está salvo em `data/saida/`?
 
 ## Antes de commitar

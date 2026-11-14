@@ -12,15 +12,15 @@ Você não precisa abrir pastas manualmente para ver a arquitetura do código em
 
 ```
 ┌─────────────────────────────────────────────────────────────┬───┬───┬───┐
-│ motor.py                                                    │ 📊│ ⚙️│ ✕ │  <-- Botão $(graph)
+│ derivador.py                                                │ 📊│ ⚙️│ ✕ │  <-- Botão $(graph)
 ├─────────────────────────────────────────────────────────────┴───┴───┴───┤
-│ 1  # src/calculos/motor.py                                              │
+│ 1  # src/motor/derivador.py                                             │
 │ 2  from dataclasses import dataclass                                    │
 │ ...                                                                     │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-1. Abra qualquer arquivo `.py` do projeto no Positron (ex.: [`src/calculos/motor.py`](../src/calculos/motor.py)).
+1. Abra qualquer arquivo `.py` do projeto no Positron (ex.: [`src/motor/derivador.py`](../src/motor/derivador.py)).
 2. Olhe no canto superior direito do editor (na barra de títulos da aba, ao lado do botão de *More Actions* `...`).
 3. Clique no ícone de grafo **`$(graph)`**:
    - O Positron executará o gerador AST em ~30ms;
@@ -88,7 +88,7 @@ graph TD
     ALVO(("⭐ funcao_alvo()")):::target
 
     subgraph Descendente["🧩 Impacto Descendente (O que ela consome)"]
-        callee["diagnosticar, fs_carcaca, specs, etc."]:::downward
+        callee["executar_ric, fs_carcaca, especificacoes, etc."]:::downward
     end
 
     caller --> ALVO
@@ -103,7 +103,7 @@ graph TD
 ### Navegando entre Módulos
 Você pode pular de um documento para outro de duas maneiras:
 1. **Clique no Próprio Diagrama:** Ao clicar em um nó do grafo (ex.: `relatorio_estrutura`), o cursor de link redirecionará para o documento C4 daquele módulo.
-2. **Tabela de Atalhos Rápidos:** Logo abaixo de cada diagrama, há uma tabela com links nativos diretos (`[⚡ src__inspecao.c4.md]`) que também permitem abrir lado a lado (`Ctrl + Clique`).
+2. **Tabela de Atalhos Rápidos:** Logo abaixo de cada diagrama, há uma tabela com links nativos diretos (`[⚡ src__relatorios.c4.md]`) que também permitem abrir lado a lado (`Ctrl + Clique`).
 
 ---
 
@@ -113,7 +113,7 @@ Se você preferir operar via terminal (ou estiver em um servidor headless sem in
 
 ```bash
 # 1. Gerar C4 de um arquivo específico:
-python centralControle/rodar.py c4 src/calculos/motor.py
+python centralControle/rodar.py c4 src/motor/derivador.py
 
 # 2. Gerar ou atualizar a documentação C4 de TODO o projeto em lote:
 python centralControle/rodar.py c4 --todos

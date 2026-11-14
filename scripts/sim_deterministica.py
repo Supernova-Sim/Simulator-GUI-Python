@@ -6,12 +6,11 @@ from datetime import datetime
 
 from rocketpy import Flight
 
-import src.viz  # noqa: F401 — configura backend antes de qualquer plot
 from configs import HEFESTO, IREC, MOTOR_IREC
-from src.ambiente import build_irec
-from src.construtor_foguete import ModoFoguete, build_rocket
-from src.paths import RESULTADOS
-from src.specs import MotorSpec
+from src.caminhos import RESULTADOS
+from src.especificacoes import MotorSpec
+from src.simulacao.ambiente import build_irec
+from src.simulacao.construtor_foguete import ModoFoguete, build_rocket
 
 # ============================================================
 #  AQUI VOCÊ AJUSTA (uso direto na IDE)

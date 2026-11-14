@@ -22,10 +22,10 @@ Lista concreta de componentes do corpo do Hefesto (nariz → cauda).
 %%{init: {'theme': 'dark', 'themeVariables': { 'lineColor': '#38bdf8' }}}%%
 flowchart LR
     MOD["📄 configs/foguetes/hefesto/corpo.py"]
-    INT_0["🧩 configs.material\n(ALUMINIO_6061, COMPOSITO_EFETIVO)"] --> MOD
-    click INT_0 href "configs__material.c4.md" "Abrir C4 de configs.material"
-    INT_1["🧩 src.specs\n(MassaPontualSpec, TuboSpec)"] --> MOD
-    click INT_1 href "src__specs.c4.md" "Abrir C4 de src.specs"
+    INT_0["🧩 configs.limites\n(ALUMINIO_6061, COMPOSITO_EFETIVO)"] --> MOD
+    click INT_0 href "configs__limites.c4.md" "Abrir C4 de configs.limites"
+    INT_1["🧩 src.especificacoes\n(MassaPontualSpec, TuboSpec)"] --> MOD
+    click INT_1 href "src__especificacoes.c4.md" "Abrir C4 de src.especificacoes"
     linkStyle default stroke:#38bdf8,stroke-width:2px;
 ```
 
@@ -33,8 +33,8 @@ flowchart LR
 
 | Dependência | Símbolos Importados | Documento C4 |
 | :--- | :--- | :--- |
-| `🧩 configs.material` | `ALUMINIO_6061`, `COMPOSITO_EFETIVO` | [⚡ `configs__material.c4.md`](configs__material.c4.md) |
-| `🧩 src.specs` | `MassaPontualSpec`, `TuboSpec` | [⚡ `src__specs.c4.md`](src__specs.c4.md) |
+| `🧩 configs.limites` | `ALUMINIO_6061`, `COMPOSITO_EFETIVO` | [⚡ `configs__limites.c4.md`](configs__limites.c4.md) |
+| `🧩 src.especificacoes` | `MassaPontualSpec`, `TuboSpec` | [⚡ `src__especificacoes.c4.md`](src__especificacoes.c4.md) |
 
 ---
 

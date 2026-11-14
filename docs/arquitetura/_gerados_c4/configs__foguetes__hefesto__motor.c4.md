@@ -12,7 +12,7 @@
 
 ## 1. Propósito do Módulo
 
-Configuração declarativa do motor Medusa (IREC).
+Configuração declarativa e variações exploratórias do motor Medusa (IREC).
 
 Zero I/O no import: o arquivo `.ric` e a curva `.eng` são apenas referenciados
 aqui e lidos sob demanda dentro de `derivar_motor()`.
@@ -25,10 +25,10 @@ aqui e lidos sob demanda dentro de `derivar_motor()`.
 %%{init: {'theme': 'dark', 'themeVariables': { 'lineColor': '#38bdf8' }}}%%
 flowchart LR
     MOD["📄 configs/foguetes/hefesto/motor.py"]
-    INT_0["🧩 src.paths\n(MOTORES, OPENMOTOR)"] --> MOD
-    click INT_0 href "src__paths.c4.md" "Abrir C4 de src.paths"
-    INT_1["🧩 src.specs\n(MotorSpec)"] --> MOD
-    click INT_1 href "src__specs.c4.md" "Abrir C4 de src.specs"
+    INT_0["🧩 src.caminhos\n(MOTORES, OPENMOTOR)"] --> MOD
+    click INT_0 href "src__caminhos.c4.md" "Abrir C4 de src.caminhos"
+    INT_1["🧩 src.especificacoes\n(MotorSpec, validar_overrides)"] --> MOD
+    click INT_1 href "src__especificacoes.c4.md" "Abrir C4 de src.especificacoes"
     linkStyle default stroke:#38bdf8,stroke-width:2px;
 ```
 
@@ -36,9 +36,35 @@ flowchart LR
 
 | Dependência | Símbolos Importados | Documento C4 |
 | :--- | :--- | :--- |
-| `🧩 src.paths` | `MOTORES`, `OPENMOTOR` | [⚡ `src__paths.c4.md`](src__paths.c4.md) |
-| `🧩 src.specs` | `MotorSpec` | [⚡ `src__specs.c4.md`](src__specs.c4.md) |
+| `🧩 src.caminhos` | `MOTORES`, `OPENMOTOR` | [⚡ `src__caminhos.c4.md`](src__caminhos.c4.md) |
+| `🧩 src.especificacoes` | `MotorSpec`, `validar_overrides` | [⚡ `src__especificacoes.c4.md`](src__especificacoes.c4.md) |
 
 ---
 
-## 3. Catálogo de Símbolos (Links Diretos para o Código)
+## 3. Fluxo Lógico de Funções Locais (`flowchart TD`)
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': { 'lineColor': '#38bdf8' }}}%%
+flowchart TD
+    F_0["🟢 criar_variacao()"]
+    EXTCALL_0["🔗 validar_overrides()\n(src.especificacoes)"]
+    click EXTCALL_0 href "src__especificacoes.c4.md" "Abrir C4 de src.especificacoes"
+    F_0 --> EXTCALL_0
+    linkStyle default stroke:#38bdf8,stroke-width:2px;
+```
+
+#### 🧭 Chamadas Externas Identificadas
+
+| Chamada Local | Módulo de Origem | Documento C4 |
+| :--- | :--- | :--- |
+| `🔗 validar_overrides()` | `src.especificacoes` | [⚡ `src__especificacoes.c4.md`](src__especificacoes.c4.md) |
+
+---
+
+## 4. Catálogo de Símbolos (Links Diretos para o Código)
+
+### Funções do Módulo
+
+| Função | Linhas | Retorno | Resumo |
+| :--- | :--- | :--- | :--- |
+| [`criar_variacao`](../../../configs/foguetes/hefesto/motor.py#L55-L67) | `L55–L67` | `MotorSpec` | Cria um `MotorSpec` do Hefesto com `overrides` validados contra `PARAMS_LIVRES`. |

@@ -12,7 +12,7 @@
 
 ## 1. Propósito do Módulo
 
-Limites de projeto do foguete (IREC + restrições estruturais/operacionais).
+Materiais e limites de projeto do foguete (IREC + restrições estruturais/operacionais).
 
 ---
 
@@ -22,10 +22,8 @@ Limites de projeto do foguete (IREC + restrições estruturais/operacionais).
 %%{init: {'theme': 'dark', 'themeVariables': { 'lineColor': '#38bdf8' }}}%%
 flowchart LR
     MOD["📄 configs/limites.py"]
-    INT_0["🧩 configs.material\n(SIGMA_LIM_AL6063_T5)"] --> MOD
-    click INT_0 href "configs__material.c4.md" "Abrir C4 de configs.material"
-    INT_1["🧩 src.specs\n(LimitesSeguranca)"] --> MOD
-    click INT_1 href "src__specs.c4.md" "Abrir C4 de src.specs"
+    INT_0["🧩 src.especificacoes\n(LimitesSeguranca)"] --> MOD
+    click INT_0 href "src__especificacoes.c4.md" "Abrir C4 de src.especificacoes"
     linkStyle default stroke:#38bdf8,stroke-width:2px;
 ```
 
@@ -33,8 +31,7 @@ flowchart LR
 
 | Dependência | Símbolos Importados | Documento C4 |
 | :--- | :--- | :--- |
-| `🧩 configs.material` | `SIGMA_LIM_AL6063_T5` | [⚡ `configs__material.c4.md`](configs__material.c4.md) |
-| `🧩 src.specs` | `LimitesSeguranca` | [⚡ `src__specs.c4.md`](src__specs.c4.md) |
+| `🧩 src.especificacoes` | `LimitesSeguranca` | [⚡ `src__especificacoes.c4.md`](src__especificacoes.c4.md) |
 
 ---
 

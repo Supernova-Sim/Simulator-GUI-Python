@@ -1,9 +1,8 @@
 # configs/__init__.py
 """Fachada pública de configurações do projeto.
 
-Reexporta os tipos de especificação (`src.specs`), recursos globais
-(`configs.material`, `configs.limites`) e a instância concreta do foguete
-`HEFESTO` (`configs.foguetes.hefesto`).
+Reexporta os tipos de especificação (`src.especificacoes`), limites e materiais
+(`configs.limites`) e a instância concreta do foguete `HEFESTO`.
 """
 from __future__ import annotations
 
@@ -19,6 +18,7 @@ from configs.foguetes.hefesto import (
     COIFA_POS_E,
     COMPONENTES,
     ENG_MEDUSA,
+    ESPESSURA_COIFA,
     FOGUETE,
     FOGUETE_E,
     GEOMETRIA_MEDIDA_HEFESTO,
@@ -27,10 +27,15 @@ from configs.foguetes.hefesto import (
     IREC_E,
     IREC_ENSEMBLE_E,
     LOWER_BUTTON_POSITION_E,
+    MOTOR_CORE_FWD_MENOR,
+    MOTOR_CORE_UNIFORME,
     MOTOR_E,
     MOTOR_IREC,
     MOTOR_POS_E,
     MOTOR_POSITION,
+    MOTOR_THROAT_ESTREITO,
+    MOTOR_THROAT_LARGO,
+    PARAMS_LIVRES,
     RAIL_BUTTONS,
     RAIL_BUTTONS_E,
     REEFED,
@@ -38,9 +43,16 @@ from configs.foguetes.hefesto import (
     RIC_MEDUSA,
     UNREEFED,
     UNREEFED_E,
+    VARIACOES,
+    criar_variacao,
 )
 from configs.limites import (
+    ALUMINIO_6061,
+    COIFA_EFETIVA,
+    COMPOSITO_EFETIVO,
+    COMPOSITO_G10,
     EROSION_MAX_GARGANTA,
+    FIBRA_CARBONO,
     FS_ALVO_CARCACA,
     FS_MIN_ALETAS,
     FS_MIN_CARCACA,
@@ -51,16 +63,10 @@ from configs.limites import (
     MASS_FLUX_MAX,
     P0_MAX,
     PORT_THROAT_MIN,
-)
-from configs.material import (
-    ALUMINIO_6061,
-    COIFA_EFETIVA,
-    COMPOSITO_EFETIVO,
-    COMPOSITO_G10,
-    FIBRA_CARBONO,
     SIGMA_LIM_AL6063_T5,
 )
-from src.specs import (
+from src.especificacoes import (
+    LIMITES_PADRAO,
     AletaSpec,
     CoifaSpec,
     FogueteSpec,
@@ -70,6 +76,7 @@ from src.specs import (
     MassaPontualSpec,
     MotorSpec,
     TuboSpec,
+    validar_overrides,
 )
 
 __all__ = [
@@ -89,6 +96,7 @@ __all__ = [
     "COMPOSITO_G10",
     "ENG_MEDUSA",
     "EROSION_MAX_GARGANTA",
+    "ESPESSURA_COIFA",
     "FIBRA_CARBONO",
     "FOGUETE",
     "FOGUETE_E",
@@ -104,13 +112,19 @@ __all__ = [
     "IREC_ENSEMBLE_E",
     "KN_MAX",
     "LIMITES_IREC",
+    "LIMITES_PADRAO",
     "LOWER_BUTTON_POSITION_E",
     "MASS_FLUX_MAX",
+    "MOTOR_CORE_FWD_MENOR",
+    "MOTOR_CORE_UNIFORME",
     "MOTOR_E",
     "MOTOR_IREC",
     "MOTOR_POSITION",
     "MOTOR_POS_E",
+    "MOTOR_THROAT_ESTREITO",
+    "MOTOR_THROAT_LARGO",
     "P0_MAX",
+    "PARAMS_LIVRES",
     "PORT_THROAT_MIN",
     "RAIL_BUTTONS",
     "RAIL_BUTTONS_E",
@@ -120,6 +134,7 @@ __all__ = [
     "SIGMA_LIM_AL6063_T5",
     "UNREEFED",
     "UNREEFED_E",
+    "VARIACOES",
     "AletaSpec",
     "CoifaSpec",
     "FogueteSpec",
@@ -129,4 +144,6 @@ __all__ = [
     "MassaPontualSpec",
     "MotorSpec",
     "TuboSpec",
+    "criar_variacao",
+    "validar_overrides",
 ]

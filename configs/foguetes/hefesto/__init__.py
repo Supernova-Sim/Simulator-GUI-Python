@@ -2,8 +2,6 @@
 """Instância concreta: foguete Hefesto."""
 from __future__ import annotations
 
-from configs.foguetes.hefesto.aletas_cfg import ALETA_IREC, ALETAS_TRAPEZIO_EQUIV
-from configs.foguetes.hefesto.coifa_cfg import COIFA_IREC
 from configs.foguetes.hefesto.corpo import COMPONENTES
 from configs.foguetes.hefesto.estocastico import (
     ALETAS_E,
@@ -19,18 +17,34 @@ from configs.foguetes.hefesto.estocastico import (
     UNREEFED_E,
 )
 from configs.foguetes.hefesto.geometria import (
+    ALETA_IREC,
     ALETAS,
+    ALETAS_TRAPEZIO_EQUIV,
     COIFA,
+    COIFA_IREC,
+    ESPESSURA_COIFA,
     FOGUETE,
     GEOMETRIA_MEDIDA_HEFESTO,
     MOTOR_POSITION,
     RAIL_BUTTONS,
+    REEFED,
+    UNREEFED,
 )
-from configs.foguetes.hefesto.motor_cfg import ENG_MEDUSA, MOTOR_IREC, RIC_MEDUSA
-from configs.foguetes.hefesto.recuperacao import REEFED, UNREEFED
+from configs.foguetes.hefesto.motor import (
+    ENG_MEDUSA,
+    MOTOR_CORE_FWD_MENOR,
+    MOTOR_CORE_UNIFORME,
+    MOTOR_IREC,
+    MOTOR_THROAT_ESTREITO,
+    MOTOR_THROAT_LARGO,
+    PARAMS_LIVRES,
+    RIC_MEDUSA,
+    VARIACOES,
+    criar_variacao,
+)
 from configs.foguetes.hefesto.voo import IREC, IREC_E, IREC_ENSEMBLE_E
 from configs.limites import LIMITES_IREC
-from src.specs import FogueteSpec
+from src.especificacoes import FogueteSpec
 
 HEFESTO = FogueteSpec(
     nome="Hefesto",
@@ -61,6 +75,7 @@ __all__ = [
     "COIFA_POS_E",
     "COMPONENTES",
     "ENG_MEDUSA",
+    "ESPESSURA_COIFA",
     "FOGUETE",
     "FOGUETE_E",
     "GEOMETRIA_MEDIDA_HEFESTO",
@@ -69,10 +84,15 @@ __all__ = [
     "IREC_E",
     "IREC_ENSEMBLE_E",
     "LOWER_BUTTON_POSITION_E",
+    "MOTOR_CORE_FWD_MENOR",
+    "MOTOR_CORE_UNIFORME",
     "MOTOR_E",
     "MOTOR_IREC",
     "MOTOR_POSITION",
     "MOTOR_POS_E",
+    "MOTOR_THROAT_ESTREITO",
+    "MOTOR_THROAT_LARGO",
+    "PARAMS_LIVRES",
     "RAIL_BUTTONS",
     "RAIL_BUTTONS_E",
     "REEFED",
@@ -80,4 +100,6 @@ __all__ = [
     "RIC_MEDUSA",
     "UNREEFED",
     "UNREEFED_E",
+    "VARIACOES",
+    "criar_variacao",
 ]
