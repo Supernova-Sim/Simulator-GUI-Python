@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
@@ -12,8 +13,11 @@ from hefesto.domain._validators import (
     require_relative_asset,
     require_xy_curve,
 )
-from hefesto.domain.motor import GrainSpec
-from hefesto.domain.safety import SafetyReport
+from hefesto.domain.environment import EnvironmentSpec
+from hefesto.domain.mission import AssetEntry, SimulationConfig
+from hefesto.domain.motor import GrainSpec, MotorCasingSpec, MotorOverride, NozzleSpec
+from hefesto.domain.rocket import FinGeometryMode, MassMode
+from hefesto.domain.safety import SafetyLimits, SafetyReport
 
 
 def _validate_optional_series(
@@ -129,6 +133,7 @@ class FlightResult(BaseModel):
     power_off_drag_curve: tuple[tuple[float, float], ...] = ()
     power_on_drag_curve: tuple[tuple[float, float], ...] = ()
     thrust_series: tuple[tuple[float, float], ...] = ()
+    rocket_draw_png_b64: str | None = None
 
     @field_validator(
         "x_series",
@@ -210,6 +215,7 @@ class SimulationResult(BaseModel):
     flight: FlightResult
     ballistics: BallisticsResult | None = None
     safety: SafetyReport | None = None
+    executed_config: SimulationConfig | None = None
 
     @field_validator("run_id", "mission_name", "motor_name")
     @classmethod
@@ -230,9 +236,209 @@ class SimulationResult(BaseModel):
         )
 
 
+class MotorPhysicalSummary(BaseModel):
+    """Combined physical casing, nozzle, and internal ballistics summary for display."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    motor_name: str
+    dry_mass_kg: float = Field(gt=0.0)
+    propellant_mass_kg: float = Field(gt=0.0)
+    total_loaded_mass_kg: float = Field(gt=0.0)
+    propellant_mass_fraction: float = Field(gt=0.0, lt=1.0)
+    casing_length_m: float = Field(gt=0.0)
+    outer_diameter_m: float = Field(gt=0.0)
+    throat_diameter_mm: float = Field(gt=0.0)
+    exit_diameter_mm: float = Field(gt=0.0)
+    expansion_ratio: float = Field(gt=0.0)
+    burn_time_s: tuple[float, float]
+    burn_duration_s: float = Field(gt=0.0)
+    total_impulse_ns: float = Field(ge=0.0)
+    average_thrust_n: float = Field(ge=0.0)
+    max_thrust_n: float = Field(ge=0.0)
+    peak_chamber_pressure_pa: float | None = Field(default=None, ge=0.0)
+    peak_kn: float | None = Field(default=None, ge=0.0)
+    peak_mass_flux_kg_m2_s: float | None = Field(default=None, ge=0.0)
+    delivered_isp_s: float | None = Field(default=None, ge=0.0)
+    aft_port_to_throat_ratio: float | None = Field(default=None, ge=0.0)
+    min_port_to_throat_ratio: float | None = Field(default=None, ge=0.0)
+    grain_count: int = Field(ge=1)
+    propellant_density_kg_m3: float = Field(gt=0.0)
+
+    @field_validator("motor_name")
+    @classmethod
+    def _validate_name(cls, value: str) -> str:
+        return require_non_empty_text(value, "motor_name")
+
+    @field_validator("burn_time_s")
+    @classmethod
+    def _validate_burn_time(cls, value: tuple[float, float]) -> tuple[float, float]:
+        return require_burn_time(value)
+
+
+class SavedMotorInspection(BaseModel):
+    """Typed inspection summary of a saved catalog MotorPreset and its .ric/.eng source."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    preset_id: str
+    name: str
+    source_kind: Literal["ric_and_eng", "ric_only", "eng_only"]
+    motor_asset: str | None = None
+    thrust_curve_asset: str | None = None
+    casing: MotorCasingSpec
+    casing_outer_diameter_m: float = Field(gt=0.0)
+    propellant_name: str
+    propellant_density_kg_m3: float = Field(gt=0.0)
+    nozzle: NozzleSpec
+    grains: tuple[GrainSpec, ...] = Field(min_length=1)
+    grain_separation_m: float = Field(ge=0.0)
+    grains_center_of_mass_m: float
+    preset_overrides: tuple[MotorOverride, ...] = ()
+
+    @field_validator("preset_id", "name", "propellant_name")
+    @classmethod
+    def _validate_texts(cls, value: str) -> str:
+        return require_non_empty_text(value, "saved motor inspection text")
+
+
+class SavedRocketInspection(BaseModel):
+    """Typed structural inspection summary of a saved catalog RocketPreset."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    preset_id: str
+    name: str
+    motor_preset_name: str
+    radius_m: float = Field(gt=0.0)
+    calculated_dry_mass_kg: float = Field(gt=0.0)
+    dry_mass_override_kg: float | None = Field(default=None, gt=0.0)
+    center_of_mass_without_motor_m: float = Field(gt=0.0)
+    inertia_kg_m2: tuple[float, float, float]
+    motor_position_m: float = Field(gt=0.0)
+    tube_count: int = Field(ge=0)
+    point_mass_count: int = Field(ge=0)
+    fin_count: int = Field(ge=1)
+    fin_position_m: float
+    nose_cone_kind: str
+    nose_cone_length_m: float = Field(gt=0.0)
+    parachute_names: tuple[str, ...] = ()
+    power_off_drag_asset: str
+    power_on_drag_asset: str
+    components_summary: tuple[str, ...] = ()
+
+    @field_validator("preset_id", "name", "motor_preset_name", "nose_cone_kind")
+    @classmethod
+    def _validate_texts(cls, value: str) -> str:
+        return require_non_empty_text(value, "saved rocket inspection text")
+
+
+class NamedSitePreset(BaseModel):
+    """Catalog EnvironmentSpec paired with its preset identifier."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    preset_id: str
+    spec: EnvironmentSpec
+
+    @field_validator("preset_id")
+    @classmethod
+    def _validate_id(cls, value: str) -> str:
+        return require_non_empty_text(value, "preset_id")
+
+
+class NamedSafetyLimitsPreset(BaseModel):
+    """Catalog SafetyLimits paired with its preset identifier."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    preset_id: str
+    limits: SafetyLimits
+
+    @field_validator("preset_id")
+    @classmethod
+    def _validate_id(cls, value: str) -> str:
+        return require_non_empty_text(value, "preset_id")
+
+
+class CatalogDatabaseInspection(BaseModel):
+    """Complete typed snapshot of catalog presets, raw assets, and saved runs."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    motors: tuple[SavedMotorInspection, ...] = ()
+    rockets: tuple[SavedRocketInspection, ...] = ()
+    sites: tuple[NamedSitePreset, ...] = ()
+    limits: tuple[NamedSafetyLimitsPreset, ...] = ()
+    assets: tuple[AssetEntry, ...] = ()
+    runs: tuple[RunSummary, ...] = ()
+
+
+class AppliedOverrideAudit(BaseModel):
+    """Audit entry comparing base .ric parameter value against applied MotorOverride."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    path: str
+    label: str
+    unit: str
+    source: Literal["preset", "runtime"] = "runtime"
+    base_value: float | int | str | None = None
+    applied_value: float | int | str
+    changed: bool = True
+
+    @field_validator("path", "label", "unit")
+    @classmethod
+    def _validate_texts(cls, value: str) -> str:
+        return require_non_empty_text(value, "applied override audit text")
+
+
+class ExecutionAuditReport(BaseModel):
+    """Detailed 'Saved Preset vs. Executed Snapshot' audit report for a simulation run."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    run_id: str
+    mission_name: str
+    motor_preset_id: str
+    motor_source_kind: Literal["ric_and_eng", "ric_only", "eng_only"]
+    motor_asset: str | None = None
+    thrust_curve_asset: str | None = None
+    applied_overrides: tuple[AppliedOverrideAudit, ...] = ()
+    effective_grains: tuple[GrainSpec, ...] = ()
+    motor_summary: MotorPhysicalSummary | None = None
+    rocket_name: str
+    rocket_preset_id: str
+    rocket_modified_in_session: bool = False
+    rocket_modification_notes: tuple[str, ...] = ()
+    mass_mode: MassMode = "calculated"
+    effective_dry_mass_kg: float = Field(gt=0.0)
+    dry_mass_override_kg: float | None = None
+    fin_geometry_mode: FinGeometryMode = "freeform"
+    drag_factor: float = Field(default=1.0, gt=0.0)
+    thrust_factor: float = Field(default=1.0, gt=0.0)
+    environment_name: str = ""
+    atmosphere_asset: str = ""
+    components_summary: tuple[str, ...] = ()
+    fins_summary: str = ""
+
+    @field_validator("run_id", "mission_name", "motor_preset_id", "rocket_name", "rocket_preset_id")
+    @classmethod
+    def _validate_texts(cls, value: str) -> str:
+        return require_non_empty_text(value, "execution audit text")
+
+
 __all__ = [
+    "AppliedOverrideAudit",
     "BallisticsResult",
+    "CatalogDatabaseInspection",
+    "ExecutionAuditReport",
     "FlightResult",
+    "MotorPhysicalSummary",
+    "NamedSafetyLimitsPreset",
+    "NamedSitePreset",
     "RunSummary",
+    "SavedMotorInspection",
+    "SavedRocketInspection",
     "SimulationResult",
 ]

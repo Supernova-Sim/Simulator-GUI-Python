@@ -392,7 +392,8 @@ def test_raw_assets_exist_in_data_assets() -> None:
         for path in assets_root.rglob("*")
         if path.is_file()
     }
-    assert actual_assets == expected_assets
+    # data/assets/openrocket/ holds user-imported .ork files, so only prove the base set exists.
+    assert expected_assets.issubset(actual_assets)
 
 
 def test_golden_baseline_exists_and_references_relative_assets() -> None:

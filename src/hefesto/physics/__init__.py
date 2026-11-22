@@ -54,6 +54,7 @@ from hefesto.physics.propulsion import (
     compute_casing_shell_mass_kg,
     prepare_solid_motor,
     recalculate_casing_dry_properties,
+    resize_motor_casing,
 )
 from hefesto.physics.safety import (
     DEFAULT_SAFETY_LIMITS,
@@ -152,6 +153,7 @@ __all__ = [
     "point_mass_inertia_kg_m2",
     "prepare_solid_motor",
     "recalculate_casing_dry_properties",
+    "resize_motor_casing",
     "summarize_thrust_curve",
     "trapezoidal_fin_points_m",
     "validate_grain_casing_dimensions",

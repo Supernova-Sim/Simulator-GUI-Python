@@ -57,6 +57,14 @@ class StoragePaths:
     def missions_catalog_dir(self) -> Path:
         return self.catalog_dir / "missions"
 
+    @property
+    def openrocket_assets_dir(self) -> Path:
+        return self.assets_dir / "openrocket"
+
+    @property
+    def openrocket_cache_dir(self) -> Path:
+        return self.data_dir / "cache" / "openrocket"
+
     def asset_category_dir(self, category: AssetCategory) -> Path:
         return self.assets_dir / category.value
 
@@ -131,8 +139,31 @@ def atomic_write_text(target: Path, content: str, *, encoding: str = "utf-8") ->
     return target
 
 
+def atomic_write_bytes(target: Path, content: bytes) -> Path:
+    """Write bytes to a same-directory temporary file, fsync, and atomically replace target."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(
+        dir=target.parent,
+        prefix=f".{target.name}.",
+        suffix=".tmp",
+        text=False,
+    )
+    tmp_path = Path(tmp_name)
+    try:
+        with os.fdopen(fd, mode="wb") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp_path, target)
+    except BaseException:
+        tmp_path.unlink(missing_ok=True)
+        raise
+    return target
+
+
 __all__ = [
     "StoragePaths",
+    "atomic_write_bytes",
     "atomic_write_text",
     "get_repo_root",
     "resolve_safe_relative_path",

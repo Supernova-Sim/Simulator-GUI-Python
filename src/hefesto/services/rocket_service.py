@@ -1,0 +1,334 @@
+"""Rocket vehicle assembly and structural mass/inertia services."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from hefesto.domain import (
+    CasingResizeResult,
+    CasingScalingMode,
+    FinComponent,
+    FinGeometryMode,
+    FinSetSpec,
+    MassMode,
+    MotorSpec,
+    RocketComponent,
+    RocketPreset,
+    RocketSpec,
+)
+from hefesto.physics import (
+    ALUMINUM_DENSITY_KG_M3,
+    GEOMETRY_TOLERANCE_M,
+    ComponentMassProperties,
+    StructureSummary,
+    derive_rocket_structure,
+    resize_motor_casing,
+)
+from hefesto.services.asset_service import (
+    DEFAULT_ROCKET_ID,
+    load_drag_curve_asset,
+    resolve_paths,
+)
+from hefesto.services.motor_service import load_motor_spec
+from hefesto.storage import CatalogStore
+
+CASING_MATERIAL_DENSITY_PRESETS: dict[str, float] = {
+    "aluminum_6061_t6": 2700.0,
+    "steel_1020_4130": 7850.0,
+    "stainless_304": 8000.0,
+    "carbon_fiber": 1550.0,
+    "fiberglass": 1850.0,
+}
+
+CASING_MATERIAL_LABELS: dict[str, str] = {
+    "aluminum_6061_t6": "Alumínio 6061-T6 (2700 kg/m³)",
+    "steel_1020_4130": "Aço 1020 / 4130 (7850 kg/m³)",
+    "stainless_304": "Aço Inox 304 (8000 kg/m³)",
+    "carbon_fiber": "Fibra de Carbono (1550 kg/m³)",
+    "fiberglass": "Fibra de Vidro (1850 kg/m³)",
+    "custom": "Customizado",
+}
+
+
+def update_rocket_motor_casing_length(
+    rocket: RocketSpec,
+    new_length_m: float,
+    *,
+    mode: CasingScalingMode = "tubular_delta",
+    material_density_kg_m3: float | None = None,
+    motor_position_m: float | None = None,
+    grain_separation_m: float | None = None,
+    internal_clearance_m: float | None = None,
+) -> tuple[RocketSpec, CasingResizeResult]:
+    """Update motor casing length/clearance/spacing/position and recalculate rocket structure."""
+    resolved_density = (
+        material_density_kg_m3
+        if material_density_kg_m3 is not None
+        else (rocket.motor.casing.material_density_kg_m3 or ALUMINUM_DENSITY_KG_M3)
+    )
+    base_casing = rocket.motor.casing
+    if internal_clearance_m is not None:
+        clearance_val = float(internal_clearance_m)
+        if clearance_val < 0.0:
+            raise ValueError(f"Folga interna deve ser >= 0 m, obtido {clearance_val!r}")
+        if clearance_val >= new_length_m:
+            raise ValueError(
+                f"Folga interna ({clearance_val:.4f} m) deve ser menor que o comprimento da "
+                f"carcaça ({new_length_m:.4f} m)."
+            )
+        base_casing = base_casing.model_copy(update={"internal_clearance_m": clearance_val})
+
+    resize_result = resize_motor_casing(
+        base_casing,
+        new_length_m,
+        mode=mode,
+        material_density_kg_m3=resolved_density,
+    )
+
+    motor_updates: dict[str, object] = {"casing": resize_result.casing}
+    if grain_separation_m is not None:
+        sep_val = float(grain_separation_m)
+        if sep_val < 0.0:
+            raise ValueError(f"Separação entre grãos deve ser >= 0 m, obtido {sep_val!r}")
+        motor_updates["grain_separation_m"] = sep_val
+
+    updated_motor = rocket.motor.model_copy(update=motor_updates)
+    warnings = list(resize_result.warnings)
+    if (
+        updated_motor.grain_stack_length_m - updated_motor.casing.available_grain_length_m
+        > GEOMETRY_TOLERANCE_M
+    ):
+        warnings.append(
+            f"Pilha de grãos ({updated_motor.grain_stack_length_m:.4f} m) excede o comprimento "
+            f"útil da carcaça ({updated_motor.casing.available_grain_length_m:.4f} m)."
+        )
+    if len(warnings) != len(resize_result.warnings):
+        resize_result = resize_result.model_copy(update={"warnings": tuple(warnings)})
+
+    rocket_updates: dict[str, object] = {"motor": updated_motor}
+    if motor_position_m is not None:
+        rocket_updates["motor_position_m"] = float(motor_position_m)
+
+    recalculated = recalculate_rocket_structure(rocket.model_copy(update=rocket_updates))
+    return recalculated, resize_result
+
+
+def build_rocket_spec(
+    preset: RocketPreset,
+    *,
+    motor: MotorSpec | None = None,
+    dry_mass_override_kg: float | None = None,
+    simulate_ric: bool = False,
+    repo_root: Path | str | None = None,
+) -> RocketSpec:
+    """Assemble an in-memory RocketSpec from a RocketPreset and relative drag/motor assets."""
+    resolved_motor = (
+        load_motor_spec(
+            preset.motor_preset_name,
+            simulate_ric=simulate_ric,
+            repo_root=repo_root,
+        )
+        if motor is None
+        else motor
+    )
+    power_off_drag = load_drag_curve_asset(preset.power_off_drag_asset, repo_root=repo_root)
+    power_on_drag = load_drag_curve_asset(preset.power_on_drag_asset, repo_root=repo_root)
+    resolved_override = (
+        preset.dry_mass_override_kg if dry_mass_override_kg is None else dry_mass_override_kg
+    )
+
+    return RocketSpec(
+        name=preset.name,
+        coordinate_system=preset.coordinate_system,
+        radius_m=preset.radius_m,
+        center_of_mass_without_motor_m=preset.center_of_mass_without_motor_m,
+        inertia_kg_m2=preset.inertia_kg_m2,
+        motor_position_m=preset.motor_position_m,
+        components=preset.components,
+        dry_mass_override_kg=resolved_override,
+        nose_cone=preset.nose_cone,
+        fins=preset.fins,
+        rail_buttons=preset.rail_buttons,
+        parachutes=preset.parachutes,
+        power_off_drag=power_off_drag,
+        power_on_drag=power_on_drag,
+        motor=resolved_motor,
+    )
+
+
+def load_rocket_spec(
+    rocket_id: str = DEFAULT_ROCKET_ID,
+    *,
+    motor_id: str | None = None,
+    motor: MotorSpec | None = None,
+    dry_mass_override_kg: float | None = None,
+    simulate_ric: bool = False,
+    repo_root: Path | str | None = None,
+) -> RocketSpec:
+    """Load a RocketPreset by ID and assemble its RocketSpec."""
+    preset = CatalogStore(resolve_paths(repo_root)).load_rocket(rocket_id)
+    resolved_motor = motor
+    if resolved_motor is None and motor_id is not None:
+        resolved_motor = load_motor_spec(
+            motor_id,
+            simulate_ric=simulate_ric,
+            repo_root=repo_root,
+        )
+    return build_rocket_spec(
+        preset,
+        motor=resolved_motor,
+        dry_mass_override_kg=dry_mass_override_kg,
+        simulate_ric=simulate_ric,
+        repo_root=repo_root,
+    )
+
+
+def summarize_rocket_structure(
+    rocket: RocketSpec,
+    nose_cone: ComponentMassProperties | None = None,
+) -> StructureSummary:
+    """Derive structural dry mass, CG, and Steiner inertia for a RocketSpec."""
+    return derive_rocket_structure(rocket, nose_cone=nose_cone)
+
+
+def calculate_rocket_dry_mass_kg(
+    rocket: RocketSpec,
+    *,
+    mass_mode: MassMode = "calculated",
+) -> float:
+    """Compute rocket dry mass without motor according to MassMode."""
+    if mass_mode == "measured":
+        if rocket.dry_mass_override_kg is None:
+            raise ValueError(
+                "mass_mode='measured' requires rocket.dry_mass_override_kg to be set"
+            )
+        return rocket.dry_mass_override_kg
+    if mass_mode == "calculated":
+        return derive_rocket_structure(rocket).dry_mass_kg
+    raise ValueError(f"Unsupported mass_mode: {mass_mode!r}")
+
+
+def recalculate_rocket_structure(rocket: RocketSpec) -> RocketSpec:
+    """Recalculate dry CG without motor and Steiner inertia from RocketSpec components."""
+    summary = derive_rocket_structure(rocket)
+    return rocket.model_copy(
+        update={
+            "center_of_mass_without_motor_m": summary.center_of_mass_m,
+            "inertia_kg_m2": summary.inertia_kg_m2,
+        }
+    )
+
+
+def trapezoidal_to_shape_points(
+    root_chord_m: float,
+    tip_chord_m: float,
+    span_m: float,
+    sweep_length_m: float = 0.0,
+) -> tuple[tuple[float, float], ...]:
+    """Convert trapezoidal fin parameters into a 4-vertex nose_to_tail polygon."""
+    return (
+        (0.0, 0.0),
+        (sweep_length_m, span_m),
+        (sweep_length_m + tip_chord_m, span_m),
+        (root_chord_m, 0.0),
+    )
+
+
+def sync_rocket_fins(
+    rocket: RocketSpec,
+    fins: FinSetSpec,
+    *,
+    thickness_m: float | None = None,
+    density_kg_m3: float | None = None,
+    fin_geometry_mode: FinGeometryMode = "freeform",
+) -> RocketSpec:
+    """Update FinSetSpec, synchronize matching FinComponent(s), and recalculate structure."""
+    resolved_fins = fins
+    if (
+        fin_geometry_mode == "trapezoidal"
+        and fins.root_chord_m is not None
+        and fins.tip_chord_m is not None
+        and fins.span_m is not None
+    ):
+        points = trapezoidal_to_shape_points(
+            fins.root_chord_m,
+            fins.tip_chord_m,
+            fins.span_m,
+            0.0 if fins.sweep_length_m is None else float(fins.sweep_length_m),
+        )
+        resolved_fins = fins.model_copy(update={"shape_points_m": points})
+
+    updated_components: list[RocketComponent] = []
+    for comp in rocket.components:
+        if isinstance(comp, FinComponent):
+            updates: dict[str, object] = {
+                "name": resolved_fins.name,
+                "count": resolved_fins.count,
+                "position_m": resolved_fins.position_m,
+                "shape_points_m": resolved_fins.shape_points_m,
+            }
+            if thickness_m is not None:
+                updates["thickness_m"] = thickness_m
+            if density_kg_m3 is not None:
+                updates["density_kg_m3"] = density_kg_m3
+            updated_components.append(comp.model_copy(update=updates))
+        else:
+            updated_components.append(comp)
+
+    updated_rocket = rocket.model_copy(
+        update={
+            "fins": resolved_fins,
+            "components": tuple(updated_components),
+        }
+    )
+    return recalculate_rocket_structure(updated_rocket)
+
+
+def rocket_preset_from_spec(
+    rocket: RocketSpec,
+    *,
+    motor_preset_name: str | None = None,
+    power_off_drag_asset: str | None = None,
+    power_on_drag_asset: str | None = None,
+) -> RocketPreset:
+    """Convert an in-memory RocketSpec into a persistable RocketPreset DTO."""
+    return RocketPreset(
+        name=rocket.name,
+        coordinate_system=rocket.coordinate_system,
+        radius_m=rocket.radius_m,
+        center_of_mass_without_motor_m=rocket.center_of_mass_without_motor_m,
+        inertia_kg_m2=rocket.inertia_kg_m2,
+        motor_position_m=rocket.motor_position_m,
+        components=rocket.components,
+        dry_mass_override_kg=rocket.dry_mass_override_kg,
+        nose_cone=rocket.nose_cone,
+        fins=rocket.fins,
+        rail_buttons=rocket.rail_buttons,
+        parachutes=rocket.parachutes,
+        power_off_drag_asset=(
+            power_off_drag_asset
+            or rocket.power_off_drag.asset_name
+            or "power_off.csv"
+        ),
+        power_on_drag_asset=(
+            power_on_drag_asset
+            or rocket.power_on_drag.asset_name
+            or "power_on.csv"
+        ),
+        motor_preset_name=motor_preset_name or rocket.motor.name,
+    )
+
+
+__all__ = [
+    "CASING_MATERIAL_DENSITY_PRESETS",
+    "CASING_MATERIAL_LABELS",
+    "build_rocket_spec",
+    "calculate_rocket_dry_mass_kg",
+    "load_rocket_spec",
+    "recalculate_rocket_structure",
+    "rocket_preset_from_spec",
+    "summarize_rocket_structure",
+    "sync_rocket_fins",
+    "trapezoidal_to_shape_points",
+    "update_rocket_motor_casing_length",
+]

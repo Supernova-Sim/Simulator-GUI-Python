@@ -7,8 +7,11 @@ from pathlib import Path
 from hefesto.domain import AssetCategory, AssetEntry
 from hefesto.storage.paths import (
     StoragePaths,
+    atomic_write_bytes,
+    atomic_write_text,
     resolve_safe_relative_path,
     resolve_storage_paths,
+    validate_safe_slug,
 )
 
 ASSET_EXTENSION_WHITELIST: dict[AssetCategory, frozenset[str]] = {
@@ -90,6 +93,64 @@ class AssetStore:
 
         entries.sort(key=lambda entry: (entry.category.value, entry.relative_path))
         return tuple(entries)
+
+    def resolve_openrocket_asset(
+        self,
+        relative_path: str,
+        *,
+        must_exist: bool = True,
+    ) -> Path:
+        """Resolve an .ork asset strictly inside data/assets/openrocket/."""
+        base_dir = self.paths.openrocket_assets_dir
+        candidate = resolve_safe_relative_path(base_dir, relative_path)
+        if candidate.suffix.lower() != ".ork":
+            raise ValueError(
+                f"Disallowed file extension {candidate.suffix.lower()!r} for openrocket asset "
+                "(allowed: .ork)"
+            )
+        if must_exist and not candidate.is_file():
+            raise FileNotFoundError(f"OpenRocket asset not found: {relative_path}")
+        return candidate
+
+    def list_openrocket_assets(self) -> tuple[str, ...]:
+        """List relative .ork asset filenames under data/assets/openrocket/."""
+        base_dir = self.paths.openrocket_assets_dir
+        if not base_dir.is_dir():
+            return ()
+        resolved_root = base_dir.resolve()
+        items = [
+            item.relative_to(base_dir).as_posix()
+            for item in sorted(base_dir.rglob("*.ork"))
+            if item.is_file() and item.resolve().is_relative_to(resolved_root)
+        ]
+        return tuple(items)
+
+    def save_openrocket_asset(self, filename: str, content: bytes) -> Path:
+        """Persist an .ork binary archive atomically under data/assets/openrocket/."""
+        cleaned = filename.strip()
+        stem = cleaned[:-4] if cleaned.lower().endswith(".ork") else cleaned
+        slug = validate_safe_slug(stem, "ork_filename")
+        target = resolve_safe_relative_path(self.paths.openrocket_assets_dir, f"{slug}.ork")
+        return atomic_write_bytes(target, content)
+
+    def load_openrocket_cache(self, sha256: str, parser_version: str = "v1") -> str | None:
+        """Return cached OrkParsedDesign JSON for sha256 + parser_version, or None."""
+        slug = validate_safe_slug(f"{sha256}_{parser_version}", "cache_key")
+        target = resolve_safe_relative_path(self.paths.openrocket_cache_dir, f"{slug}.json")
+        if not target.is_file():
+            return None
+        return target.read_text(encoding="utf-8")
+
+    def save_openrocket_cache(
+        self,
+        sha256: str,
+        payload_json: str,
+        parser_version: str = "v1",
+    ) -> Path:
+        """Persist parsed OrkParsedDesign JSON under data/cache/openrocket/."""
+        slug = validate_safe_slug(f"{sha256}_{parser_version}", "cache_key")
+        target = resolve_safe_relative_path(self.paths.openrocket_cache_dir, f"{slug}.json")
+        return atomic_write_text(target, payload_json)
 
 
 __all__ = ["ASSET_EXTENSION_WHITELIST", "AssetStore"]

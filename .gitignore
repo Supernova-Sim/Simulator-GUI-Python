@@ -15,4 +15,5 @@ build/
 *.log
 data/saida/
 data/runs/
+data/cache/
 data/assets/atmosphere/**/*.nc

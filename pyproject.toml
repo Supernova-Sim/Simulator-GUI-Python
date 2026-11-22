@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/hefesto"]
+packages = ["src/hefesto", "frontend"]
 
 [tool.uv]
 package = true

@@ -100,6 +100,7 @@ class MotorCasingSpec(BaseModel):
     dry_mass_kg: float = Field(gt=0.0)
     dry_inertia_kg_m2: tuple[float, float, float]
     center_of_dry_mass_m: float
+    material_density_kg_m3: float | None = Field(default=None, gt=0.0)
 
     @field_validator("dry_inertia_kg_m2")
     @classmethod
@@ -126,6 +127,24 @@ class MotorCasingSpec(BaseModel):
         return self.length_m - self.internal_clearance_m
 
 
+CasingScalingMode = Literal["tubular_delta", "proportional", "manual"]
+MotorOverrideGroup = Literal["nozzle", "grain", "propellant", "config"]
+MotorOverrideValueType = Literal["float", "int", "str"]
+
+
+class CasingResizeResult(BaseModel):
+    """Typed result of resizing a motor casing length with physical mass/CG/inertia updates."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    casing: MotorCasingSpec
+    mode: CasingScalingMode
+    delta_mass_kg: float
+    estimated_tube_mass_kg: float
+    estimated_fixed_hardware_mass_kg: float
+    warnings: tuple[str, ...] = ()
+
+
 class MotorOverride(BaseModel):
     """Typed parameter override applied to a motor configuration path."""
 
@@ -138,6 +157,24 @@ class MotorOverride(BaseModel):
     @classmethod
     def _validate_path(cls, value: str) -> str:
         return require_non_empty_text(value, "path")
+
+
+class MotorOverrideOption(BaseModel):
+    """Guided OpenMotor override option with SI unit and optional current .ric value."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    path: str
+    label: str
+    group: MotorOverrideGroup
+    unit: str
+    value_type: MotorOverrideValueType
+    current_value: float | int | str | None = None
+
+    @field_validator("path", "label", "unit")
+    @classmethod
+    def _validate_texts(cls, value: str) -> str:
+        return require_non_empty_text(value, "override option text")
 
 
 class MotorSpec(BaseModel):
@@ -208,12 +245,17 @@ class MotorSpec(BaseModel):
 
 
 __all__ = [
+    "CasingResizeResult",
+    "CasingScalingMode",
     "GeometryValidationError",
     "GrainInhibition",
     "GrainSpec",
     "InterpolationMethod",
     "MotorCasingSpec",
     "MotorOverride",
+    "MotorOverrideGroup",
+    "MotorOverrideOption",
+    "MotorOverrideValueType",
     "MotorSpec",
     "NozzleSpec",
 ]

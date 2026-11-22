@@ -13,6 +13,7 @@ from hefesto.storage.file_parsers import (
 )
 from hefesto.storage.paths import (
     StoragePaths,
+    atomic_write_bytes,
     atomic_write_text,
     get_repo_root,
     resolve_safe_relative_path,
@@ -27,6 +28,7 @@ __all__ = [
     "CatalogStore",
     "RunStore",
     "StoragePaths",
+    "atomic_write_bytes",
     "atomic_write_text",
     "get_repo_root",
     "load_drag_curve",

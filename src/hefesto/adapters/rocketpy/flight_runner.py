@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import base64
 import math
+import tempfile
 import warnings
 from pathlib import Path
 from typing import Any
@@ -185,6 +187,29 @@ def extract_flight_result(
     )
 
 
+def _render_rocket_draw_png_b64(rocket: Rocket) -> str | None:
+    """Render RocketPy's rocket.draw() diagram (with mounted motor) to a base64 PNG."""
+    draw_fn = getattr(rocket, "draw", None)
+    if not callable(draw_fn):
+        return None
+    import matplotlib
+
+    matplotlib.use("Agg", force=False)
+    import matplotlib.pyplot as plt
+
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_path = Path(tmpdir) / "rocket_draw.png"
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+                draw_fn(filename=str(out_path))
+            if not out_path.exists():
+                return None
+            return base64.b64encode(out_path.read_bytes()).decode("ascii")
+    finally:
+        plt.close("all")
+
+
 def execute_flight(
     rocket: Rocket,
     environment: Environment,
@@ -207,7 +232,11 @@ def execute_flight(
             ode_solver=launch.ode_solver,
             verbose=False,
         )
-    return extract_flight_result(flight, selection=output_selection)
+    result = extract_flight_result(flight, selection=output_selection)
+    draw_b64 = _render_rocket_draw_png_b64(rocket)
+    if draw_b64 is not None:
+        return result.model_copy(update={"rocket_draw_png_b64": draw_b64})
+    return result
 
 
 def run_flight(

@@ -4,9 +4,16 @@ from __future__ import annotations
 
 from hefesto.adapters.aerodynamics import DatabaseDragModel, DragModelProtocol
 from hefesto.adapters.openmotor import (
+    CONFIG_PROPERTY_CONSTRAINTS,
+    GRAIN_PROPERTY_CONSTRAINTS,
+    NOZZLE_PROPERTY_CONSTRAINTS,
+    PROPELLANT_PROPERTY_CONSTRAINTS,
+    PROPELLANT_TAB_PROPERTY_CONSTRAINTS,
     OpenMotorAlert,
     OpenMotorSimulationError,
     OpenMotorSimulationResult,
+    PropertyConstraint,
+    PropertyKind,
     apply_overrides_to_props,
     extract_grains_from_props,
     load_ric_props,
@@ -14,6 +21,11 @@ from hefesto.adapters.openmotor import (
     simulate_ric_detailed,
     validate_override,
     validate_ric_dict,
+)
+from hefesto.adapters.openrocket import (
+    OrkParseError,
+    parse_ork_bytes,
+    parse_ork_file,
 )
 from hefesto.adapters.rocketpy import (
     OutputSelection,
@@ -29,12 +41,20 @@ from hefesto.adapters.rocketpy import (
 )
 
 __all__ = [
+    "CONFIG_PROPERTY_CONSTRAINTS",
     "DatabaseDragModel",
     "DragModelProtocol",
+    "GRAIN_PROPERTY_CONSTRAINTS",
+    "NOZZLE_PROPERTY_CONSTRAINTS",
     "OpenMotorAlert",
     "OpenMotorSimulationError",
     "OpenMotorSimulationResult",
+    "OrkParseError",
     "OutputSelection",
+    "PROPELLANT_PROPERTY_CONSTRAINTS",
+    "PROPELLANT_TAB_PROPERTY_CONSTRAINTS",
+    "PropertyConstraint",
+    "PropertyKind",
     "apply_overrides_to_props",
     "build_environment",
     "build_netcdf_dictionary",
@@ -45,6 +65,8 @@ __all__ = [
     "extract_flight_result",
     "extract_grains_from_props",
     "load_ric_props",
+    "parse_ork_bytes",
+    "parse_ork_file",
     "run_flight",
     "run_openmotor_ric",
     "simulate_ric_detailed",

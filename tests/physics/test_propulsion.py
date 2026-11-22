@@ -24,6 +24,7 @@ from hefesto.physics.propulsion import (
     compute_casing_shell_mass_kg,
     prepare_solid_motor,
     recalculate_casing_dry_properties,
+    resize_motor_casing,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -299,3 +300,63 @@ def test_propulsion_edge_cases_and_invalid_inputs() -> None:
         assert hasattr(physics_pkg, symbol)
     assert not hasattr(physics_pkg, "build_solid_motor")
     assert physics_pkg.prepare_solid_motor is prepare_solid_motor
+
+
+def test_resize_motor_casing_modes_and_invariants() -> None:
+    base = _medusa_casing()
+    rho = 2700.0
+    r_in = base.inner_radius_m
+    r_out = base.outer_radius_m
+    a_wall = math.pi * (r_out**2 - r_in**2)
+
+    # 1) Exact invariance when new_length_m == casing.length_m
+    same = resize_motor_casing(
+        base, base.length_m, mode="tubular_delta", material_density_kg_m3=rho
+    )
+    assert same.casing == base
+    assert same.delta_mass_kg == 0.0
+
+    # 2) tubular_delta analytical Δm, fixed hardware preservation, CG/inertia update
+    new_len = 1.35
+    res_td = resize_motor_casing(base, new_len, mode="tubular_delta", material_density_kg_m3=rho)
+    expected_delta = rho * a_wall * (new_len - base.length_m)
+    expected_tube = rho * a_wall * new_len
+    expected_fixed = base.dry_mass_kg - rho * a_wall * base.length_m
+    assert res_td.delta_mass_kg == pytest.approx(expected_delta, rel=1e-12)
+    assert res_td.estimated_tube_mass_kg == pytest.approx(expected_tube, rel=1e-12)
+    assert res_td.estimated_fixed_hardware_mass_kg == pytest.approx(expected_fixed, rel=1e-12)
+    assert res_td.casing.dry_mass_kg == pytest.approx(base.dry_mass_kg + expected_delta, rel=1e-12)
+    assert res_td.casing.center_of_dry_mass_m == pytest.approx(new_len / 2.0, rel=1e-12)
+    assert res_td.casing.dry_inertia_kg_m2 == pytest.approx(
+        compute_motor_casing_dry_inertia_kg_m2(
+            res_td.casing.dry_mass_kg, r_in, base.wall_thickness_m, new_len
+        ),
+        rel=1e-12,
+    )
+    assert res_td.casing.material_density_kg_m3 == pytest.approx(rho)
+    assert res_td.warnings == ()
+
+    # 3) Warning when preset dry_mass_0 < m_tube_0 (e.g. high steel density)
+    res_warn = resize_motor_casing(base, 1.20, mode="tubular_delta", material_density_kg_m3=7850.0)
+    assert res_warn.estimated_fixed_hardware_mass_kg < 0.0
+    assert len(res_warn.warnings) == 1
+
+    # 4) ValueError if resulting dry mass <= 0
+    light = _medusa_casing(dry_mass_kg=1.0, length_m=1.10)
+    with pytest.raises(ValueError, match="<= 0 kg"):
+        resize_motor_casing(light, 0.10, mode="tubular_delta", material_density_kg_m3=7850.0)
+
+    # 5) proportional mode
+    res_prop = resize_motor_casing(base, 1.32, mode="proportional")
+    scale = 1.32 / base.length_m
+    assert res_prop.casing.dry_mass_kg == pytest.approx(base.dry_mass_kg * scale, rel=1e-12)
+    assert res_prop.casing.center_of_dry_mass_m == pytest.approx(
+        base.center_of_dry_mass_m * scale, rel=1e-12
+    )
+
+    # 6) manual mode preserves dry_mass_kg, CG, and inertia
+    res_man = resize_motor_casing(base, 1.40, mode="manual")
+    assert res_man.casing.length_m == pytest.approx(1.40)
+    assert res_man.casing.dry_mass_kg == base.dry_mass_kg
+    assert res_man.casing.center_of_dry_mass_m == base.center_of_dry_mass_m
+    assert res_man.casing.dry_inertia_kg_m2 == base.dry_inertia_kg_m2
