@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "source": "validated legacy baseline from backend/basic and backend/API/openmotor",
+  "dry_mass": {
+    "wall_2mm_kg": 18.85049031412732,
+    "wall_2mm_reference_kg": 18.8504,
+    "wall_3mm_kg": 21.643853130029957,
+    "wall_3mm_reference_kg": 21.644
+  },
+  "rocketpy_baseline_88deg": {
+    "inputs": {
+      "atmosphere_asset": "irec_era5_oper.nc",
+      "thrust_curve_asset": "medusa_knsb_a.eng",
+      "power_off_drag_asset": "power_off.csv",
+      "power_on_drag_asset": "power_on.csv",
+      "date_utc": [
+        2026,
+        6,
+        15,
+        12
+      ],
+      "latitude_deg": 32.94019,
+      "longitude_deg": -106.92056,
+      "elevation_m": 1401.0,
+      "inclination_deg": 88.0,
+      "heading_deg": 90.0,
+      "rail_length_m": 6.0,
+      "dry_mass_kg": 18.85049031412732,
+      "center_of_mass_without_motor_m": 1.2333,
+      "inertia_kg_m2": [
+        12.297744243637531,
+        12.297744243637531,
+        0.08243211389076663
+      ],
+      "motor_position_m": 2.78,
+      "rocket_coordinate_system": "nose_to_tail",
+      "motor_coordinate_system": "nozzle_to_combustion_chamber",
+      "motor_dry_mass_kg": 7.5,
+      "motor_dry_inertia_kg_m2": [
+        0.7678260027343752,
+        0.7678260027343752,
+        0.023152005468749997
+      ],
+      "motor_center_of_dry_mass_m": 0.55,
+      "grains_center_of_mass_m": 0.5403902229538684
+    },
+    "metrics": {
+      "apogee_agl_m": 3578.203646273967,
+      "apogee_msl_m": 4979.203646273967,
+      "apogee_time_s": 26.718324509230904,
+      "flight_time_s": 168.74358250760554,
+      "max_speed_ms": 305.8368305097546,
+      "max_mach": 0.898553288997534,
+      "rail_exit_velocity_ms": 27.05325152020802,
+      "min_static_margin_calibers": 2.3617646744652694,
+      "total_impulse_ns": 11514.406191,
+      "dry_mass_kg": 18.85049031412732
+    }
+  },
+  "openmotor_baselines": {
+    "medusa_knsb_a": {
+      "motor_asset": "medusa_knsb_a.ric",
+      "thrust_curve_asset": "medusa_knsb_a.eng",
+      "grain_count": 6,
+      "grain_lengths_m": [
+        0.16,
+        0.16,
+        0.16,
+        0.16,
+        0.16,
+        0.16
+      ],
+      "grain_outer_radii_m": [
+        0.049345,
+        0.049345,
+        0.049345,
+        0.049345,
+        0.049345,
+        0.049345
+      ],
+      "grain_inner_radii_m": [
+        0.0195,
+        0.0195,
+        0.0195,
+        0.0195,
+        0.027,
+        0.027
+      ],
+      "propellant_density_kg_m3": 1841.0,
+      "throat_radius_m": 0.017,
+      "nozzle_exit_radius_m": 0.039,
+      "burn_time_s": [
+        0.0,
+        3.8999999999999893
+      ],
+      "total_impulse_ns": 11514.40619119084,
+      "max_thrust_n": 3425.4490206754954,
+      "propellant_mass_kg": 10.762788308893114,
+      "peak_chamber_pressure_pa": 3058226.560004312,
+      "peak_kn": 244.58520640319318,
+      "peak_mass_flux_kg_m2_s": 1400.6633182068554,
+      "delivered_isp_s": 109.09279583496946,
+      "aft_port_to_throat_ratio": 2.5224913494809686,
+      "min_port_to_throat_ratio": 1.315743944636678
+    },
+    "medusa_n2792_v1": {
+      "motor_asset": "medusa_n2792_v1.ric",
+      "thrust_curve_asset": "medusa_n2792_v1.eng",
+      "grain_count": 6,
+      "burn_time_s": [
+        0.0,
+        3.7499999999999902
+      ],
+      "total_impulse_ns": 10555.375194621507,
+      "max_thrust_n": 3243.013855902439,
+      "propellant_mass_kg": 9.95130590978108,
+      "peak_chamber_pressure_pa": 2912170.8920163075,
+      "peak_kn": 232.73903043998877,
+      "peak_mass_flux_kg_m2_s": 1249.466104889373,
+      "delivered_isp_s": 108.16155505219912
+    },
+    "medusa_n3002_v2": {
+      "motor_asset": "medusa_n3002_v2.ric",
+      "thrust_curve_asset": "medusa_n3002_v2.eng",
+      "grain_count": 6,
+      "burn_time_s": [
+        0.0,
+        3.7499999999999902
+      ],
+      "total_impulse_ns": 11345.683823411546,
+      "max_thrust_n": 3456.506953367843,
+      "propellant_mass_kg": 10.614726303766487,
+      "peak_chamber_pressure_pa": 3083091.213216044,
+      "peak_kn": 246.60273880571106,
+      "peak_mass_flux_kg_m2_s": 1301.9697824904918,
+      "delivered_isp_s": 108.99365099926253
+    }
+  },
+  "safety_baseline_medusa_knsb_a": {
+    "case_inner_radius_m": 0.05395,
+    "case_wall_thickness_m": 0.003175,
+    "case_yield_strength_pa": 145000000.0,
+    "hoop_stress_pa": 51965770.99597878,
+    "limits": {
+      "min_case_safety_factor": 2.0,
+      "target_case_safety_factor": 3.0,
+      "max_chamber_pressure_pa": 8000000.0,
+      "max_kn": 250.0,
+      "max_mass_flux_kg_m2_s": 1406.0,
+      "min_port_to_throat_ratio": 2.0
+    },
+    "checks": {
+      "case_safety_factor": {
+        "value": 2.790298252502025,
+        "passed": true
+      },
+      "peak_chamber_pressure_mpa": {
+        "value": 3.058226560004312,
+        "passed": true
+      },
+      "peak_kn": {
+        "value": 244.58520640319318,
+        "passed": true
+      },
+      "peak_mass_flux_kg_m2_s": {
+        "value": 1400.6633182068554,
+        "passed": true
+      },
+      "aft_port_to_throat_ratio": {
+        "value": 2.5224913494809686,
+        "passed": true
+      }
+    }
+  }
+}

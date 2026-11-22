@@ -1,0 +1,31 @@
+{
+  "name": "Spaceport America (IREC ENDA Grid)",
+  "atmosphere_asset": "irec_era5_enda_grid.nc",
+  "dataset_kind": "enda",
+  "ensemble_member": 0,
+  "date_utc": [
+    2026,
+    6,
+    15,
+    12
+  ],
+  "latitude_deg": 32.94019,
+  "longitude_deg": -106.92056,
+  "elevation_m": 1401.0,
+  "datum": "SIRGAS2000",
+  "timezone": "UTC",
+  "max_expected_height_m": 80000.0,
+  "variable_map": {
+    "time": "valid_time",
+    "latitude": "latitude",
+    "longitude": "longitude",
+    "level": "pressure_level",
+    "temperature": "t",
+    "surface_geopotential_height": null,
+    "geopotential_height": null,
+    "geopotential": "z",
+    "u_wind": "u",
+    "v_wind": "v",
+    "ensemble_number": "number"
+  }
+}

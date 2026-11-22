@@ -1,0 +1,27 @@
+project-includes = [
+    "src/hefesto/**/*.py",
+    "frontend/**/*.py",
+    "tests/**/*.py",
+]
+
+project-excludes = [
+    ".venv/**",
+]
+
+search-path = ["src", "."]
+python-version = "3.12"
+python-platform = "linux"
+
+# Bibliotecas externas sem py.typed nem stubs .pyi no ambiente atual.
+replace-imports-with-any = [
+    "rocketpy",
+    "rocketpy.*",
+    "motorlib",
+    "motorlib.*",
+    "uilib",
+    "uilib.*",
+    "plotly",
+    "plotly.*",
+    "yaml",
+    "yaml.*",
+]

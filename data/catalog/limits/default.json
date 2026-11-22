@@ -1,0 +1,8 @@
+{
+  "min_case_safety_factor": 2.0,
+  "target_case_safety_factor": 3.0,
+  "max_chamber_pressure_pa": 8000000.0,
+  "max_kn": 250.0,
+  "max_mass_flux_kg_m2_s": 1406.0,
+  "min_port_to_throat_ratio": 2.0
+}

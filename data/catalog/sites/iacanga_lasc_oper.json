@@ -1,0 +1,31 @@
+{
+  "name": "Iacanga (LASC)",
+  "atmosphere_asset": "iacanga_lasc_era5_oper.nc",
+  "dataset_kind": "oper",
+  "ensemble_member": null,
+  "date_utc": [
+    2025,
+    11,
+    6,
+    12
+  ],
+  "latitude_deg": -21.88,
+  "longitude_deg": -49.02,
+  "elevation_m": 422.0,
+  "datum": "SIRGAS2000",
+  "timezone": "UTC",
+  "max_expected_height_m": 80000.0,
+  "variable_map": {
+    "time": "valid_time",
+    "latitude": "latitude",
+    "longitude": "longitude",
+    "level": "pressure_level",
+    "temperature": "t",
+    "surface_geopotential_height": null,
+    "geopotential_height": null,
+    "geopotential": "z",
+    "u_wind": "u",
+    "v_wind": "v",
+    "ensemble_number": "number"
+  }
+}
