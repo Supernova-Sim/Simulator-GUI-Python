@@ -27,7 +27,7 @@ from hefesto.domain.motor import (
     MotorOverride,
     NozzleSpec,
 )
-from hefesto.domain.rocket import RocketSpec
+from hefesto.domain.rocket import FinGeometryMode, MassMode, RocketSpec
 from hefesto.domain.safety import SafetyLimits
 
 
@@ -194,6 +194,71 @@ class MissionSpec(BaseModel):
         return require_non_empty_text(value, "name")
 
 
+class OutputSelection(BaseModel):
+    """Boolean selector controlling which trajectory curves are extracted into FlightResult."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    x: bool = False
+    y: bool = False
+    altitude_agl: bool = False
+    speed: bool = False
+    vertical_velocity: bool = False
+    acceleration: bool = False
+    mach: bool = False
+    cg: bool = False
+    cp: bool = False
+    static_margin: bool = False
+    drag: bool = False
+    thrust: bool = False
+
+    @classmethod
+    def all(cls) -> OutputSelection:
+        """Enable extraction of all trajectory and aerodynamic curves."""
+        return cls(
+            x=True,
+            y=True,
+            altitude_agl=True,
+            speed=True,
+            vertical_velocity=True,
+            acceleration=True,
+            mach=True,
+            cg=True,
+            cp=True,
+            static_margin=True,
+            drag=True,
+            thrust=True,
+        )
+
+    @classmethod
+    def none(cls) -> OutputSelection:
+        """Disable all optional trajectory curves (scalar metrics only)."""
+        return cls()
+
+
+class SimulationConfig(BaseModel):
+    """Picklable end-to-end simulation configuration consumed by services and UI."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    mission: MissionSpec
+    mass_mode: MassMode = "calculated"
+    fin_geometry_mode: FinGeometryMode = "freeform"
+    drag_factor: float = Field(default=1.0, gt=0.0)
+    thrust_factor: float = Field(default=1.0, gt=0.0)
+    motor_overrides: tuple[MotorOverride, ...] = ()
+    output_selection: OutputSelection = Field(default_factory=OutputSelection.all)
+
+    @model_validator(mode="after")
+    def _validate_measured_mass_mode(self) -> SimulationConfig:
+        if self.mass_mode == "measured" and self.mission.rocket.dry_mass_override_kg is None:
+            raise ValueError(
+                "SimulationConfig with mass_mode='measured' requires "
+                "mission.rocket.dry_mass_override_kg to be set"
+            )
+        return self
+
+
 class CatalogOverview(BaseModel):
     """Summary DTO of available assets and presets returned by storage/services."""
 
@@ -225,5 +290,7 @@ __all__ = [
     "MissionPreset",
     "MissionSpec",
     "MotorPreset",
+    "OutputSelection",
     "RocketPreset",
+    "SimulationConfig",
 ]

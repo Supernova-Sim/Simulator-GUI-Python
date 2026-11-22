@@ -20,6 +20,9 @@ from hefesto.domain.aerodynamics import (
 from hefesto.domain.components import RocketComponent
 from hefesto.domain.motor import MotorSpec
 
+MassMode = Literal["calculated", "measured"]
+FinGeometryMode = Literal["freeform", "trapezoidal"]
+
 
 class RocketSpec(BaseModel):
     """Complete in-memory 6-DOF vehicle specification (nose_to_tail, SI units)."""
@@ -55,4 +58,4 @@ class RocketSpec(BaseModel):
         return require_axisymmetric_inertia(value, "inertia_kg_m2")
 
 
-__all__ = ["RocketSpec"]
+__all__ = ["FinGeometryMode", "MassMode", "RocketSpec"]

@@ -12,7 +12,10 @@ from hefesto.adapters.aerodynamics import DatabaseDragModel, DragModelProtocol
 from hefesto.adapters.rocketpy.motor_builder import build_solid_motor
 from hefesto.domain import (
     FinComponent,
+    FinGeometryMode,
+    FinSetSpec,
     GeometryValidationError,
+    MassMode,
     PointMassComponent,
     RocketSpec,
     TubeComponent,
@@ -42,10 +45,21 @@ def _polygon_area_m2(points_m: Sequence[tuple[float, float]]) -> float:
     return area
 
 
-def compute_rocket_dry_mass_kg(rocket: RocketSpec) -> float:
-    """Compute RocketSpec dry mass without motor, honoring dry_mass_override_kg."""
-    if rocket.dry_mass_override_kg is not None:
+def compute_rocket_dry_mass_kg(
+    rocket: RocketSpec,
+    mass_mode: MassMode | None = None,
+) -> float:
+    """Compute RocketSpec dry mass without motor according to MassMode."""
+    if mass_mode == "measured":
+        if rocket.dry_mass_override_kg is None:
+            raise ValueError(
+                "mass_mode='measured' requires rocket.dry_mass_override_kg to be set"
+            )
         return _require_positive_finite(rocket.dry_mass_override_kg, "dry_mass_override_kg")
+    if mass_mode is None and rocket.dry_mass_override_kg is not None:
+        return _require_positive_finite(rocket.dry_mass_override_kg, "dry_mass_override_kg")
+    if mass_mode not in (None, "calculated"):
+        raise ValueError(f"Unsupported mass_mode: {mass_mode!r}")
 
     total_mass_kg = 0.0
     for component in rocket.components:
@@ -115,6 +129,72 @@ def _resolve_drag_functions(
     )
 
 
+def _derive_trapezoidal_params(fins: FinSetSpec) -> tuple[float, float, float, float]:
+    """Return (root_chord, tip_chord, span, sweep_length) preserving fin planform area."""
+    if (
+        fins.root_chord_m is not None
+        and fins.tip_chord_m is not None
+        and fins.span_m is not None
+    ):
+        return (
+            fins.root_chord_m,
+            fins.tip_chord_m,
+            fins.span_m,
+            0.0 if fins.sweep_length_m is None else float(fins.sweep_length_m),
+        )
+
+    pts = fins.shape_points_m
+    area_m2 = _polygon_area_m2(pts)
+    if len(pts) == 4:
+        p0, p1, p2, p3 = pts
+        root_chord = abs(p3[0] - p0[0])
+        tip_chord = abs(p2[0] - p1[0])
+        sweep_length = p1[0] - p0[0]
+        if root_chord > 0.0 and (root_chord + tip_chord) > 0.0:
+            span = (2.0 * area_m2) / (root_chord + tip_chord)
+            return root_chord, tip_chord, span, sweep_length
+
+    xs = [pt[0] for pt in pts]
+    ys = [pt[1] for pt in pts]
+    root_chord = _require_positive_finite(max(xs) - min(xs), "fin root_chord_m")
+    span = _require_positive_finite(max(ys) - min(ys), "fin span_m")
+    tip_chord = max(0.0, (2.0 * area_m2) / span - root_chord)
+    return root_chord, tip_chord, span, 0.0
+
+
+def _attach_fins(
+    rkt: Rocket,
+    *,
+    fins: FinSetSpec,
+    fin_geometry_mode: FinGeometryMode,
+) -> None:
+    if fin_geometry_mode == "freeform":
+        rkt.add_free_form_fins(
+            n=fins.count,
+            shape_points=list(fins.shape_points_m),
+            position=fins.position_m,
+            cant_angle=fins.cant_angle_deg,
+            radius=fins.radius_m,
+            name=fins.name,
+        )
+        return
+    if fin_geometry_mode == "trapezoidal":
+        root_chord, tip_chord, span, sweep_length = _derive_trapezoidal_params(fins)
+        rkt.add_trapezoidal_fins(
+            n=fins.count,
+            root_chord=root_chord,
+            tip_chord=tip_chord,
+            span=span,
+            position=fins.position_m,
+            cant_angle=fins.cant_angle_deg,
+            sweep_length=sweep_length,
+            radius=fins.radius_m,
+            name=fins.name,
+        )
+        return
+    raise ValueError(f"Unsupported fin_geometry_mode: {fin_geometry_mode!r}")
+
+
 def build_rocket(
     rocket: RocketSpec,
     *,
@@ -123,6 +203,8 @@ def build_rocket(
     drag_factor: float = 1.0,
     thrust_factor: float = 1.0,
     dry_mass_kg: float | None = None,
+    mass_mode: MassMode | None = None,
+    fin_geometry_mode: FinGeometryMode = "freeform",
 ) -> Rocket:
     """Assemble a RocketPy Rocket in nose_to_tail orientation using in-memory curves."""
     if rocket.coordinate_system != _ROCKET_COORDINATE_SYSTEM:
@@ -132,7 +214,7 @@ def build_rocket(
         )
 
     resolved_mass_kg = (
-        compute_rocket_dry_mass_kg(rocket)
+        compute_rocket_dry_mass_kg(rocket, mass_mode=mass_mode)
         if dry_mass_kg is None
         else _require_positive_finite(dry_mass_kg, "dry_mass_kg")
     )
@@ -166,15 +248,7 @@ def build_rocket(
         base_radius=nose.base_radius_m,
     )
 
-    fins = rocket.fins
-    rkt.add_free_form_fins(
-        n=fins.count,
-        shape_points=list(fins.shape_points_m),
-        position=fins.position_m,
-        cant_angle=fins.cant_angle_deg,
-        radius=fins.radius_m,
-        name=fins.name,
-    )
+    _attach_fins(rkt, fins=rocket.fins, fin_geometry_mode=fin_geometry_mode)
 
     rail_buttons = rocket.rail_buttons
     rkt.set_rail_buttons(

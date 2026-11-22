@@ -45,7 +45,7 @@ class NoseConeSpec(BaseModel):
 
 
 class FinSetSpec(BaseModel):
-    """Free-form aerodynamic fin set geometry."""
+    """Aerodynamic fin set geometry supporting free-form and trapezoidal RocketPy builders."""
 
     model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
 
@@ -55,6 +55,10 @@ class FinSetSpec(BaseModel):
     shape_points_m: tuple[tuple[float, float], ...] = Field(min_length=3)
     cant_angle_deg: float = Field(default=0.0, ge=-45.0, le=45.0)
     radius_m: float | None = Field(default=None, gt=0.0)
+    root_chord_m: float | None = Field(default=None, gt=0.0)
+    tip_chord_m: float | None = Field(default=None, ge=0.0)
+    span_m: float | None = Field(default=None, gt=0.0)
+    sweep_length_m: float | None = None
 
     @field_validator("name")
     @classmethod

@@ -29,7 +29,9 @@ from hefesto.domain.mission import (
     MissionPreset,
     MissionSpec,
     MotorPreset,
+    OutputSelection,
     RocketPreset,
+    SimulationConfig,
 )
 from hefesto.domain.motor import (
     GeometryValidationError,
@@ -47,7 +49,7 @@ from hefesto.domain.results import (
     RunSummary,
     SimulationResult,
 )
-from hefesto.domain.rocket import RocketSpec
+from hefesto.domain.rocket import FinGeometryMode, MassMode, RocketSpec
 from hefesto.domain.safety import (
     SafetyCheck,
     SafetyCriterion,
@@ -64,6 +66,7 @@ __all__ = [
     "EnvironmentSpec",
     "Era5DatasetKind",
     "FinComponent",
+    "FinGeometryMode",
     "FinSetSpec",
     "FlightResult",
     "GeometryValidationError",
@@ -71,6 +74,7 @@ __all__ = [
     "GrainSpec",
     "InterpolationMethod",
     "LaunchConfig",
+    "MassMode",
     "MissionPreset",
     "MissionSpec",
     "MotorCasingSpec",
@@ -81,6 +85,7 @@ __all__ = [
     "NoseConeKind",
     "NoseConeSpec",
     "NozzleSpec",
+    "OutputSelection",
     "ParachuteSpec",
     "PointMassComponent",
     "RailButtonsSpec",
@@ -92,6 +97,7 @@ __all__ = [
     "SafetyCriterion",
     "SafetyLimits",
     "SafetyReport",
+    "SimulationConfig",
     "SimulationResult",
     "TubeComponent",
 ]

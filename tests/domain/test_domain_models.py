@@ -17,12 +17,14 @@ from hefesto.domain import (
     EnvironmentSpec,
     Era5DatasetKind,
     FinComponent,
+    FinGeometryMode,
     FinSetSpec,
     FlightResult,
     GeometryValidationError,
     GrainInhibition,
     GrainSpec,
     LaunchConfig,
+    MassMode,
     MissionPreset,
     MissionSpec,
     MotorCasingSpec,
@@ -33,6 +35,7 @@ from hefesto.domain import (
     NoseConeKind,
     NoseConeSpec,
     NozzleSpec,
+    OutputSelection,
     ParachuteSpec,
     PointMassComponent,
     RailButtonsSpec,
@@ -43,6 +46,7 @@ from hefesto.domain import (
     SafetyCriterion,
     SafetyLimits,
     SafetyReport,
+    SimulationConfig,
     SimulationResult,
     TubeComponent,
 )
@@ -311,10 +315,20 @@ def _sample_flight_result() -> FlightResult:
         dry_mass_kg=18.85049031412732,
         landing_velocity_ms=6.5,
         impact_distance_m=850.0,
+        x_series=((0.0, 0.0), (26.7, 22.8)),
+        y_series=((0.0, 0.0), (26.7, -28.8)),
         altitude_agl_series=((0.0, 0.0), (26.7, 3578.2)),
+        speed_series=((0.0, 0.0), (3.9, 305.8)),
         vertical_velocity_series=((0.0, 0.0), (3.9, 290.0)),
+        acceleration_series=((0.0, 0.0), (3.9, 85.0)),
         mach_series=((0.0, 0.0), (3.9, 0.898)),
+        cg_series=((0.0, 1.72), (3.9, 1.52)),
+        cp_series=((0.0, 2.11), (3.9, 2.14)),
         static_margin_series=((0.0, 2.36), (3.9, 3.10)),
+        drag_series=((0.0, 0.0), (3.9, 145.0)),
+        power_off_drag_curve=((0.0, 0.45), (0.9, 0.55)),
+        power_on_drag_curve=((0.0, 0.41), (0.9, 0.50)),
+        thrust_series=((0.0, 0.0), (1.0, 3200.0)),
     )
 
 
@@ -403,6 +417,16 @@ def _all_domain_instances() -> list[BaseModel]:
         safety=safety_report,
     )
     run_summary = sim_result.to_summary(snapshot_asset="run_20261122_001.json")
+    output_selection = OutputSelection.all()
+    sim_config = SimulationConfig(
+        mission=mission_spec,
+        mass_mode="calculated",
+        fin_geometry_mode="freeform",
+        drag_factor=1.05,
+        thrust_factor=0.98,
+        motor_overrides=(MotorOverride(path="nozzle.throat", value=0.034),),
+        output_selection=output_selection,
+    )
 
     return [
         _sample_tube(),
@@ -454,6 +478,8 @@ def _all_domain_instances() -> list[BaseModel]:
         launch,
         mission_preset,
         mission_spec,
+        output_selection,
+        sim_config,
         catalog_overview,
         ballistics,
         flight,
@@ -738,3 +764,38 @@ def test_run_summary_rejects_absolute_snapshot_path() -> None:
             safety_passed=True,
             snapshot_asset="/tmp/abs.json",
         )
+
+
+def test_simulation_config_mass_fin_modes_and_output_selection() -> None:
+    mass_mode: MassMode = "calculated"
+    fin_mode: FinGeometryMode = "trapezoidal"
+    mission = MissionSpec(
+        name="irec_nominal_88deg",
+        rocket=_sample_rocket(),
+        environment=_sample_environment(),
+    )
+    cfg = SimulationConfig(mission=mission, mass_mode=mass_mode, fin_geometry_mode=fin_mode)
+    assert cfg.output_selection == OutputSelection.all()
+    assert OutputSelection.none() == OutputSelection()
+    assert SimulationConfig.model_validate_json(cfg.model_dump_json()) == cfg
+    assert pickle.loads(pickle.dumps(cfg)) == cfg
+
+    # Measured mass mode requires dry_mass_override_kg on rocket.
+    with pytest.raises(ValidationError, match="dry_mass_override_kg"):
+        SimulationConfig(mission=mission, mass_mode="measured")
+
+    measured_rocket = mission.rocket.model_copy(update={"dry_mass_override_kg": 21.644})
+    measured_cfg = SimulationConfig(
+        mission=mission.model_copy(update={"rocket": measured_rocket}),
+        mass_mode="measured",
+    )
+    assert measured_cfg.mission.rocket.dry_mass_override_kg == pytest.approx(21.644)
+
+    with pytest.raises(ValidationError):
+        SimulationConfig.model_validate({**cfg.model_dump(), "mass_mode": "invalid"})
+    with pytest.raises(ValidationError):
+        SimulationConfig.model_validate({**cfg.model_dump(), "fin_geometry_mode": "elliptical"})
+    with pytest.raises(ValidationError):
+        SimulationConfig(mission=mission, drag_factor=0.0)
+    with pytest.raises(ValidationError):
+        SimulationConfig(mission=mission, thrust_factor=-1.0)

@@ -388,10 +388,23 @@ def test_flight_runner_matches_golden_baseline_with_output_selection_and_no_leak
     # Default OutputSelection omits trajectory series and never leaks Flight or MPL objects.
     default_result = run_flight(mission, nc_path)
     assert isinstance(default_result, FlightResult)
-    assert default_result.altitude_agl_series == ()
-    assert default_result.vertical_velocity_series == ()
-    assert default_result.mach_series == ()
-    assert default_result.static_margin_series == ()
+    for empty_field in (
+        "x_series",
+        "y_series",
+        "altitude_agl_series",
+        "speed_series",
+        "vertical_velocity_series",
+        "acceleration_series",
+        "mach_series",
+        "cg_series",
+        "cp_series",
+        "static_margin_series",
+        "drag_series",
+        "power_off_drag_curve",
+        "power_on_drag_curve",
+        "thrust_series",
+    ):
+        assert getattr(default_result, empty_field) == ()
 
     assert default_result.apogee_agl_m == pytest.approx(expected["apogee_agl_m"], rel=1e-6)
     assert default_result.apogee_msl_m == pytest.approx(expected["apogee_msl_m"], rel=1e-6)
@@ -414,7 +427,7 @@ def test_flight_runner_matches_golden_baseline_with_output_selection_and_no_leak
 
     # Selective OutputSelection populates only requested curves in memory.
     env = build_environment(mission.environment, nc_path)
-    rocket = build_rocket(mission.rocket)
+    rocket = build_rocket(mission.rocket, drag_factor=1.15)
     selected_result = execute_flight(
         rocket,
         env,
@@ -423,21 +436,58 @@ def test_flight_runner_matches_golden_baseline_with_output_selection_and_no_leak
     )
     assert len(selected_result.altitude_agl_series) > 100
     assert len(selected_result.mach_series) == len(selected_result.altitude_agl_series)
-    assert selected_result.vertical_velocity_series == ()
-    assert selected_result.static_margin_series == ()
-    assert FlightResult.model_validate_json(selected_result.model_dump_json()) == selected_result
+    for empty_field in (
+        "x_series",
+        "y_series",
+        "speed_series",
+        "vertical_velocity_series",
+        "acceleration_series",
+        "cg_series",
+        "cp_series",
+        "static_margin_series",
+        "drag_series",
+        "power_off_drag_curve",
+        "power_on_drag_curve",
+        "thrust_series",
+    ):
+        assert getattr(selected_result, empty_field) == ()
 
-    # Full OutputSelection.all() with terminate_on_apogee=True yields None landing/impact metrics.
+    # Full OutputSelection.all() with terminate_on_apogee=True extracts all 12 series + Cd curves.
     apogee_mission = mission.model_copy(
         update={"launch": LaunchConfig(terminate_on_apogee=True)}
     )
-    apogee_result = run_flight(apogee_mission, nc_path, output_selection=OutputSelection.all())
+    apogee_result = run_flight(
+        apogee_mission,
+        nc_path,
+        output_selection=OutputSelection.all(),
+        drag_factor=1.15,
+    )
     assert apogee_result.landing_velocity_ms is None
     assert apogee_result.impact_distance_m is None
-    assert len(apogee_result.altitude_agl_series) > 50
-    assert len(apogee_result.vertical_velocity_series) == len(apogee_result.altitude_agl_series)
-    assert len(apogee_result.mach_series) == len(apogee_result.altitude_agl_series)
-    assert len(apogee_result.static_margin_series) == len(apogee_result.altitude_agl_series)
+    n_samples = len(apogee_result.altitude_agl_series)
+    assert n_samples > 50
+    for time_field in (
+        "x_series",
+        "y_series",
+        "speed_series",
+        "vertical_velocity_series",
+        "acceleration_series",
+        "mach_series",
+        "cg_series",
+        "cp_series",
+        "static_margin_series",
+        "drag_series",
+        "thrust_series",
+    ):
+        assert len(getattr(apogee_result, time_field)) == n_samples
+    assert len(apogee_result.power_off_drag_curve) > 100
+    assert len(apogee_result.power_on_drag_curve) > 100
+    assert apogee_result.power_off_drag_curve[0][1] == pytest.approx(
+        mission.rocket.power_off_drag.points[0][1] * 1.15
+    )
+    assert apogee_result.power_on_drag_curve[0][1] == pytest.approx(
+        mission.rocket.power_on_drag.points[0][1] * 1.15
+    )
 
     assert matplotlib.get_backend() == backend_before
     assert list(plt.get_fignums()) == figs_before
@@ -476,7 +526,14 @@ def test_extract_flight_result_uses_effective_rail_lengths_and_handles_no_impact
 
     stub_flight = SimpleNamespace(
         env=SimpleNamespace(elevation=1401.0),
-        rocket=SimpleNamespace(mass=18.85, motor=SimpleNamespace(total_impulse=11514.4)),
+        rocket=SimpleNamespace(
+            mass=18.85,
+            motor=SimpleNamespace(total_impulse=11514.4),
+            center_of_mass=lambda t: 1.72 - 0.05 * t,
+            cp_position=lambda mach: 2.11 + 0.02 * mach,
+            _power_off_drag_input=FakeSeries([[0.0, 0.45], [1.0, 0.72]]),
+            _power_on_drag_input=FakeSeries([[0.0, 0.41], [1.0, 0.65]]),
+        ),
         apogee=4979.2,
         apogee_time=26.7,
         t_final=168.7,
@@ -491,19 +548,37 @@ def test_extract_flight_result_uses_effective_rail_lengths_and_handles_no_impact
         impact_velocity=-18.3,
         x_impact=450.0,
         y_impact=-50.0,
+        x=FakeSeries([[0.0, 0.0], [1.0, 2.5]]),
+        y=FakeSeries([[0.0, 0.0], [1.0, -1.5]]),
         altitude=FakeSeries([[0.0, 0.0], [1.0, 100.0]]),
+        speed=FakeSeries([[0.0, 0.0], [1.0, 82.0]]),
         vz=FakeSeries([[0.0, 0.0], [1.0, 80.0]]),
+        acceleration=FakeSeries([[0.0, 0.0], [1.0, 75.0]]),
         mach_number=FakeSeries([[0.0, 0.0], [1.0, 0.3]]),
         stability_margin=FakeSeries([[0.0, 2.36], [1.0, 2.50]]),
+        aerodynamic_drag=FakeSeries([[0.0, 0.0], [1.0, 42.0]]),
+        net_thrust=FakeSeries([[0.0, 0.0], [1.0, 3100.0]]),
     )
     extracted = extract_flight_result(stub_flight, selection=OutputSelection.all())  # type: ignore[arg-type]
     assert extracted.apogee_agl_m == pytest.approx(3578.2)
     assert extracted.landing_velocity_ms == pytest.approx(18.3)
     assert extracted.impact_distance_m == pytest.approx(math.hypot(450.0, -50.0))
+    assert extracted.x_series == ((0.0, 0.0), (1.0, 2.5))
+    assert extracted.y_series == ((0.0, 0.0), (1.0, -1.5))
     assert extracted.altitude_agl_series == ((0.0, 0.0), (1.0, 100.0))
+    assert extracted.speed_series == ((0.0, 0.0), (1.0, 82.0))
     assert extracted.vertical_velocity_series == ((0.0, 0.0), (1.0, 80.0))
+    assert extracted.acceleration_series == ((0.0, 0.0), (1.0, 75.0))
     assert extracted.mach_series == ((0.0, 0.0), (1.0, 0.3))
+    assert extracted.cg_series[0] == pytest.approx((0.0, 1.72))
+    assert extracted.cg_series[1] == pytest.approx((1.0, 1.67))
+    assert extracted.cp_series[0] == pytest.approx((0.0, 2.11))
+    assert extracted.cp_series[1] == pytest.approx((1.0, 2.116))
     assert extracted.static_margin_series == ((0.0, 2.36), (1.0, 2.50))
+    assert extracted.drag_series == ((0.0, 0.0), (1.0, 42.0))
+    assert extracted.power_off_drag_curve == ((0.0, 0.45), (1.0, 0.72))
+    assert extracted.power_on_drag_curve == ((0.0, 0.41), (1.0, 0.65))
+    assert extracted.thrust_series == ((0.0, 0.0), (1.0, 3100.0))
 
     # No-impact stub (1-element impact_state) maps landing/impact metrics to None.
     stub_flight.impact_state = np.array([0.0])
@@ -511,6 +586,8 @@ def test_extract_flight_result_uses_effective_rail_lengths_and_handles_no_impact
     assert no_impact.landing_velocity_ms is None
     assert no_impact.impact_distance_m is None
     assert no_impact.altitude_agl_series == ()
+    assert no_impact.drag_series == ()
+    assert no_impact.thrust_series == ()
 
     # Dry mass override & validation checks on rocket_builder.
     overridden_spec = mission.rocket.model_copy(update={"dry_mass_override_kg": 21.5})
@@ -529,3 +606,53 @@ def test_extract_flight_result_uses_effective_rail_lengths_and_handles_no_impact
         assert hasattr(adapters_pkg, symbol)
     assert DragCurveSpec.__name__ == "DragCurveSpec"
     assert NoseConeSpec.__name__ == "NoseConeSpec"
+
+
+def test_rocket_builder_respects_mass_mode_and_fin_geometry_mode() -> None:
+    golden = json.loads(GOLDEN_PATH.read_text(encoding="utf-8"))
+    mission, nc_path = _load_real_mission(site_id="irec_oper", terminate_on_apogee=True)
+
+    # MassMode="measured" requires dry_mass_override_kg; MassMode="calculated" ignores it.
+    with pytest.raises(ValueError, match="measured"):
+        compute_rocket_dry_mass_kg(mission.rocket, mass_mode="measured")
+    with pytest.raises(ValueError, match="measured"):
+        build_rocket(mission.rocket, mass_mode="measured")
+
+    measured_rocket = mission.rocket.model_copy(update={"dry_mass_override_kg": 21.644})
+    assert compute_rocket_dry_mass_kg(measured_rocket, mass_mode="measured") == pytest.approx(
+        21.644
+    )
+    assert compute_rocket_dry_mass_kg(measured_rocket, mass_mode="calculated") == pytest.approx(
+        golden["dry_mass"]["wall_2mm_kg"], rel=1e-12
+    )
+    assert build_rocket(measured_rocket, mass_mode="measured").mass == pytest.approx(21.644)
+    assert build_rocket(measured_rocket, mass_mode="calculated").mass == pytest.approx(
+        golden["dry_mass"]["wall_2mm_kg"], rel=1e-12
+    )
+
+    # FinGeometryMode="trapezoidal" derives area-preserving trapezoidal fins or uses explicit dims.
+    trap_derived_rkt = build_rocket(mission.rocket, fin_geometry_mode="trapezoidal")
+    assert len(trap_derived_rkt.aerodynamic_surfaces) >= 2
+    explicit_fins = mission.rocket.fins.model_copy(
+        update={
+            "root_chord_m": 0.18,
+            "tip_chord_m": 0.07458606,
+            "span_m": 0.13999711,
+            "sweep_length_m": 0.10051811,
+        }
+    )
+    trap_explicit_spec = mission.rocket.model_copy(update={"fins": explicit_fins})
+    trap_result = run_flight(
+        mission.model_copy(update={"rocket": trap_explicit_spec}),
+        nc_path,
+        mass_mode="calculated",
+        fin_geometry_mode="trapezoidal",
+        output_selection=OutputSelection(altitude_agl=True),
+    )
+    assert trap_result.apogee_agl_m > 3000.0
+    assert len(trap_result.altitude_agl_series) > 50
+
+    with pytest.raises(ValueError, match="mass_mode"):
+        compute_rocket_dry_mass_kg(mission.rocket, mass_mode="invalid")  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="fin_geometry_mode"):
+        build_rocket(mission.rocket, fin_geometry_mode="elliptical")  # type: ignore[arg-type]

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from hefesto.domain._validators import (
     require_burn_time,
@@ -115,38 +115,59 @@ class FlightResult(BaseModel):
     dry_mass_kg: float = Field(gt=0.0)
     landing_velocity_ms: float | None = Field(default=None, ge=0.0)
     impact_distance_m: float | None = Field(default=None, ge=0.0)
+    x_series: tuple[tuple[float, float], ...] = ()
+    y_series: tuple[tuple[float, float], ...] = ()
     altitude_agl_series: tuple[tuple[float, float], ...] = ()
+    speed_series: tuple[tuple[float, float], ...] = ()
     vertical_velocity_series: tuple[tuple[float, float], ...] = ()
+    acceleration_series: tuple[tuple[float, float], ...] = ()
     mach_series: tuple[tuple[float, float], ...] = ()
+    cg_series: tuple[tuple[float, float], ...] = ()
+    cp_series: tuple[tuple[float, float], ...] = ()
     static_margin_series: tuple[tuple[float, float], ...] = ()
+    drag_series: tuple[tuple[float, float], ...] = ()
+    power_off_drag_curve: tuple[tuple[float, float], ...] = ()
+    power_on_drag_curve: tuple[tuple[float, float], ...] = ()
+    thrust_series: tuple[tuple[float, float], ...] = ()
 
-    @field_validator("altitude_agl_series")
+    @field_validator(
+        "x_series",
+        "y_series",
+        "altitude_agl_series",
+        "speed_series",
+        "vertical_velocity_series",
+        "acceleration_series",
+        "mach_series",
+        "cg_series",
+        "cp_series",
+        "static_margin_series",
+        "drag_series",
+        "thrust_series",
+    )
     @classmethod
-    def _validate_altitude_series(
+    def _validate_time_series_fields(
+        cls,
+        value: tuple[tuple[float, float], ...],
+        info: ValidationInfo,
+    ) -> tuple[tuple[float, float], ...]:
+        return _validate_optional_series(value, info.field_name or "series")
+
+    @field_validator("power_off_drag_curve", "power_on_drag_curve")
+    @classmethod
+    def _validate_drag_curves(
         cls, value: tuple[tuple[float, float], ...]
     ) -> tuple[tuple[float, float], ...]:
-        return _validate_optional_series(value, "altitude_agl_m")
-
-    @field_validator("vertical_velocity_series")
-    @classmethod
-    def _validate_vz_series(
-        cls, value: tuple[tuple[float, float], ...]
-    ) -> tuple[tuple[float, float], ...]:
-        return _validate_optional_series(value, "vertical_velocity_ms")
-
-    @field_validator("mach_series")
-    @classmethod
-    def _validate_mach_series(
-        cls, value: tuple[tuple[float, float], ...]
-    ) -> tuple[tuple[float, float], ...]:
-        return _validate_optional_series(value, "mach")
-
-    @field_validator("static_margin_series")
-    @classmethod
-    def _validate_margin_series(
-        cls, value: tuple[tuple[float, float], ...]
-    ) -> tuple[tuple[float, float], ...]:
-        return _validate_optional_series(value, "static_margin_calibers")
+        if not value:
+            return ()
+        return require_xy_curve(
+            value,
+            x_name="mach",
+            y_name="cd",
+            min_points=2,
+            min_x=0.0,
+            min_y=0.0,
+            strict_x=True,
+        )
 
 
 class RunSummary(BaseModel):

@@ -519,7 +519,7 @@ def test_ast_gate_isolates_rocketpy_and_openmotor_to_their_adapter_subpackages()
     assert check_source_violations("import motorlib\nimport uilib\n", openmotor_mod)[0] == []
     assert check_source_violations("import rocketpy\n", openmotor_mod)[0]
 
-    for layer, rel_path, mod_name in (
+    common_scopes = (
         ("domain", "src/hefesto/domain/motor.py", "hefesto.domain.motor"),
         ("physics", "src/hefesto/physics/propulsion.py", "hefesto.physics.propulsion"),
         ("storage", "src/hefesto/storage/asset_store.py", "hefesto.storage.asset_store"),
@@ -531,7 +531,25 @@ def test_ast_gate_isolates_rocketpy_and_openmotor_to_their_adapter_subpackages()
             "src/hefesto/adapters/aerodynamics/database_drag.py",
             "hefesto.adapters.aerodynamics.database_drag",
         ),
-    ):
+    )
+
+    for layer, rel_path, mod_name in (*common_scopes, (
+        "adapters",
+        "src/hefesto/adapters/openmotor/runner.py",
+        "hefesto.adapters.openmotor.runner",
+    )):
         info = ModuleInfo(rel_path, mod_name, layer, mod_name == "hefesto.adapters")
         violations, _ = check_source_violations("import rocketpy\n", info)
         assert any("rocketpy" in v for v in violations), f"Expected rocketpy block for {mod_name}"
+
+    for layer, rel_path, mod_name in (*common_scopes, (
+        "adapters",
+        "src/hefesto/adapters/rocketpy/motor_builder.py",
+        "hefesto.adapters.rocketpy.motor_builder",
+    )):
+        info = ModuleInfo(rel_path, mod_name, layer, mod_name == "hefesto.adapters")
+        for forbidden_om in ("motorlib", "uilib", "openmotor"):
+            violations, _ = check_source_violations(f"import {forbidden_om}\n", info)
+            assert any(forbidden_om in v for v in violations), (
+                f"Expected {forbidden_om} block for {mod_name}"
+            )
