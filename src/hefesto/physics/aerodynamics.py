@@ -215,9 +215,13 @@ def _nose_wetted_area_m2(rocket: RocketSpec) -> float:
     area = 0.0
     for index in range(_NOSE_SLICES):
         x_m = (index + 0.5) * dx
-        radius = nose_cone_radius_at(x_m, length, base_radius, nose.kind, power=nose.power)
+        radius = nose_cone_radius_at(
+            x_m, length, base_radius, nose.kind, power=nose.power,
+            haack_parameter=nose.haack_parameter,
+        )
         radius_next = nose_cone_radius_at(
-            min(length, x_m + dx), length, base_radius, nose.kind, power=nose.power
+            min(length, x_m + dx), length, base_radius, nose.kind, power=nose.power,
+            haack_parameter=nose.haack_parameter,
         )
         slope = (radius_next - radius) / dx
         area += 2.0 * math.pi * radius * math.sqrt(1.0 + slope**2) * dx

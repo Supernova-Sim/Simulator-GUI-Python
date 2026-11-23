@@ -379,3 +379,57 @@ def test_rocket_preset_from_spec_materializes_ork_sim_drag_table(tmp_path: Path)
     assert reloaded.drag_source == "ork_sim"
     assert reloaded.power_off_drag.points[round(0.3 / 0.01)][1] == pytest.approx(0.73)
     assert reloaded.power_on_drag.points[round(0.3 / 0.01)][1] == pytest.approx(0.63)
+
+
+def test_preview_ork_without_motormount_uses_airframe_aft_end_and_warns(
+    tmp_path: Path,
+) -> None:
+    repo = _setup_isolated_repo(tmp_path)
+
+    summary = preview_ork_import(
+        _make_ork_bytes(SIMPLE_ORK_XML),
+        base_motor_id="medusa_knsb_a",
+        power_off_drag_asset="power_off.csv",
+        power_on_drag_asset="power_on.csv",
+        repo_root=repo,
+    )
+
+    # Nose 0.40 m + body tube 1.20 m => aft end at 1.60 m, never the tube center (1.00 m).
+    assert summary.rocket_spec.motor_position_m == pytest.approx(1.60)
+    mount_warnings = [w.message for w in summary.warnings if "<motormount>" in w.message]
+    assert mount_warnings
+    assert "extremidade traseira" in mount_warnings[0]
+
+
+def test_ork_cache_read_and_write_oserror_is_best_effort(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from hefesto.storage import AssetStore
+
+    repo = _setup_isolated_repo(tmp_path)
+
+    def _read_only(self: AssetStore, *_args: object, **_kwargs: object) -> str | None:
+        raise OSError("Read-only file system")
+
+    def _write_read_only(self: AssetStore, *_args: object, **_kwargs: object) -> None:
+        raise OSError("Read-only file system")
+
+    monkeypatch.setattr(AssetStore, "load_openrocket_cache", _read_only)
+    monkeypatch.setattr(AssetStore, "save_openrocket_cache", _write_read_only)
+
+    summary = preview_ork_import(
+        _make_ork_bytes(SIMPLE_ORK_XML),
+        base_motor_id="medusa_knsb_a",
+        power_off_drag_asset="power_off.csv",
+        power_on_drag_asset="power_on.csv",
+        repo_root=repo,
+    )
+
+    # Parsing succeeded despite an inaccessible cache, and both failures are surfaced.
+    assert summary.from_cache is False
+    assert summary.calculated_dry_mass_kg > 0.0
+    cache_warnings = [w.message for w in summary.warnings if "data/cache/openrocket" in w.message]
+    assert len(cache_warnings) == 2
+    assert any("ilegível" in message for message in cache_warnings)
+    assert any("somente leitura" in message for message in cache_warnings)

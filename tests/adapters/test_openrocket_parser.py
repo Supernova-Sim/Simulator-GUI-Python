@@ -465,3 +465,102 @@ def test_parse_ork_detects_motormount_inside_bodytube_and_prefers_motor_bearing_
     # Aft ends are 1.00 (Propulsao) and 1.40 (Aletas); only the mount holding <motor>
     # defines the motor station, shifted forward by its -0.02 m overhang.
     assert parsed.detected_motor_mount_position_m == pytest.approx(1.38)
+
+
+HAACK_OVERRIDE_ORK_XML = """<?xml version='1.0' encoding='utf-8'?>
+<openrocket version="1.9">
+  <rocket>
+    <name>Haack Override Rocket</name>
+    <subcomponents>
+      <stage>
+        <name>Sustainer</name>
+        <subcomponents>
+          <nosecone>
+            <name>Ogiva Haack</name>
+            <shape>haack</shape>
+            <shapeparameter>0.3333</shapeparameter>
+            <length>0.40</length>
+            <aftradius>0.075</aftradius>
+          </nosecone>
+          <bodytube>
+            <name>Tubo</name>
+            <length>1.00</length>
+            <thickness>0.002</thickness>
+            <radius>0.075</radius>
+            <overridemass>1.5</overridemass>
+            <overridecg>0.25</overridecg>
+            <subcomponents>
+              <innertube>
+                <name>Inner</name>
+                <axialoffset method="top">0.10</axialoffset>
+                <length>0.20</length>
+                <outerradius>0.05</outerradius>
+                <thickness>0.002</thickness>
+                <overridemass>0.8</overridemass>
+                <overridecg>0.05</overridecg>
+              </innertube>
+              <centeringring>
+                <name>Anel</name>
+                <axialoffset method="top">0.30</axialoffset>
+                <length>0.006</length>
+                <outerradius>0.075</outerradius>
+                <innerradius>0.05</innerradius>
+                <overridemass>0.2</overridemass>
+              </centeringring>
+              <bulkhead>
+                <name>Bulk</name>
+                <axialoffset method="top">0.50</axialoffset>
+                <length>0.01</length>
+                <outerradius>0.075</outerradius>
+                <overridemass>0.3</overridemass>
+              </bulkhead>
+            </subcomponents>
+          </bodytube>
+        </subcomponents>
+      </stage>
+    </subcomponents>
+  </rocket>
+</openrocket>
+"""
+
+
+def test_parse_ork_maps_haack_shape_parameter_to_profile() -> None:
+    parsed = parse_ork_bytes(HAACK_OVERRIDE_ORK_XML.encode("utf-8"))
+    assert parsed.nose_cone.kind == NoseConeKind.LV_HAACK
+    # Exact OpenRocket parameter is preserved (not silently replaced by 1/3).
+    assert parsed.nose_cone.haack_parameter == pytest.approx(0.3333)
+
+    von_karman_xml = HAACK_OVERRIDE_ORK_XML.replace(
+        "<shapeparameter>0.3333</shapeparameter>",
+        "<shapeparameter>0.0</shapeparameter>",
+    )
+    von_karman = parse_ork_bytes(von_karman_xml.encode("utf-8"))
+    assert von_karman.nose_cone.kind == NoseConeKind.VON_KARMAN
+    assert von_karman.nose_cone.haack_parameter == pytest.approx(0.0)
+
+
+def test_parse_ork_applies_overridemass_and_overridecg_to_tubes_and_rings() -> None:
+    parsed = parse_ork_bytes(HAACK_OVERRIDE_ORK_XML.encode("utf-8"))
+    tubes = {
+        component.name: component
+        for component in parsed.components
+        if isinstance(component, TubeComponent)
+    }
+
+    body = tubes["Tubo"]
+    assert body.mass_override_kg == pytest.approx(1.5)
+    # Body tube starts at 0.40 m (nose aft end); overridecg is measured from its front.
+    assert body.cg_override_m == pytest.approx(0.40 + 0.25)
+    assert body.position_m == pytest.approx(0.40 + 0.50)
+
+    inner = tubes["Inner"]
+    assert inner.mass_override_kg == pytest.approx(0.8)
+    assert inner.cg_override_m == pytest.approx(0.50 + 0.05)
+
+    ring = tubes["Anel"]
+    assert ring.mass_override_kg == pytest.approx(0.2)
+    assert ring.cg_override_m is None
+
+    bulkhead = tubes["Bulk"]
+    assert bulkhead.mass_override_kg == pytest.approx(0.3)
+    assert bulkhead.wall_thickness_m == pytest.approx(bulkhead.outer_radius_m)

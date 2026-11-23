@@ -275,11 +275,19 @@ def _conical_radius(x_m: float, length_m: float, base_radius_m: float) -> float:
     return base_radius_m * (x_m / length_m)
 
 
-def _haack_radius(x_m: float, length_m: float, base_radius_m: float) -> float:
+def _haack_radius(
+    x_m: float,
+    length_m: float,
+    base_radius_m: float,
+    haack_parameter: float = 1.0 / 3.0,
+) -> float:
+    """Evaluate the Haack series r(theta) with C=0 (Von Karman) or C=1/3 (LV-Haack)."""
     # Clamp argument to [-1, 1] to guard acos against endpoint rounding drift.
     arg = max(-1.0, min(1.0, 1.0 - 2.0 * x_m / length_m))
     theta = math.acos(arg)
     val = theta - math.sin(2.0 * theta) / 2.0
+    if haack_parameter != 0.0:
+        val += haack_parameter * math.sin(theta) ** 3
     return (base_radius_m / math.sqrt(math.pi)) * math.sqrt(max(0.0, val))
 
 
@@ -290,9 +298,13 @@ def _ogive_radius(x_m: float, length_m: float, base_radius_m: float) -> float:
 
 _NOSE_PROFILE_BY_KIND: dict[str, Callable[[float, float, float], float]] = {
     "conical": _conical_radius,
-    "lvhaack": _haack_radius,
-    "von karman": _haack_radius,
     "ogive": _ogive_radius,
+}
+
+# Haack series C constant per profile: 0 is Von Karman, 1/3 is LV-Haack.
+_HAACK_PARAMETER_BY_KIND: dict[str, float] = {
+    "lvhaack": 1.0 / 3.0,
+    "von karman": 0.0,
 }
 
 
@@ -302,6 +314,7 @@ def nose_cone_radius_at(
     base_radius_m: float,
     kind: NoseConeKind | str,
     power: float | None = None,
+    haack_parameter: float | None = None,
 ) -> float:
     """Evaluate nose cone outer radius r(x) at axial station x_m from tip (0) to base (L)."""
     _require_positive(length_m, "length_m")
@@ -321,6 +334,17 @@ def nose_cone_radius_at(
             )
         return base_radius_m * ((x_clamped / length_m) ** power)
 
+    default_haack_parameter = _HAACK_PARAMETER_BY_KIND.get(kind_key)
+    if default_haack_parameter is not None:
+        resolved_parameter = (
+            default_haack_parameter if haack_parameter is None else haack_parameter
+        )
+        if not math.isfinite(resolved_parameter):
+            raise GeometryValidationError(
+                f"haack_parameter must be finite, got {resolved_parameter!r}"
+            )
+        return _haack_radius(x_clamped, length_m, base_radius_m, resolved_parameter)
+
     profile_fn = _NOSE_PROFILE_BY_KIND.get(kind_key)
     if profile_fn is None:
         raise GeometryValidationError(f"Unsupported nose cone profile kind: {kind!r}")
@@ -334,6 +358,7 @@ def nose_cone_slope_at(
     kind: NoseConeKind | str,
     power: float | None = None,
     eps_m: float = DEFAULT_DERIVATIVE_STEP_M,
+    haack_parameter: float | None = None,
 ) -> float:
     """Compute central-clamped finite-difference slope dr/dx along the nose cone profile."""
     _require_positive(length_m, "length_m")
@@ -343,8 +368,12 @@ def nose_cone_slope_at(
     x_hi = min(length_m, x_m + eps_m)
     if x_hi <= x_lo:
         return 0.0
-    r_lo = nose_cone_radius_at(x_lo, length_m, base_radius_m, kind, power=power)
-    r_hi = nose_cone_radius_at(x_hi, length_m, base_radius_m, kind, power=power)
+    r_lo = nose_cone_radius_at(
+        x_lo, length_m, base_radius_m, kind, power=power, haack_parameter=haack_parameter
+    )
+    r_hi = nose_cone_radius_at(
+        x_hi, length_m, base_radius_m, kind, power=power, haack_parameter=haack_parameter
+    )
     return (r_hi - r_lo) / (x_hi - x_lo)
 
 

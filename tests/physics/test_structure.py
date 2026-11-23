@@ -771,7 +771,7 @@ def test_edge_cases_and_validation_guards() -> None:
     assert nose_cone_radius_at(0.10, 0.40, 0.05, NoseConeKind.POWERSERIES, power=0.5) == (
         pytest.approx(0.025)
     )
-    assert nose_cone_radius_at(0.20, 0.40, 0.05, NoseConeKind.VON_KARMAN) == pytest.approx(
+    assert nose_cone_radius_at(0.20, 0.40, 0.05, NoseConeKind.VON_KARMAN) < (
         nose_cone_radius_at(0.20, 0.40, 0.05, NoseConeKind.LV_HAACK)
     )
     ps_props = derive_nose_cone_properties(ps_spec, wall_thickness_m=0.002, density_kg_m3=1850.0)
@@ -871,3 +871,90 @@ def test_derive_rocket_structure_counts_imported_nose_shell_exactly_once() -> No
     assert derive_rocket_structure(measured).dry_mass_kg == pytest.approx(
         baseline.dry_mass_kg + shell.mass_kg, rel=1e-12
     )
+
+
+def _haack_radius_analytic(
+    x_m: float, length_m: float, base_radius_m: float, c_param: float
+) -> float:
+    theta = math.acos(max(-1.0, min(1.0, 1.0 - 2.0 * x_m / length_m)))
+    return (base_radius_m / math.sqrt(math.pi)) * math.sqrt(
+        theta - math.sin(2.0 * theta) / 2.0 + c_param * math.sin(theta) ** 3
+    )
+
+
+def test_lv_haack_series_matches_analytic_profiles_and_honors_parameter() -> None:
+    length_m = 0.45
+    base_radius_m = 0.079
+    for x_m in (0.02, 0.11, 0.23, 0.37, 0.44):
+        von_karman = nose_cone_radius_at(
+            x_m, length_m, base_radius_m, NoseConeKind.VON_KARMAN
+        )
+        lv_haack = nose_cone_radius_at(x_m, length_m, base_radius_m, NoseConeKind.LV_HAACK)
+        assert von_karman == pytest.approx(
+            _haack_radius_analytic(x_m, length_m, base_radius_m, 0.0), rel=1e-12
+        )
+        assert lv_haack == pytest.approx(
+            _haack_radius_analytic(x_m, length_m, base_radius_m, 1.0 / 3.0), rel=1e-12
+        )
+        assert lv_haack > von_karman
+
+    # The imported OpenRocket shape parameter is preserved exactly, not rounded to 1/3.
+    imported_c = 0.29
+    assert nose_cone_radius_at(
+        0.2, length_m, base_radius_m, NoseConeKind.LV_HAACK, haack_parameter=imported_c
+    ) == pytest.approx(_haack_radius_analytic(0.2, length_m, base_radius_m, imported_c), rel=1e-12)
+    assert nose_cone_radius_at(
+        0.2, length_m, base_radius_m, NoseConeKind.LV_HAACK, haack_parameter=0.0
+    ) == pytest.approx(
+        nose_cone_radius_at(0.2, length_m, base_radius_m, NoseConeKind.VON_KARMAN), rel=1e-12
+    )
+    # Slope uses the same C parameter instead of silently defaulting to LV-Haack.
+    assert nose_cone_slope_at(
+        0.2, length_m, base_radius_m, NoseConeKind.LV_HAACK, haack_parameter=0.0
+    ) == pytest.approx(
+        nose_cone_slope_at(0.2, length_m, base_radius_m, NoseConeKind.VON_KARMAN), rel=1e-12
+    )
+
+
+def test_nose_shell_rejects_wall_at_or_above_base_radius_and_oversized_volume() -> None:
+    spec = NoseConeSpec(
+        length_m=0.40, kind=NoseConeKind.CONICAL, position_m=0.0, base_radius_m=0.05
+    )
+    with pytest.raises(GeometryValidationError, match="less than"):
+        derive_nose_cone_properties(spec, wall_thickness_m=0.05, density_kg_m3=1850.0)
+    with pytest.raises(GeometryValidationError, match="less than"):
+        derive_nose_cone_properties(spec, wall_thickness_m=0.06, density_kg_m3=1850.0)
+    # Thickness < R but shell volume above the solid cone volume must still be rejected.
+    with pytest.raises(GeometryValidationError, match="solid nose volume"):
+        derive_nose_cone_properties(spec, wall_thickness_m=0.03, density_kg_m3=1850.0)
+    thin_shell = derive_nose_cone_properties(
+        spec, wall_thickness_m=0.002, density_kg_m3=1850.0
+    )
+    solid_volume_m3 = math.pi * 0.05**2 * 0.40 / 3.0
+    assert thin_shell.mass_kg < solid_volume_m3 * 1850.0
+
+
+def test_tube_mass_and_cg_overrides_match_openrocket_semantics() -> None:
+    tube = TubeComponent(
+        name="Cauda",
+        outer_radius_m=0.079,
+        wall_thickness_m=0.002,
+        length_m=0.50,
+        density_kg_m3=1850.0,
+        position_m=1.80,
+        mass_override_kg=1.5,
+        cg_override_m=1.62,
+    )
+    props = derive_tube_properties(tube)
+    assert props.mass_kg == pytest.approx(1.5)
+    assert props.cg_m == pytest.approx(1.62)
+    # No override keeps the density-derived shell mass and the geometric center.
+    plain = derive_tube_properties(
+        tube.model_copy(update={"mass_override_kg": None, "cg_override_m": None})
+    )
+    assert plain.mass_kg == pytest.approx(
+        math.pi * (0.079**2 - 0.077**2) * 0.50 * 1850.0
+    )
+    assert plain.cg_m == pytest.approx(1.80)
+    # extra_mass_kg still adds on top of the OpenRocket override.
+    assert derive_tube_properties(tube, extra_mass_kg=0.2).mass_kg == pytest.approx(1.7)

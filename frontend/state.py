@@ -166,6 +166,25 @@ class AppState:
         self.last_error_stage = None
         self.last_alerts = ()
 
+    def simulation_signature(self) -> tuple[object, ...]:
+        """Return an immutable snapshot of every input that defines the next 6-DOF run."""
+        return (
+            self.selected_mission_id,
+            self.selected_rocket_id,
+            self.selected_motor_id,
+            self.selected_site_id,
+            self.selected_limits_id,
+            self.launch_config,
+            self.mass_mode,
+            self.fin_geometry_mode,
+            self.drag_factor,
+            self.thrust_factor,
+            self.dry_mass_override_kg,
+            self.motor_overrides,
+            self.output_selection,
+            self.working_rocket_spec,
+        )
+
     def set_error(
         self,
         message: str,
@@ -616,8 +635,13 @@ class AppState:
         )
         self.casing_scaling_mode = resolved_mode
         self.casing_density_kg_m3 = resolved_density
-        self.invalidate_simulation_results(clear_ballistics=True)
         self.last_casing_resize_result = resize_result
+        if updated_rocket is rocket:
+            # No-op edit: keep the previous CG/inertia and the unsaved-changes flag intact.
+            self.clear_error()
+            self.notify()
+            return resize_result
+        self.invalidate_simulation_results(clear_ballistics=True)
         self.working_rocket_spec = updated_rocket
         self.has_unsaved_rocket_changes = True
         self.clear_error()

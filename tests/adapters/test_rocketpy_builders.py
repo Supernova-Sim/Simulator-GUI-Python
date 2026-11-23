@@ -745,3 +745,52 @@ def test_isa_environment_reproduces_ork_reference_profile_and_keeps_era5_default
     # Default path is still ERA5-only and fails closed without a .nc file.
     with pytest.raises(ValueError, match=r".nc"):
         build_environment(mission.environment, None)
+
+
+def test_build_rocket_scales_inertia_tensor_with_measured_dry_mass() -> None:
+    golden = json.loads(GOLDEN_PATH.read_text(encoding="utf-8"))
+    mission, _ = _load_real_mission()
+    calculated_dry_mass_kg = compute_rocket_dry_mass_kg(
+        mission.rocket, mass_mode="calculated"
+    )
+    assert calculated_dry_mass_kg == pytest.approx(
+        golden["dry_mass"]["wall_2mm_kg"], rel=1e-12
+    )
+
+    measured_mass_kg = 21.644
+    measured_rocket = mission.rocket.model_copy(
+        update={"dry_mass_override_kg": measured_mass_kg}
+    )
+    inertia_scale = measured_mass_kg / calculated_dry_mass_kg
+    built = build_rocket(measured_rocket, mass_mode="measured")
+
+    assert built.mass == pytest.approx(measured_mass_kg)
+    assert built.I_11_without_motor == pytest.approx(
+        measured_rocket.inertia_kg_m2[0] * inertia_scale, rel=1e-12
+    )
+    assert built.I_33_without_motor == pytest.approx(
+        measured_rocket.inertia_kg_m2[2] * inertia_scale, rel=1e-12
+    )
+    assert built.I_11_without_motor > measured_rocket.inertia_kg_m2[0]
+
+    # Calculated mode and the Golden Master keep the catalog tensor untouched.
+    calculated_built = build_rocket(measured_rocket, mass_mode="calculated")
+    assert calculated_built.I_11_without_motor == pytest.approx(
+        measured_rocket.inertia_kg_m2[0], rel=1e-12
+    )
+    assert calculated_built.I_33_without_motor == pytest.approx(
+        measured_rocket.inertia_kg_m2[2], rel=1e-12
+    )
+    golden_rocket = build_rocket(mission.rocket)
+    assert golden_rocket.I_11_without_motor == pytest.approx(
+        mission.rocket.inertia_kg_m2[0], rel=1e-12
+    )
+
+    # A measured mass equal to the calculated mass is a no-op for inertia.
+    same_mass = mission.rocket.model_copy(
+        update={"dry_mass_override_kg": calculated_dry_mass_kg}
+    )
+    same_built = build_rocket(same_mass, mass_mode="measured")
+    assert same_built.I_11_without_motor == pytest.approx(
+        same_mass.inertia_kg_m2[0], rel=1e-12
+    )

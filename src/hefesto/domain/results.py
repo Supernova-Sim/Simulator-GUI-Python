@@ -372,6 +372,7 @@ class CatalogDatabaseInspection(BaseModel):
     limits: tuple[NamedSafetyLimitsPreset, ...] = ()
     assets: tuple[AssetEntry, ...] = ()
     runs: tuple[RunSummary, ...] = ()
+    invalid_run_snapshots: tuple[str, ...] = ()
 
 
 class AppliedOverrideAudit(BaseModel):

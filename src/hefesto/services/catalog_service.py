@@ -225,14 +225,15 @@ def inspect_catalog_database(
         for lim_id in store.list_limits()
     )
     assets = list_assets(repo_root=repo_root)
-    runs = RunStore(paths).list_runs()
+    run_listing = RunStore(paths).list_runs_report()
     return CatalogDatabaseInspection(
         motors=motors,
         rockets=rockets,
         sites=sites,
         limits=limits,
         assets=assets,
-        runs=runs,
+        runs=run_listing.summaries,
+        invalid_run_snapshots=run_listing.invalid_snapshots,
     )
 
 

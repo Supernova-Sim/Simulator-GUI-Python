@@ -65,6 +65,9 @@ def compute_rocket_dry_mass_kg(
     total_mass_kg = 0.0
     for component in rocket.components:
         if isinstance(component, TubeComponent):
+            if component.mass_override_kg is not None:
+                total_mass_kg += component.mass_override_kg
+                continue
             volume_m3 = (
                 math.pi
                 * (component.outer_radius_m**2 - component.inner_radius_m**2)
@@ -253,6 +256,15 @@ def build_rocket(
         if dry_mass_kg is None
         else _require_positive_finite(dry_mass_kg, "dry_mass_kg")
     )
+    resolved_inertia_kg_m2 = rocket.inertia_kg_m2
+    if mass_mode == "measured" and dry_mass_kg is None:
+        # Keep the inertia tensor consistent with the measured dry mass.
+        calculated_mass_kg = compute_rocket_dry_mass_kg(rocket, mass_mode="calculated")
+        inertia_scale = resolved_mass_kg / calculated_mass_kg
+        if inertia_scale != 1.0:
+            resolved_inertia_kg_m2 = tuple(
+                moment * inertia_scale for moment in rocket.inertia_kg_m2
+            )
     resolved_motor = (
         build_solid_motor(rocket.motor, thrust_factor=thrust_factor) if motor is None else motor
     )
@@ -265,7 +277,7 @@ def build_rocket(
     rkt = Rocket(
         radius=rocket.radius_m,
         mass=resolved_mass_kg,
-        inertia=rocket.inertia_kg_m2,
+        inertia=resolved_inertia_kg_m2,
         center_of_mass_without_motor=rocket.center_of_mass_without_motor_m,
         coordinate_system_orientation=_ROCKET_COORDINATE_SYSTEM,
         power_off_drag=power_off_fn,

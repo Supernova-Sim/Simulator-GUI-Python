@@ -57,6 +57,8 @@ class NoseConeSpec(BaseModel):
     position_m: float = Field(default=0.0, ge=0.0)
     bluffness: float = Field(default=0.0, ge=0.0, le=1.0)
     power: float | None = Field(default=None, gt=0.0)
+    # Haack series C: None keeps the profile default (0 for Von Karman, 1/3 for LV-Haack).
+    haack_parameter: float | None = Field(default=None, ge=0.0, le=1.0)
     base_radius_m: float | None = Field(default=None, gt=0.0)
     name: str = "Nose Cone"
     # Imported nose shell as a lumped mass; presets carrying it in `components` leave it None.
@@ -66,6 +68,24 @@ class NoseConeSpec(BaseModel):
     @classmethod
     def _validate_name(cls, value: str) -> str:
         return require_non_empty_text(value, "name")
+
+
+def validate_nose_cone_shell_thickness(wall_thickness_m: float, base_radius_m: float) -> None:
+    """Reject a nose shell whose wall leaves no hollow cavity (same guard as a tube)."""
+    if not (math.isfinite(wall_thickness_m) and math.isfinite(base_radius_m)):
+        raise ValueError(
+            f"nose shell thickness/base radius must be finite, got "
+            f"{wall_thickness_m!r}/{base_radius_m!r}"
+        )
+    if wall_thickness_m < 0.0:
+        raise ValueError(f"wall_thickness_m must be >= 0, got {wall_thickness_m!r}")
+    if base_radius_m <= 0.0:
+        raise ValueError(f"base_radius_m must be > 0, got {base_radius_m!r}")
+    if wall_thickness_m >= base_radius_m:
+        raise ValueError(
+            f"nose shell thickness_m ({wall_thickness_m}) must be less than "
+            f"base_radius_m ({base_radius_m})"
+        )
 
 
 class FinSetSpec(BaseModel):
@@ -277,4 +297,5 @@ __all__ = [
     "ParachuteSpec",
     "RailButtonsSpec",
     "SurfaceFinish",
+    "validate_nose_cone_shell_thickness",
 ]

@@ -12,12 +12,14 @@ from hefesto.domain import (
     DragCurveSpec,
     DragCurveTable,
     DragSource,
+    FinComponent,
     NoseConeSpec,
     OrkImportSummary,
     OrkImportWarning,
     OrkParsedDesign,
     PointMassComponent,
     RocketSpec,
+    TubeComponent,
 )
 from hefesto.physics import derive_nose_cone_properties
 from hefesto.services.asset_service import (
@@ -68,29 +70,70 @@ def _resolve_ork_bytes(
 def _load_or_parse_ork(
     raw_bytes: bytes,
     store: AssetStore,
-) -> tuple[OrkParsedDesign, bool]:
+) -> tuple[OrkParsedDesign, bool, tuple[OrkImportWarning, ...]]:
+    """Parse the .ork, treating data/cache/openrocket/ as best-effort storage."""
     sha256 = hashlib.sha256(raw_bytes).hexdigest()
-    cached_json = store.load_openrocket_cache(sha256, parser_version=_PARSER_CACHE_VERSION)
+    warnings: list[OrkImportWarning] = []
+    cached_json: str | None = None
+    try:
+        cached_json = store.load_openrocket_cache(
+            sha256, parser_version=_PARSER_CACHE_VERSION
+        )
+    except OSError as exc:
+        warnings.append(
+            OrkImportWarning(
+                severity="warning",
+                component_name="Cache OpenRocket",
+                message=(
+                    f"Cache .ork ilegível em data/cache/openrocket/ ({exc}); "
+                    "o arquivo foi reprocessado diretamente."
+                ),
+            )
+        )
     if cached_json is not None:
         try:
-            return OrkParsedDesign.model_validate_json(cached_json), True
+            return OrkParsedDesign.model_validate_json(cached_json), True, ()
         except ValidationError:
             pass
 
     parsed = parse_ork_bytes(raw_bytes)
-    store.save_openrocket_cache(
-        sha256,
-        parsed.model_dump_json(indent=2) + "\n",
-        parser_version=_PARSER_CACHE_VERSION,
-    )
-    return parsed, False
+    try:
+        store.save_openrocket_cache(
+            sha256,
+            parsed.model_dump_json(indent=2) + "\n",
+            parser_version=_PARSER_CACHE_VERSION,
+        )
+    except OSError as exc:
+        warnings.append(
+            OrkImportWarning(
+                severity="warning",
+                component_name="Cache OpenRocket",
+                message=(
+                    f"Não foi possível gravar o cache .ork em data/cache/openrocket/ "
+                    f"({exc}); diretório somente leitura ou inacessível."
+                ),
+            )
+        )
+    return parsed, False, tuple(warnings)
+
+
+def _component_aft_m(component: object) -> float:
+    """Return the aft-most axial station of one imported component."""
+    if isinstance(component, TubeComponent):
+        return component.position_m + component.length_m / 2.0
+    if isinstance(component, FinComponent):
+        return component.position_m + max(x_m for x_m, _ in component.shape_points_m)
+    if isinstance(component, PointMassComponent):
+        return component.position_m
+    return 0.0
 
 
 def _default_motor_position_m(parsed: OrkParsedDesign) -> float:
     if parsed.detected_motor_mount_position_m is not None:
         return parsed.detected_motor_mount_position_m
+    # Without <motormount>, assume the motor sits at the airframe aft end, not its center.
     max_tail = max(
-        (comp.position_m for comp in parsed.components),
+        (_component_aft_m(comp) for comp in parsed.components),
         default=parsed.nose_cone.length_m + 0.5,
     )
     return max(0.1, max_tail)
@@ -203,7 +246,7 @@ def preview_ork_import(
     """Parse (with hash cache), bind catalog motor/drag, and derive structural mass/CG/inertia."""
     store = AssetStore(resolve_paths(repo_root))
     raw_bytes = _resolve_ork_bytes(ork_bytes_or_asset, store)
-    parsed, from_cache = _load_or_parse_ork(raw_bytes, store)
+    parsed, from_cache, cache_warnings = _load_or_parse_ork(raw_bytes, store)
 
     motor = load_motor_spec(base_motor_id, repo_root=repo_root)
     drag_table, power_off_drag, power_on_drag = _resolve_ork_drag_curves(
@@ -235,7 +278,18 @@ def preview_ork_import(
     recalculated_spec = recalculate_rocket_structure(initial_spec)
     structure = summarize_rocket_structure(recalculated_spec)
 
-    warnings = list(parsed.warnings)
+    warnings = [*parsed.warnings, *cache_warnings]
+    if parsed.detected_motor_mount_position_m is None:
+        warnings.append(
+            OrkImportWarning(
+                severity="warning",
+                component_name="Motor",
+                message=(
+                    "Nenhum <motormount> encontrado no .ork; a posição do motor foi "
+                    f"assumida na extremidade traseira da fuselagem ({motor_pos_m:.4f} m)."
+                ),
+            )
+        )
     warnings.append(
         OrkImportWarning(
             severity="info",

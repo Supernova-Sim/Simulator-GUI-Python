@@ -555,3 +555,29 @@ def test_catalog_and_ork_stores_refuse_silent_overwrite_and_protect_golden_maste
     assert ork_path.read_bytes() == ork_bytes
     asset_store.save_openrocket_asset("demo.ork", b"PK\x03\x04third-ork", overwrite=True)
     assert ork_path.read_bytes() == b"PK\x03\x04third-ork"
+
+
+def test_run_store_skips_corrupt_and_schema_invalid_snapshots(tmp_path: Path) -> None:
+    paths = resolve_storage_paths(tmp_path)
+    run_store = RunStore(paths)
+    valid = _sample_simulation_result(
+        "run_valid_001", datetime(2026, 11, 23, 4, 0, tzinfo=UTC)
+    )
+    run_store.save_run(valid)
+
+    (paths.runs_dir / "corrupt.json").write_text("{not-json", encoding="utf-8")
+    (paths.runs_dir / "schema_invalid.json").write_text(
+        '{"run_id": "broken", "created_at_utc": "not-a-date"}', encoding="utf-8"
+    )
+    # A leftover directory named *.json must not be read as a snapshot either.
+    (paths.runs_dir / "directory.json").mkdir()
+
+    summaries = run_store.list_runs()
+    assert [summary.run_id for summary in summaries] == ["run_valid_001"]
+
+    listing = run_store.list_runs_report()
+    assert listing.summaries == tuple(summaries)
+    assert set(listing.invalid_snapshots) == {"corrupt.json", "schema_invalid.json"}
+
+    # A valid snapshot is still loadable while siblings are corrupt.
+    assert run_store.load_run("run_valid_001") == valid

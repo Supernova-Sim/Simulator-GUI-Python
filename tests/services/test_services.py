@@ -1036,3 +1036,91 @@ def test_execution_audit_uses_real_rocket_preset_id_not_display_name(tmp_path: P
     )
     assert unknown.rocket_preset_id is None
     assert any("não verificável" in note for note in unknown.rocket_modification_notes)
+
+
+def test_noop_casing_update_preserves_golden_cg_inertia_and_unsaved_flag(
+    tmp_path: Path,
+) -> None:
+    from hefesto.services import (
+        estimate_motor_casing_fixed_hardware_mass_kg,
+        update_rocket_motor_casing_length,
+    )
+
+    root = _seed_isolated_workspace(tmp_path)
+    base_rocket = load_rocket_spec(DEFAULT_ROCKET_ID, repo_root=root)
+    casing = base_rocket.motor.casing
+    hardware_mass_kg = estimate_motor_casing_fixed_hardware_mass_kg(
+        casing, material_density_kg_m3=2700.0
+    )
+
+    # Same numeric inputs (as re-sent by config_page on every widget change) = no-op.
+    unchanged_rocket, resize_res = update_rocket_motor_casing_length(
+        base_rocket,
+        casing.length_m,
+        mode="tubular_delta",
+        material_density_kg_m3=2700.0,
+        motor_position_m=base_rocket.motor_position_m,
+        grain_separation_m=base_rocket.motor.grain_separation_m,
+        internal_clearance_m=casing.internal_clearance_m,
+        wall_thickness_m=casing.wall_thickness_m,
+        fixed_hardware_mass_kg=hardware_mass_kg,
+    )
+    assert unchanged_rocket is base_rocket
+    assert unchanged_rocket.center_of_mass_without_motor_m == pytest.approx(1.2333)
+    assert unchanged_rocket.inertia_kg_m2 == base_rocket.inertia_kg_m2
+    assert resize_res.casing == casing
+    assert resize_res.delta_mass_kg == 0.0
+
+    # Floating-point round-trip noise stays a no-op.
+    noisy_rocket, _ = update_rocket_motor_casing_length(
+        base_rocket,
+        casing.length_m + 1e-12,
+        mode="tubular_delta",
+        material_density_kg_m3=2700.0,
+    )
+    assert noisy_rocket is base_rocket
+
+    # A real length edit still recalculates structure.
+    edited_rocket, _ = update_rocket_motor_casing_length(
+        base_rocket,
+        casing.length_m + 0.05,
+        mode="tubular_delta",
+        material_density_kg_m3=2700.0,
+    )
+    assert edited_rocket is not base_rocket
+    assert edited_rocket.motor.casing.length_m == pytest.approx(casing.length_m + 0.05)
+
+
+def test_inspect_catalog_database_skips_corrupt_run_snapshots(tmp_path: Path) -> None:
+    from hefesto.domain import FlightResult, SimulationResult
+    from hefesto.services import inspect_catalog_database, save_run_snapshot
+
+    root = _seed_isolated_workspace(tmp_path)
+    config = compose_simulation_config()
+    valid_result = SimulationResult(
+        run_id="valid_run",
+        created_at_utc=datetime(2026, 11, 23, 12, 0, tzinfo=UTC),
+        mission_name=config.mission.name,
+        motor_name=config.mission.rocket.motor.name,
+        flight=FlightResult(
+            apogee_agl_m=3578.2,
+            apogee_msl_m=4979.2,
+            apogee_time_s=26.7,
+            flight_time_s=168.7,
+            max_speed_ms=305.8,
+            max_mach=0.898,
+            rail_exit_velocity_ms=27.05,
+            min_static_margin_calibers=2.36,
+            total_impulse_ns=11514.4,
+            dry_mass_kg=18.85,
+        ),
+    )
+    save_run_snapshot(valid_result, repo_root=root)
+    runs_dir = root / "data" / "runs"
+    (runs_dir / "corrupt.json").write_text("{not-json", encoding="utf-8")
+    (runs_dir / "schema_invalid.json").write_text('{"run_id": "broken"}', encoding="utf-8")
+
+    inspection = inspect_catalog_database(repo_root=root)
+
+    assert [summary.run_id for summary in inspection.runs] == ["valid_run"]
+    assert set(inspection.invalid_run_snapshots) == {"corrupt.json", "schema_invalid.json"}

@@ -6,6 +6,7 @@ import hashlib
 import re
 import tempfile
 from collections.abc import Mapping
+from os import stat_result
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -29,7 +30,7 @@ from hefesto.services.asset_service import DEFAULT_MOTOR_ID, resolve_paths
 from hefesto.storage import AssetStore, CatalogStore, StoragePaths, validate_safe_slug
 
 _RIC_EXTENSION = ".ric"
-_CACHE_VERSION = 2
+_CACHE_VERSION = 3
 # A .ric carries grains/nozzle/propellant but no casing, so the preset casing is
 # synthesized from the grain stack with a default aluminium shell unless a catalog
 # preset references a byte-identical asset (then its calibrated casing is inherited).
@@ -100,6 +101,30 @@ def _thrust_curve_asset(store: AssetStore, slug: str) -> str | None:
     """Return '<slug>.eng' when a RASP thrust curve with the same stem exists."""
     asset_name = f"{slug}.eng"
     return asset_name if store.asset_exists(AssetCategory.MOTORS, asset_name) else None
+
+
+def _eng_signature(store: AssetStore, slug: str) -> str | None:
+    """Hash the sibling .eng (None when absent) so added/removed curves invalidate the cache."""
+    asset_name = f"{slug}.eng"
+    if not store.asset_exists(AssetCategory.MOTORS, asset_name):
+        return None
+    try:
+        return _sha256(
+            store.resolve_asset(AssetCategory.MOTORS, asset_name).read_bytes()
+        )
+    except (FileNotFoundError, ValueError, OSError):
+        return None
+
+
+def _casing_template_signature(template: MotorPreset | None) -> str | None:
+    """Identify the inherited casing template so catalog edits invalidate the preset."""
+    if template is None:
+        return None
+    payload = (
+        template.casing.model_dump_json()
+        + f"|{template.grain_separation_m!r}|{template.nozzle_position_m!r}"
+    )
+    return _sha256(payload.encode("utf-8"))
 
 
 def _catalog_casing_templates(store: AssetStore) -> dict[str, MotorPreset]:
@@ -267,32 +292,39 @@ def _cache_entry_from_disk(
     slug: str,
     store: AssetStore,
     templates: Mapping[str, MotorPreset],
+    *,
+    stat: stat_result | None = None,
+    digest: str | None = None,
 ) -> RicMotorCacheEntry:
-    stat = ric_path.stat()
-    raw = ric_path.read_bytes()
-    digest = _sha256(raw)
+    file_stat = ric_path.stat() if stat is None else stat
+    resolved_digest = _sha256(ric_path.read_bytes()) if digest is None else digest
+    template = templates.get(resolved_digest)
     try:
         preset = _preset_from_ric_path(
             ric_path,
             slug,
             _thrust_curve_asset(store, slug),
-            templates.get(digest),
+            template,
         )
     except Exception as exc:  # Corrupt .ric files must never break the other motors.
         return RicMotorCacheEntry(
             relative_path=relative_path,
-            mtime_ns=stat.st_mtime_ns,
-            size_bytes=stat.st_size,
-            sha256=digest,
+            mtime_ns=file_stat.st_mtime_ns,
+            size_bytes=file_stat.st_size,
+            sha256=resolved_digest,
+            eng_signature=_eng_signature(store, slug),
+            casing_template_signature=_casing_template_signature(template),
             warnings=(f"Falha ao ler '{relative_path}': {_one_line(exc)}",),
         )
     return RicMotorCacheEntry(
         relative_path=relative_path,
-        mtime_ns=stat.st_mtime_ns,
-        size_bytes=stat.st_size,
-        sha256=digest,
+        mtime_ns=file_stat.st_mtime_ns,
+        size_bytes=file_stat.st_size,
+        sha256=resolved_digest,
+        eng_signature=_eng_signature(store, slug),
+        casing_template_signature=_casing_template_signature(template),
         preset=preset,
-        warnings=() if digest in templates else (_SYNTHETIC_CASING_WARNING,),
+        warnings=() if resolved_digest in templates else (_SYNTHETIC_CASING_WARNING,),
     )
 
 
@@ -314,25 +346,37 @@ def _synced_entries(
         ric_path = motors_dir / relative_path
         try:
             stat = ric_path.stat()
+            digest = _sha256(ric_path.read_bytes())
         except OSError:
             continue
+        template = templates.get(digest)
+        eng_signature = _eng_signature(store, slug)
+        template_signature = _casing_template_signature(template)
         entry = cached.get(relative_path)
+        # A hit requires the real content hash plus the .eng/template state, never mtime alone.
         if (
             entry is not None
-            and entry.mtime_ns == stat.st_mtime_ns
-            and entry.size_bytes == stat.st_size
+            and entry.sha256 == digest
+            and entry.eng_signature == eng_signature
+            and entry.casing_template_signature == template_signature
         ):
-            synced.append(entry)
-            continue
-        if entry is not None and entry.sha256 == _sha256(ric_path.read_bytes()):
-            # Only the mtime moved: reuse the validated preset and refresh the identity.
-            synced.append(
-                entry.model_copy(
+            if entry.mtime_ns != stat.st_mtime_ns or entry.size_bytes != stat.st_size:
+                entry = entry.model_copy(
                     update={"mtime_ns": stat.st_mtime_ns, "size_bytes": stat.st_size}
                 )
-            )
+            synced.append(entry)
             continue
-        synced.append(_cache_entry_from_disk(ric_path, relative_path, slug, store, templates))
+        synced.append(
+            _cache_entry_from_disk(
+                ric_path,
+                relative_path,
+                slug,
+                store,
+                templates,
+                stat=stat,
+                digest=digest,
+            )
+        )
 
     new_cache = RicMotorCache(version=_CACHE_VERSION, entries=tuple(synced))
     if new_cache.model_dump_json() != cache.model_dump_json():
@@ -404,11 +448,16 @@ def _upsert_cache_entry(
 ) -> None:
     ric_path = store.paths.asset_category_dir(AssetCategory.MOTORS) / relative_path
     stat = ric_path.stat()
+    digest = _sha256(ric_path.read_bytes())
+    slug = Path(relative_path).stem
+    template = _catalog_casing_templates(store).get(digest)
     entry = RicMotorCacheEntry(
         relative_path=relative_path,
         mtime_ns=stat.st_mtime_ns,
         size_bytes=stat.st_size,
-        sha256=_sha256(ric_path.read_bytes()),
+        sha256=digest,
+        eng_signature=_eng_signature(store, slug),
+        casing_template_signature=_casing_template_signature(template),
         preset=preset,
         warnings=warnings,
     )

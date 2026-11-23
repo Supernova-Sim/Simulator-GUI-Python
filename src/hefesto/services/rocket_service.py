@@ -64,6 +64,27 @@ CASING_MATERIAL_LABELS: dict[str, str] = {
     "custom": "Customizado",
 }
 
+# Float round-trip tolerance for edits that did not actually change any casing input.
+_CASING_NOOP_TOLERANCE = 1e-9
+
+
+def _casing_noop_result(casing: MotorCasingSpec, mode: CasingScalingMode) -> CasingResizeResult:
+    """Describe an unchanged casing without rewriting the rocket CG/inertia."""
+    estimated_tube_mass_kg = compute_casing_shell_mass_kg(
+        casing.inner_radius_m,
+        casing.wall_thickness_m,
+        casing.length_m,
+        casing.material_density_kg_m3 or ALUMINUM_DENSITY_KG_M3,
+    )
+    return CasingResizeResult(
+        casing=casing,
+        mode=mode,
+        delta_mass_kg=0.0,
+        estimated_tube_mass_kg=estimated_tube_mass_kg,
+        estimated_fixed_hardware_mass_kg=casing.dry_mass_kg - estimated_tube_mass_kg,
+        warnings=(),
+    )
+
 
 def update_rocket_motor_casing_length(
     rocket: RocketSpec,
@@ -107,6 +128,40 @@ def update_rocket_motor_casing_length(
                 base_casing=base_casing,
                 case_density_kg_m3=resolved_density,
             )
+
+    current_density = base_casing.material_density_kg_m3 or ALUMINUM_DENSITY_KG_M3
+    hardware_unchanged = True
+    if fixed_hardware_mass_kg is not None:
+        implied_hardware_kg = (
+            base_casing.dry_mass_kg
+            - compute_casing_shell_mass_kg(
+                base_casing.inner_radius_m,
+                base_casing.wall_thickness_m,
+                base_casing.length_m,
+                resolved_density,
+            )
+        )
+        hardware_unchanged = (
+            abs(float(fixed_hardware_mass_kg) - implied_hardware_kg) <= _CASING_NOOP_TOLERANCE
+        )
+    noop_edit = (
+        base_casing == rocket.motor.casing
+        and abs(float(new_length_m) - rocket.motor.casing.length_m) <= _CASING_NOOP_TOLERANCE
+        and abs(resolved_density - current_density) <= _CASING_NOOP_TOLERANCE
+        and hardware_unchanged
+        and (
+            grain_separation_m is None
+            or abs(float(grain_separation_m) - rocket.motor.grain_separation_m)
+            <= _CASING_NOOP_TOLERANCE
+        )
+        and (
+            motor_position_m is None
+            or abs(float(motor_position_m) - rocket.motor_position_m) <= _CASING_NOOP_TOLERANCE
+        )
+    )
+    if noop_edit:
+        # Keep the preset's stored CG/I_l untouched when the edit changes no numeric input.
+        return rocket, _casing_noop_result(rocket.motor.casing, mode)
 
     resize_result = resize_motor_casing(
         base_casing,

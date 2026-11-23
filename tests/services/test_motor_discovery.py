@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import os
 import shutil
 from pathlib import Path
 
@@ -180,3 +182,62 @@ def test_import_rejects_invalid_ric_and_preserves_existing_asset(tmp_path: Path)
 
     assert target.read_bytes() == original
     assert not (root / "data" / "catalog" / "motors" / "m1001voltas.json").exists()
+
+
+def test_cache_rehashes_ric_even_when_mtime_and_size_are_unchanged(tmp_path: Path) -> None:
+    root = _seed_isolated_workspace(tmp_path)
+    mutant = root / "data" / "assets" / "motors" / "mutante.ric"
+    original_text = RIC_SOURCE.read_text(encoding="utf-8")
+    mutant.write_text(original_text, encoding="utf-8")
+
+    first = load_motor_preset("mutante", repo_root=root)
+    assert first.nozzle is not None
+    assert first.nozzle.throat_radius_m == pytest.approx(0.034 / 2.0)
+
+    original_stat = mutant.stat()
+    mutated_text = original_text.replace("throat: 0.034", "throat: 0.035")
+    assert len(mutated_text) == len(original_text)
+    mutant.write_text(mutated_text, encoding="utf-8")
+    # Defeat the old mtime+size cache heuristic: same byte length, same timestamps.
+    os.utime(mutant, ns=(original_stat.st_atime_ns, original_stat.st_mtime_ns))
+    rewritten_stat = mutant.stat()
+    assert rewritten_stat.st_size == original_stat.st_size
+    assert rewritten_stat.st_mtime_ns == original_stat.st_mtime_ns
+
+    second = load_motor_preset("mutante", repo_root=root)
+    assert second.nozzle is not None
+    assert second.nozzle.throat_radius_m == pytest.approx(0.035 / 2.0)
+
+
+def test_cache_invalidates_when_sibling_eng_is_added_or_removed(tmp_path: Path) -> None:
+    root = _seed_isolated_workspace(tmp_path)
+    motor_path = root / "data" / "assets" / "motors" / "com_curva.ric"
+    eng_path = root / "data" / "assets" / "motors" / "com_curva.eng"
+    shutil.copyfile(RIC_SOURCE, motor_path)
+
+    without_eng = load_motor_preset("com_curva", repo_root=root)
+    assert without_eng.thrust_curve_asset is None
+
+    shutil.copyfile(root / "data" / "assets" / "motors" / "medusa_knsb_a.eng", eng_path)
+    with_eng = load_motor_preset("com_curva", repo_root=root)
+    assert with_eng.thrust_curve_asset == "com_curva.eng"
+
+    eng_path.unlink()
+    without_eng_again = load_motor_preset("com_curva", repo_root=root)
+    assert without_eng_again.thrust_curve_asset is None
+
+
+def test_cache_invalidates_inherited_casing_when_catalog_template_changes(
+    tmp_path: Path,
+) -> None:
+    root = _seed_isolated_workspace(tmp_path)
+    before = load_motor_preset("m1001voltas", repo_root=root)
+    assert before.casing.wall_thickness_m == pytest.approx(0.003175)
+
+    motor_json = root / "data" / "catalog" / "motors" / "medusa_knsb_a.json"
+    payload = json.loads(motor_json.read_text(encoding="utf-8"))
+    payload["casing"]["wall_thickness_m"] = 0.004
+    motor_json.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    after = load_motor_preset("m1001voltas", repo_root=root)
+    assert after.casing.wall_thickness_m == pytest.approx(0.004)

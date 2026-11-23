@@ -18,6 +18,7 @@ from hefesto.domain.aerodynamics import (
     ParachuteSpec,
     RailButtonsSpec,
     SurfaceFinish,
+    validate_nose_cone_shell_thickness,
 )
 from hefesto.domain.components import (
     FinComponent,
@@ -155,4 +156,5 @@ __all__ = [
     "SimulationResult",
     "SurfaceFinish",
     "TubeComponent",
+    "validate_nose_cone_shell_thickness",
 ]

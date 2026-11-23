@@ -25,12 +25,13 @@ from hefesto.storage.paths import (
     resolve_storage_paths,
     validate_safe_slug,
 )
-from hefesto.storage.run_store import RunStore
+from hefesto.storage.run_store import RunListing, RunStore
 
 __all__ = [
     "ASSET_EXTENSION_WHITELIST",
     "AssetStore",
     "CatalogStore",
+    "RunListing",
     "RunStore",
     "StoragePaths",
     "atomic_write_bytes",

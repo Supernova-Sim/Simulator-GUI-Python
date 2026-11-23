@@ -29,6 +29,8 @@ from hefesto.services import (
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
+pytestmark = pytest.mark.slow
+
 RASAERO_CSV = """Mach Number,Angle of Attack (alpha),CD Power-Off,CD Power-On
 0.30,0.00,0.4940,0.4900
 0.30,2.00,0.5130,0.5090

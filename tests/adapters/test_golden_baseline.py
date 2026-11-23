@@ -37,6 +37,8 @@ from hefesto.storage import (
 REPO_ROOT = Path(__file__).resolve().parents[2]
 GOLDEN_PATH = REPO_ROOT / "tests" / "golden" / "hefesto_baseline.json"
 
+pytestmark = pytest.mark.slow
+
 
 def _build_mission_from_catalog(
     *,

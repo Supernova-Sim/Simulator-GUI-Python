@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -13,6 +14,14 @@ from hefesto.storage.paths import (
     resolve_storage_paths,
     validate_safe_slug,
 )
+
+
+@dataclass(frozen=True)
+class RunListing:
+    """Valid run summaries plus the snapshot filenames that failed validation."""
+
+    summaries: tuple[RunSummary, ...]
+    invalid_snapshots: tuple[str, ...] = ()
 
 
 def _utc_sort_key(summary: RunSummary) -> tuple[datetime, str]:
@@ -54,19 +63,32 @@ class RunStore:
 
     def list_runs(self) -> tuple[RunSummary, ...]:
         """List saved snapshots newest-first as compact RunSummary DTOs."""
+        return self.list_runs_report().summaries
+
+    def list_runs_report(self) -> RunListing:
+        """List valid snapshots and report corrupt/unreadable files instead of aborting."""
         if not self.runs_dir.is_dir():
-            return ()
+            return RunListing(summaries=())
         resolved_dir = self.runs_dir.resolve()
         summaries: list[RunSummary] = []
+        invalid_snapshots: list[str] = []
 
         for entry in sorted(self.runs_dir.glob("*.json")):
             if not entry.is_file() or not entry.resolve().is_relative_to(resolved_dir):
                 continue
-            result = SimulationResult.model_validate_json(entry.read_text(encoding="utf-8"))
-            summaries.append(result.to_summary(snapshot_asset=entry.name))
+            try:
+                summary = SimulationResult.model_validate_json(
+                    entry.read_text(encoding="utf-8")
+                ).to_summary(snapshot_asset=entry.name)
+            except (OSError, ValueError):
+                invalid_snapshots.append(entry.name)
+                continue
+            summaries.append(summary)
 
         summaries.sort(key=_utc_sort_key, reverse=True)
-        return tuple(summaries)
+        return RunListing(
+            summaries=tuple(summaries), invalid_snapshots=tuple(invalid_snapshots)
+        )
 
 
-__all__ = ["RunStore"]
+__all__ = ["RunListing", "RunStore"]

@@ -140,6 +140,9 @@ class RicMotorCacheEntry(BaseModel):
     mtime_ns: int = Field(ge=0)
     size_bytes: int = Field(ge=0)
     sha256: str
+    # Sibling .eng content hash (None when absent) and inherited casing-template signature.
+    eng_signature: str | None = None
+    casing_template_signature: str | None = None
     preset: MotorPreset | None = None
     warnings: tuple[str, ...] = ()
 

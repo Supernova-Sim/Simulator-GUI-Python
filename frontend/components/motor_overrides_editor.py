@@ -6,7 +6,7 @@ import math
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from nicegui import ui
+from nicegui import context, ui
 from pydantic import ValidationError
 
 from hefesto.domain import MotorOverride, MotorOverrideOption
@@ -61,6 +61,16 @@ def format_override_label(
     return f"{opt.label} ({override.path}) = {override.value}{unit_str}"
 
 
+def _editor_signature(state: AppState) -> tuple[object, ...]:
+    """Identify a motor/override state change that must rebuild the editor widgets."""
+    rocket = state.working_rocket_spec
+    return (
+        state.selected_motor_id,
+        state.motor_overrides,
+        None if rocket is None else rocket.motor.name,
+    )
+
+
 def render_motor_overrides_editor(
     state: AppState,
     *,
@@ -68,6 +78,10 @@ def render_motor_overrides_editor(
 ) -> ui.column:
     """Render guided OpenMotor override selector, value editor, and active override list."""
     container = ui.column().classes("w-full gap-2")
+    last_signature: list[tuple[object, ...]] = [_editor_signature(state)]
+
+    def _sync_signature() -> None:
+        last_signature[0] = _editor_signature(state)
 
     @ui.refreshable
     def _render_body() -> None:
@@ -130,12 +144,14 @@ def render_motor_overrides_editor(
 
                 filtered = tuple(ov for ov in state.motor_overrides if ov.path != raw_path)
                 state.motor_overrides = (*filtered, item)
+                _sync_signature()
                 _render_list.refresh()
                 if on_change is not None:
                     on_change()
 
             def _clear_overrides() -> None:
                 state.motor_overrides = ()
+                _sync_signature()
                 _render_list.refresh()
                 if on_change is not None:
                     on_change()
@@ -177,6 +193,7 @@ def render_motor_overrides_editor(
                                     for item_idx, item in enumerate(state.motor_overrides)
                                     if item_idx != target_idx
                                 )
+                                _sync_signature()
                                 _render_list.refresh()
                                 if on_change is not None:
                                     on_change()
@@ -190,9 +207,25 @@ def render_motor_overrides_editor(
 
         _render_list()
 
+    def _on_state_change() -> None:
+        signature = _editor_signature(state)
+        if signature == last_signature[0]:
+            return
+        last_signature[0] = signature
+        try:
+            _render_body.refresh()
+        except RuntimeError:
+            # Refreshing outside a client slot is a no-op; the next render rebuilds anyway.
+            return
+
     with container:
         _render_body()
 
+    unsubscribe = state.subscribe(_on_state_change)
+    try:
+        context.client.on_delete(unsubscribe)
+    except RuntimeError:
+        pass
     return container
 
 

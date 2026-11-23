@@ -18,10 +18,12 @@ from hefesto.domain import (
     RocketComponent,
     RocketSpec,
     TubeComponent,
+    validate_nose_cone_shell_thickness,
 )
 from hefesto.physics.constants import (
     ALUMINUM_DENSITY_KG_M3,
     DEFAULT_NOSE_CONE_SLICES,
+    GEOMETRY_TOLERANCE_M,
 )
 from hefesto.physics.geometry import (
     EffectiveGrainGeometry,
@@ -123,7 +125,12 @@ def derive_tube_properties(
         component.inner_radius_m,
         component.length_m,
     )
-    mass_kg = volume_m3 * component.density_kg_m3 + extra_mass_kg
+    # An imported OpenRocket override replaces the density-derived shell mass.
+    mass_kg = (
+        component.mass_override_kg
+        if component.mass_override_kg is not None
+        else volume_m3 * component.density_kg_m3
+    ) + extra_mass_kg
     i_transverse, i_longitudinal = hollow_cylinder_inertia_kg_m2(
         mass_kg,
         component.outer_radius_m,
@@ -133,7 +140,11 @@ def derive_tube_properties(
     return ComponentMassProperties(
         name=component.name,
         mass_kg=mass_kg,
-        cg_m=component.position_m,
+        cg_m=(
+            component.cg_override_m
+            if component.cg_override_m is not None
+            else component.position_m
+        ),
         i_longitudinal_local_kg_m2=i_longitudinal,
         i_transverse_local_kg_m2=i_transverse,
     )
@@ -212,6 +223,10 @@ def derive_nose_cone_properties(
         )
     _require_positive(resolved_base_radius, "base_radius_m")
     _require_non_negative(wall_thickness_m, "wall_thickness_m")
+    try:
+        validate_nose_cone_shell_thickness(wall_thickness_m, resolved_base_radius)
+    except ValueError as exc:
+        raise GeometryValidationError(str(exc)) from exc
     _require_positive(density_kg_m3, "density_kg_m3")
     _require_non_negative(extra_mass_kg, "extra_mass_kg")
     if extra_mass_position_m is not None and not math.isfinite(extra_mass_position_m):
@@ -226,6 +241,7 @@ def derive_nose_cone_properties(
     m_shell = 0.0
     moment = 0.0
     i_xx = 0.0
+    solid_volume_m3 = 0.0
     x_samples: list[float] = []
     r_samples: list[float] = []
     dm_samples: list[float] = []
@@ -238,6 +254,7 @@ def derive_nose_cone_properties(
             resolved_base_radius,
             nose_cone.kind,
             power=nose_cone.power,
+            haack_parameter=nose_cone.haack_parameter,
         )
         dr_dx = nose_cone_slope_at(
             x_m,
@@ -245,15 +262,24 @@ def derive_nose_cone_properties(
             resolved_base_radius,
             nose_cone.kind,
             power=nose_cone.power,
+            haack_parameter=nose_cone.haack_parameter,
         )
         ds = math.sqrt(1.0 + dr_dx**2) * dx
         dm = 2.0 * math.pi * r_m * ds * wall_thickness_m * density_kg_m3
         m_shell += dm
+        solid_volume_m3 += math.pi * r_m**2 * dx
         moment += x_m * dm
         i_xx += (r_m**2) * dm
         x_samples.append(x_m)
         r_samples.append(r_m)
         dm_samples.append(dm)
+
+    shell_volume_m3 = m_shell / density_kg_m3
+    if shell_volume_m3 > solid_volume_m3 * (1.0 + GEOMETRY_TOLERANCE_M):
+        raise GeometryValidationError(
+            f"nose shell volume ({shell_volume_m3:.6f} m³) exceeds the solid nose volume "
+            f"({solid_volume_m3:.6f} m³) for wall_thickness_m={wall_thickness_m}"
+        )
 
     cg_shell = moment / m_shell if m_shell > 0.0 else 0.0
     x_extra = extra_mass_position_m if extra_mass_position_m is not None else cg_shell

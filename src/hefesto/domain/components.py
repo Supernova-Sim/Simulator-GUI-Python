@@ -22,6 +22,9 @@ class TubeComponent(BaseModel):
     length_m: float = Field(gt=0.0)
     density_kg_m3: float = Field(gt=0.0)
     position_m: float = Field(ge=0.0)
+    # OpenRocket <overridemass>/<overridecg>: absolute axial CG when provided.
+    mass_override_kg: float | None = Field(default=None, gt=0.0)
+    cg_override_m: float | None = Field(default=None, ge=0.0)
 
     @field_validator("name")
     @classmethod

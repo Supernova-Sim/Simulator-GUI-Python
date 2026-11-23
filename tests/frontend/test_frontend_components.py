@@ -493,6 +493,7 @@ def test_all_three_pages_render_headless_and_support_snapshot_crud(tmp_path: Pat
     assert not (REPO_ROOT / "data" / "runs").exists()
 
 
+@pytest.mark.slow
 @pytest.mark.anyio
 async def test_app_routes_and_cpu_bound_simulation_with_user_simulation(
     tmp_path: Path,

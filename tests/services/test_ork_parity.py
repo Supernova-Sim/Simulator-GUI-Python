@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from hefesto.domain import DragSource
 from hefesto.physics import derive_dry_mass
 from hefesto.services import (
@@ -9,6 +11,8 @@ from hefesto.services import (
     load_rocket_spec,
     run_deterministic,
 )
+
+pytestmark = pytest.mark.slow
 
 # OpenRocket 26.11 flight of hefesto_1.41.ork (ISA, launch rail 84 deg, 6.48 m).
 ORK_REFERENCE_APOGEE_AGL_M = 3393.406064

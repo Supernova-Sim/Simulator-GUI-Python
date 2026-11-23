@@ -392,22 +392,36 @@ def _map_nose_shape(
     elem: ET.Element,
     comp_name: str,
     warnings: list[OrkImportWarning],
-) -> tuple[NoseConeKind, float | None]:
+) -> tuple[NoseConeKind, float | None, float | None]:
+    """Return (kind, power, haack C) preserving the OpenRocket shape parameter."""
     raw_shape = (elem.findtext("shape") or "ogive").strip().lower()
     shape_param = _float_text(elem, "shapeparameter", None)
     if raw_shape == "ogive":
-        return NoseConeKind.OGIVE, None
+        return NoseConeKind.OGIVE, None, None
     if raw_shape == "conical":
-        return NoseConeKind.CONICAL, None
+        return NoseConeKind.CONICAL, None, None
     if raw_shape == "power":
         power = shape_param if shape_param is not None and shape_param > 0.0 else 0.5
-        return NoseConeKind.POWERSERIES, power
-    if raw_shape == "haack":
-        if shape_param is not None and abs(shape_param) < 1e-9:
-            return NoseConeKind.VON_KARMAN, None
-        return NoseConeKind.LV_HAACK, None
-    if raw_shape == "lvhaack":
-        return NoseConeKind.LV_HAACK, None
+        return NoseConeKind.POWERSERIES, power, None
+    if raw_shape in {"haack", "lvhaack"}:
+        # OpenRocket's Haack series: C=0 is Von Karman, C=1/3 is LV-Haack.
+        default_c = 1.0 / 3.0 if raw_shape == "lvhaack" else 0.0
+        c_param = shape_param if shape_param is not None else default_c
+        if abs(c_param) < 1e-9:
+            return NoseConeKind.VON_KARMAN, None, c_param
+        if abs(c_param - 1.0 / 3.0) <= 1e-3:
+            return NoseConeKind.LV_HAACK, None, c_param
+        warnings.append(
+            OrkImportWarning(
+                severity="warning",
+                component_name=comp_name,
+                message=(
+                    f"Parâmetro Haack C={c_param:g} preservado na geometria analítica; "
+                    "RocketPy voa o perfil LV-Haack (C=1/3) mais próximo."
+                ),
+            )
+        )
+        return NoseConeKind.LV_HAACK, None, c_param
 
     warnings.append(
         OrkImportWarning(
@@ -419,7 +433,18 @@ def _map_nose_shape(
             ),
         )
     )
-    return NoseConeKind.OGIVE, None
+    return NoseConeKind.OGIVE, None, None
+
+
+def _read_mass_cg_override(
+    elem: ET.Element,
+) -> tuple[float | None, float | None]:
+    """Return (overridemass kg, overridecg m from component front) when present."""
+    raw_mass = _float_text(elem, "overridemass", None)
+    mass_kg = raw_mass if raw_mass is not None and raw_mass > 0.0 else None
+    raw_cg = _float_text(elem, "overridecg", None)
+    cg_from_front_m = max(0.0, raw_cg) if raw_cg is not None else None
+    return mass_kg, cg_from_front_m
 
 
 def _build_fin_specs(
@@ -808,7 +833,7 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
                     parent_length_m=parent_length_m,
                     is_sequential=is_sequential,
                 )
-                kind, power = _map_nose_shape(child, comp_name, warnings)
+                kind, power, haack_parameter = _map_nose_shape(child, comp_name, warnings)
                 nose_cones.append(
                     NoseConeSpec(
                         name=comp_name,
@@ -816,6 +841,7 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
                         kind=kind,
                         position_m=start_m,
                         power=power,
+                        haack_parameter=haack_parameter,
                         base_radius_m=aft_r,
                     )
                 )
@@ -875,6 +901,7 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
                     parent_length_m=parent_length_m,
                     is_sequential=is_sequential,
                 )
+                mass_override_kg, cg_from_front_m = _read_mass_cg_override(child)
                 components.append(
                     TubeComponent(
                         name=comp_name,
@@ -883,6 +910,12 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
                         length_m=length_m,
                         density_kg_m3=density,
                         position_m=start_m + length_m / 2.0,
+                        mass_override_kg=mass_override_kg,
+                        cg_override_m=(
+                            start_m + cg_from_front_m
+                            if mass_override_kg is not None and cg_from_front_m is not None
+                            else None
+                        ),
                     )
                 )
                 record_motor_mount(child, start_m, length_m)
@@ -946,6 +979,7 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
                     is_sequential=False,
                 )
                 count, sep = _read_instances(child)
+                mass_override_kg, cg_from_front_m = _read_mass_cg_override(child)
                 for idx in range(count):
                     inst_start = max(0.0, base_start + idx * sep)
                     inst_name = comp_name if count == 1 else f"{comp_name} #{idx + 1}"
@@ -957,6 +991,13 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
                             length_m=length_m,
                             density_kg_m3=density,
                             position_m=inst_start + length_m / 2.0,
+                            mass_override_kg=mass_override_kg,
+                            cg_override_m=(
+                                inst_start + cg_from_front_m
+                                if mass_override_kg is not None
+                                and cg_from_front_m is not None
+                                else None
+                            ),
                         )
                     )
                     record_motor_mount(child, inst_start, length_m)
@@ -1016,6 +1057,7 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
                     is_sequential=False,
                 )
                 count, sep = _read_instances(child)
+                mass_override_kg, cg_from_front_m = _read_mass_cg_override(child)
                 for idx in range(count):
                     inst_start = max(0.0, base_start + idx * sep)
                     inst_name = comp_name if count == 1 else f"{comp_name} #{idx + 1}"
@@ -1027,6 +1069,13 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
                             length_m=length_m,
                             density_kg_m3=density,
                             position_m=inst_start + length_m / 2.0,
+                            mass_override_kg=mass_override_kg,
+                            cg_override_m=(
+                                inst_start + cg_from_front_m
+                                if mass_override_kg is not None
+                                and cg_from_front_m is not None
+                                else None
+                            ),
                         )
                     )
 
