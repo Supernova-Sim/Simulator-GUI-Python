@@ -11,10 +11,13 @@ from hefesto.domain._validators import (
     require_non_empty_text,
 )
 from hefesto.domain.aerodynamics import (
+    DragCurveTable,
+    DragSource,
     FinSetSpec,
     NoseConeSpec,
     ParachuteSpec,
     RailButtonsSpec,
+    SurfaceFinish,
 )
 from hefesto.domain.components import RocketComponent
 from hefesto.domain.rocket import RocketSpec
@@ -56,6 +59,8 @@ class OrkParsedDesign(BaseModel):
     embedded_rse_names: tuple[str, ...] = ()
     stored_datapoint_count: int = Field(default=0, ge=0)
     has_mass_or_cg_overrides: bool = False
+    surface_finish: SurfaceFinish = SurfaceFinish.REGULAR
+    drag_table: DragCurveTable | None = None
     warnings: tuple[OrkImportWarning, ...] = ()
 
     @field_validator("rocket_name", "source_sha256")
@@ -79,6 +84,8 @@ class OrkImportSummary(BaseModel):
     embedded_rse_names: tuple[str, ...] = ()
     stored_datapoint_count: int = Field(default=0, ge=0)
     has_mass_or_cg_overrides: bool = False
+    drag_source: DragSource = "analytical"
+    drag_table: DragCurveTable | None = None
     warnings: tuple[OrkImportWarning, ...] = ()
 
     @field_validator("source_sha256")

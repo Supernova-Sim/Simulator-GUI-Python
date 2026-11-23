@@ -9,6 +9,9 @@ from pydantic import ValidationError
 
 from hefesto.adapters.openrocket import parse_ork_bytes
 from hefesto.domain import (
+    DragCurveSpec,
+    DragCurveTable,
+    DragSource,
     NoseConeSpec,
     OrkImportSummary,
     OrkImportWarning,
@@ -31,7 +34,7 @@ from hefesto.services.rocket_service import (
 )
 from hefesto.storage import AssetStore
 
-_PARSER_CACHE_VERSION = "v4"
+_PARSER_CACHE_VERSION = "v5"
 
 
 def list_ork_assets(repo_root: Path | str | None = None) -> tuple[str, ...]:
@@ -125,12 +128,72 @@ def _resolve_nose_cone_shell(parsed: OrkParsedDesign) -> NoseConeSpec:
     )
 
 
+_DRAG_SOURCE_MESSAGES: dict[str, str] = {
+    "analytical": (
+        "Curvas Cd(Mach) calculadas analiticamente da geometria do foguete "
+        "(drag_source='analytical', rugosidade '{finish}'); os assets '{off}'/'{on}' do "
+        "catálogo não são usados neste modo."
+    ),
+    "legacy_csv": (
+        "Curvas de arrasto vinculadas do catálogo: power_off='{off}', power_on='{on}' "
+        "(drag_source='legacy_csv')."
+    ),
+    "ork_sim": (
+        "Curvas Cd(Mach) extraídas dos <datapoint> de voo do .ork "
+        "(drag_source='ork_sim'); assets '{off}'/'{on}' ficam apenas como fallback."
+    ),
+}
+
+
+def _drag_source_message(
+    drag_source: DragSource,
+    *,
+    surface_finish: str,
+    power_off_drag_asset: str,
+    power_on_drag_asset: str,
+) -> str:
+    template = _DRAG_SOURCE_MESSAGES[drag_source]
+    return template.format(
+        finish=surface_finish, off=power_off_drag_asset, on=power_on_drag_asset
+    )
+
+
+def _resolve_ork_drag_curves(
+    parsed: OrkParsedDesign,
+    *,
+    drag_source: DragSource,
+    power_off_drag_asset: str,
+    power_on_drag_asset: str,
+    repo_root: Path | str | None,
+) -> tuple[DragCurveTable | None, DragCurveSpec, DragCurveSpec]:
+    """Return (reference table, power_off curve, power_on curve) for the requested source."""
+    if drag_source == "rasaero_csv":
+        raise ValueError(
+            "drag_source='rasaero_csv' is imported from a RASAero II CSV, not from a .ork file"
+        )
+    if drag_source == "ork_sim":
+        if parsed.drag_table is None:
+            raise ValueError(
+                "O .ork não possui <flightdata> com colunas Mach/CD utilizáveis para "
+                "drag_source='ork_sim'."
+            )
+        power_off_drag, power_on_drag = parsed.drag_table.to_specs()
+        return parsed.drag_table, power_off_drag, power_on_drag
+    # analytical curves are recomputed from geometry after the spec exists.
+    return (
+        parsed.drag_table,
+        load_drag_curve_asset(power_off_drag_asset, repo_root=repo_root),
+        load_drag_curve_asset(power_on_drag_asset, repo_root=repo_root),
+    )
+
+
 def preview_ork_import(
     ork_bytes_or_asset: bytes | str,
     *,
     base_motor_id: str,
     power_off_drag_asset: str,
     power_on_drag_asset: str,
+    drag_source: DragSource = "analytical",
     repo_root: Path | str | None = None,
 ) -> OrkImportSummary:
     """Parse (with hash cache), bind catalog motor/drag, and derive structural mass/CG/inertia."""
@@ -139,8 +202,13 @@ def preview_ork_import(
     parsed, from_cache = _load_or_parse_ork(raw_bytes, store)
 
     motor = load_motor_spec(base_motor_id, repo_root=repo_root)
-    power_off_drag = load_drag_curve_asset(power_off_drag_asset, repo_root=repo_root)
-    power_on_drag = load_drag_curve_asset(power_on_drag_asset, repo_root=repo_root)
+    drag_table, power_off_drag, power_on_drag = _resolve_ork_drag_curves(
+        parsed,
+        drag_source=drag_source,
+        power_off_drag_asset=power_off_drag_asset,
+        power_on_drag_asset=power_on_drag_asset,
+        repo_root=repo_root,
+    )
 
     motor_pos_m = _default_motor_position_m(parsed)
     initial_spec = RocketSpec(
@@ -157,6 +225,8 @@ def preview_ork_import(
         power_off_drag=power_off_drag,
         power_on_drag=power_on_drag,
         motor=motor,
+        drag_source=drag_source,
+        surface_finish=parsed.surface_finish,
     )
     recalculated_spec = recalculate_rocket_structure(initial_spec)
     structure = summarize_rocket_structure(recalculated_spec)
@@ -166,21 +236,27 @@ def preview_ork_import(
         OrkImportWarning(
             severity="info",
             component_name="Aerodinâmica (Cd)",
-            message=(
-                f"Curvas de arrasto vinculadas do catálogo: power_off='{power_off_drag_asset}', "
-                f"power_on='{power_on_drag_asset}' (nenhuma curva Cd(Mach) foi inferida de "
-                "datapoints de voo)."
+            message=_drag_source_message(
+                drag_source,
+                surface_finish=parsed.surface_finish.value,
+                power_off_drag_asset=power_off_drag_asset,
+                power_on_drag_asset=power_on_drag_asset,
             ),
         )
     )
     if parsed.stored_datapoint_count > 0:
+        used = drag_source == "ork_sim"
         warnings.append(
             OrkImportWarning(
                 severity="info",
                 component_name="Simulações Salvas (.ork)",
                 message=(
-                    f"Detectados {parsed.stored_datapoint_count} <datapoint> de voo no .ork; "
-                    "dados de voo salvos não são usados para gerar curvas aerodinâmicas."
+                    f"Detectados {parsed.stored_datapoint_count} <datapoint> de voo no .ork"
+                    + (
+                        " e extraída a curva ork_sim de referência."
+                        if used
+                        else "; a curva de referência ork_sim não foi usada neste import."
+                    )
                 ),
             )
         )
@@ -196,6 +272,8 @@ def preview_ork_import(
         embedded_rse_names=parsed.embedded_rse_names,
         stored_datapoint_count=parsed.stored_datapoint_count,
         has_mass_or_cg_overrides=parsed.has_mass_or_cg_overrides,
+        drag_source=drag_source,
+        drag_table=drag_table if drag_source == "ork_sim" else None,
         warnings=tuple(warnings),
     )
 
@@ -208,6 +286,7 @@ def import_and_save_ork_rocket(
     power_off_drag_asset: str,
     power_on_drag_asset: str,
     rocket_name: str | None = None,
+    drag_source: DragSource = "analytical",
     save_ork_asset_file: bool = True,
     repo_root: Path | str | None = None,
 ) -> OrkImportSummary:
@@ -225,6 +304,7 @@ def import_and_save_ork_rocket(
         base_motor_id=base_motor_id,
         power_off_drag_asset=power_off_drag_asset,
         power_on_drag_asset=power_on_drag_asset,
+        drag_source=drag_source,
         repo_root=repo_root,
     )
 
@@ -243,6 +323,7 @@ def import_and_save_ork_rocket(
         motor_preset_name=base_motor_id,
         power_off_drag_asset=power_off_drag_asset,
         power_on_drag_asset=power_on_drag_asset,
+        drag_table=summary.drag_table,
     )
     save_rocket_preset(preset, preset_id=cleaned_id, repo_root=repo_root)
 

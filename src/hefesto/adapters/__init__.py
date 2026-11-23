@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from hefesto.adapters.aerodynamics import DatabaseDragModel, DragModelProtocol
+from hefesto.adapters.aerodynamics import (
+    DatabaseDragModel,
+    DragModelProtocol,
+    parse_rasaero_csv_file,
+    parse_rasaero_csv_text,
+)
 from hefesto.adapters.openmotor import (
     CONFIG_PROPERTY_CONSTRAINTS,
     GRAIN_PROPERTY_CONSTRAINTS,
@@ -67,6 +72,8 @@ __all__ = [
     "load_ric_props",
     "parse_ork_bytes",
     "parse_ork_file",
+    "parse_rasaero_csv_file",
+    "parse_rasaero_csv_text",
     "run_flight",
     "run_openmotor_ric",
     "simulate_ric_detailed",

@@ -8,9 +8,10 @@ from typing import Final
 
 from rocketpy import Function, Rocket, SolidMotor
 
-from hefesto.adapters.aerodynamics import DatabaseDragModel, DragModelProtocol
+from hefesto.adapters.aerodynamics import DragModelProtocol
 from hefesto.adapters.rocketpy.motor_builder import build_solid_motor
 from hefesto.domain import (
+    DragCurveSpec,
     FinComponent,
     FinGeometryMode,
     FinSetSpec,
@@ -111,6 +112,35 @@ def _to_linear_drag_function(
     return Function(scaled, interpolation="linear", extrapolation="constant")
 
 
+def _in_memory_curves(
+    rocket: RocketSpec,
+    source: str,
+) -> tuple[DragCurveSpec, DragCurveSpec]:
+    """Return the materialized curves of a computed source, rejecting stale CSV assets."""
+    curves = (rocket.power_off_drag, rocket.power_on_drag)
+    assets = [curve.asset_name for curve in curves if curve.asset_name is not None]
+    if assets:
+        raise ValueError(
+            f"drag_source={source!r} requires in-memory curves, got CSV assets {assets!r}"
+        )
+    return curves
+
+
+def _resolve_drag_curve_specs(rocket: RocketSpec) -> tuple[DragCurveSpec, DragCurveSpec]:
+    """Dispatch RocketSpec.drag_source into its (power_off, power_on) curve pair."""
+    match rocket.drag_source:
+        case "legacy_csv":
+            return rocket.power_off_drag, rocket.power_on_drag
+        case "analytical":
+            return _in_memory_curves(rocket, "analytical")
+        case "ork_sim":
+            return _in_memory_curves(rocket, "ork_sim")
+        case "rasaero_csv":
+            return _in_memory_curves(rocket, "rasaero_csv")
+        case _:
+            raise ValueError(f"Unsupported drag_source: {rocket.drag_source!r}")
+
+
 def _resolve_drag_functions(
     rocket: RocketSpec,
     *,
@@ -119,10 +149,10 @@ def _resolve_drag_functions(
 ) -> tuple[Function, Function]:
     factor = _require_positive_finite(drag_factor, "drag_factor")
     if drag_model is None:
-        model = DatabaseDragModel.from_rocket(rocket, drag_factor=factor)
+        power_off_drag, power_on_drag = _resolve_drag_curve_specs(rocket)
         return (
-            _to_linear_drag_function(model.power_off_curve(), factor=1.0, label="power_off_drag"),
-            _to_linear_drag_function(model.power_on_curve(), factor=1.0, label="power_on_drag"),
+            _to_linear_drag_function(power_off_drag.points, factor=factor, label="power_off_drag"),
+            _to_linear_drag_function(power_on_drag.points, factor=factor, label="power_on_drag"),
         )
     return (
         _to_linear_drag_function(

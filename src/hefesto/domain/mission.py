@@ -14,10 +14,13 @@ from hefesto.domain._validators import (
     require_relative_asset,
 )
 from hefesto.domain.aerodynamics import (
+    DragCurveTable,
+    DragSource,
     FinSetSpec,
     NoseConeSpec,
     ParachuteSpec,
     RailButtonsSpec,
+    SurfaceFinish,
 )
 from hefesto.domain.components import RocketComponent
 from hefesto.domain.environment import EnvironmentSpec
@@ -127,6 +130,9 @@ class RocketPreset(BaseModel):
     power_off_drag_asset: str
     power_on_drag_asset: str
     motor_preset_name: str
+    drag_source: DragSource = "legacy_csv"
+    surface_finish: SurfaceFinish = SurfaceFinish.REGULAR
+    drag_table: DragCurveTable | None = None
 
     @field_validator("name", "motor_preset_name")
     @classmethod
@@ -144,6 +150,18 @@ class RocketPreset(BaseModel):
         cls, value: tuple[float, float, float]
     ) -> tuple[float, float, float]:
         return require_axisymmetric_inertia(value, "inertia_kg_m2")
+
+    @model_validator(mode="after")
+    def _validate_drag_source(self) -> RocketPreset:
+        if self.drag_source == "ork_sim" and self.drag_table is None:
+            raise ValueError(
+                "drag_source='ork_sim' requires drag_table extracted from the .ork flight data"
+            )
+        if self.drag_source != "ork_sim" and self.drag_table is not None:
+            raise ValueError(
+                f"drag_table is only valid for drag_source='ork_sim', got {self.drag_source!r}"
+            )
+        return self
 
 
 class LaunchConfig(BaseModel):

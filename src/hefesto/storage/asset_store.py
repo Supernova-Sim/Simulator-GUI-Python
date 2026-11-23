@@ -16,7 +16,8 @@ from hefesto.storage.paths import (
 
 ASSET_EXTENSION_WHITELIST: dict[AssetCategory, frozenset[str]] = {
     AssetCategory.MOTORS: frozenset({".eng", ".ric"}),
-    AssetCategory.DRAG: frozenset({".csv"}),
+    # `.cs` is the RASAero II aerodynamic-window export (see adapters.aerodynamics.rasaero_csv).
+    AssetCategory.DRAG: frozenset({".csv", ".cs"}),
     AssetCategory.ATMOSPHERE: frozenset({".nc"}),
 }
 

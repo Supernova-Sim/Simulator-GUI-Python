@@ -807,6 +807,6 @@ def test_ork_parity_mission_runs_on_isa_without_touching_the_era5_netcdf() -> No
     flight = result.flight
     assert flight.dry_mass_kg == pytest.approx(15.769610321481428, rel=1e-12)
     assert flight.apogee_msl_m == pytest.approx(flight.apogee_agl_m + 1000.0, rel=1e-12)
-    # Legacy Cd table still drives the flight; the analytical aero model is a later stage.
-    assert 3600.0 < flight.apogee_agl_m < 4000.0
+    # Analytical Cd(Mach) drives the flight: within 4.5% of OpenRocket's 3393.406 m AGL.
+    assert 3393.406064 * 0.955 < flight.apogee_agl_m < 3393.406064 * 1.045
     assert flight.rail_exit_velocity_ms > 25.0

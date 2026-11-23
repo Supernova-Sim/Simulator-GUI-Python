@@ -274,5 +274,6 @@
   ],
   "power_off_drag_asset": "power_off.csv",
   "power_on_drag_asset": "power_on.csv",
-  "motor_preset_name": "medusa_knsb_a"
+  "motor_preset_name": "medusa_knsb_a",
+  "drag_source": "analytical"
 }

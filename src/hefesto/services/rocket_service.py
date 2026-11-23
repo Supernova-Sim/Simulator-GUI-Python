@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from hefesto.adapters.aerodynamics import parse_rasaero_csv_file
 from hefesto.domain import (
+    AssetCategory,
     CasingResizeResult,
     CasingScalingMode,
+    DragCurveSpec,
+    DragCurveTable,
     FinComponent,
     FinGeometryMode,
     FinSetSpec,
@@ -21,12 +25,14 @@ from hefesto.physics import (
     GEOMETRY_TOLERANCE_M,
     ComponentMassProperties,
     StructureSummary,
+    compute_analytical_drag_curves,
     derive_rocket_structure,
     resize_motor_casing,
 )
 from hefesto.services.asset_service import (
     DEFAULT_ROCKET_ID,
     load_drag_curve_asset,
+    resolve_asset_path,
     resolve_paths,
 )
 from hefesto.services.motor_service import load_motor_spec
@@ -113,6 +119,43 @@ def update_rocket_motor_casing_length(
     return recalculated, resize_result
 
 
+# Analytical sources need a RocketSpec before the geometry model can run.
+_ANALYTICAL_PLACEHOLDER_CURVE = DragCurveSpec(points=((0.0, 0.4), (1.0, 0.8)))
+
+
+def _resolve_preset_drag_curves(
+    preset: RocketPreset,
+    *,
+    repo_root: Path | str | None,
+) -> tuple[DragCurveSpec, DragCurveSpec]:
+    """Resolve the persisted (power_off, power_on) curve pair for a preset drag_source."""
+    if preset.drag_source == "analytical":
+        return _ANALYTICAL_PLACEHOLDER_CURVE, _ANALYTICAL_PLACEHOLDER_CURVE
+    if preset.drag_source == "ork_sim":
+        if preset.drag_table is None:
+            raise ValueError(
+                f"RocketPreset '{preset.name}' uses drag_source='ork_sim' without a drag_table"
+            )
+        return preset.drag_table.to_specs()
+    if preset.drag_source == "rasaero_csv":
+        csv_path = resolve_asset_path(
+            AssetCategory.DRAG, preset.power_off_drag_asset, repo_root=repo_root
+        )
+        return parse_rasaero_csv_file(csv_path).to_specs()
+    return (
+        load_drag_curve_asset(preset.power_off_drag_asset, repo_root=repo_root),
+        load_drag_curve_asset(preset.power_on_drag_asset, repo_root=repo_root),
+    )
+
+
+def with_analytical_drag(rocket: RocketSpec) -> RocketSpec:
+    """Recompute the geometry-based drag curves so parametric edits never fly stale Cd."""
+    power_off_drag, power_on_drag = compute_analytical_drag_curves(rocket).to_specs()
+    return rocket.model_copy(
+        update={"power_off_drag": power_off_drag, "power_on_drag": power_on_drag}
+    )
+
+
 def build_rocket_spec(
     preset: RocketPreset,
     *,
@@ -131,13 +174,12 @@ def build_rocket_spec(
         if motor is None
         else motor
     )
-    power_off_drag = load_drag_curve_asset(preset.power_off_drag_asset, repo_root=repo_root)
-    power_on_drag = load_drag_curve_asset(preset.power_on_drag_asset, repo_root=repo_root)
+    power_off_drag, power_on_drag = _resolve_preset_drag_curves(preset, repo_root=repo_root)
     resolved_override = (
         preset.dry_mass_override_kg if dry_mass_override_kg is None else dry_mass_override_kg
     )
 
-    return RocketSpec(
+    rocket = RocketSpec(
         name=preset.name,
         coordinate_system=preset.coordinate_system,
         radius_m=preset.radius_m,
@@ -153,7 +195,12 @@ def build_rocket_spec(
         power_off_drag=power_off_drag,
         power_on_drag=power_on_drag,
         motor=resolved_motor,
+        drag_source=preset.drag_source,
+        surface_finish=preset.surface_finish,
     )
+    if rocket.drag_source == "analytical":
+        return with_analytical_drag(rocket)
+    return rocket
 
 
 def load_rocket_spec(
@@ -209,14 +256,17 @@ def calculate_rocket_dry_mass_kg(
 
 
 def recalculate_rocket_structure(rocket: RocketSpec) -> RocketSpec:
-    """Recalculate dry CG without motor and Steiner inertia from RocketSpec components."""
+    """Recalculate dry CG/inertia and refresh analytical drag for parametric edits."""
     summary = derive_rocket_structure(rocket)
-    return rocket.model_copy(
+    updated = rocket.model_copy(
         update={
             "center_of_mass_without_motor_m": summary.center_of_mass_m,
             "inertia_kg_m2": summary.inertia_kg_m2,
         }
     )
+    if updated.drag_source == "analytical":
+        return with_analytical_drag(updated)
+    return updated
 
 
 def trapezoidal_to_shape_points(
@@ -290,6 +340,7 @@ def rocket_preset_from_spec(
     motor_preset_name: str | None = None,
     power_off_drag_asset: str | None = None,
     power_on_drag_asset: str | None = None,
+    drag_table: DragCurveTable | None = None,
 ) -> RocketPreset:
     """Convert an in-memory RocketSpec into a persistable RocketPreset DTO."""
     return RocketPreset(
@@ -316,6 +367,9 @@ def rocket_preset_from_spec(
             or "power_on.csv"
         ),
         motor_preset_name=motor_preset_name or rocket.motor.name,
+        drag_source=rocket.drag_source,
+        surface_finish=rocket.surface_finish,
+        drag_table=drag_table if rocket.drag_source == "ork_sim" else None,
     )
 
 
@@ -331,4 +385,5 @@ __all__ = [
     "sync_rocket_fins",
     "trapezoidal_to_shape_points",
     "update_rocket_motor_casing_length",
+    "with_analytical_drag",
 ]

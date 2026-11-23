@@ -12,10 +12,12 @@ from hefesto.domain._validators import (
 )
 from hefesto.domain.aerodynamics import (
     DragCurveSpec,
+    DragSource,
     FinSetSpec,
     NoseConeSpec,
     ParachuteSpec,
     RailButtonsSpec,
+    SurfaceFinish,
 )
 from hefesto.domain.components import RocketComponent
 from hefesto.domain.motor import MotorSpec
@@ -44,6 +46,8 @@ class RocketSpec(BaseModel):
     power_off_drag: DragCurveSpec
     power_on_drag: DragCurveSpec
     motor: MotorSpec
+    drag_source: DragSource = "legacy_csv"
+    surface_finish: SurfaceFinish = SurfaceFinish.REGULAR
 
     @field_validator("name")
     @classmethod

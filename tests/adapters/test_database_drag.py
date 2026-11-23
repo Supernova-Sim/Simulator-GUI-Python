@@ -177,4 +177,9 @@ def test_database_drag_model_rejects_invalid_mach_queries(bad_mach: float | bool
 def test_aerodynamics_package_exports_expected_symbols() -> None:
     import hefesto.adapters.aerodynamics as aero_pkg
 
-    assert set(aero_pkg.__all__) == {"DatabaseDragModel", "DragModelProtocol"}
+    assert set(aero_pkg.__all__) == {
+        "DatabaseDragModel",
+        "DragModelProtocol",
+        "parse_rasaero_csv_file",
+        "parse_rasaero_csv_text",
+    }

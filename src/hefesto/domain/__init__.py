@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 from hefesto.domain.aerodynamics import (
+    SURFACE_ROUGHNESS_M,
     DragCurveSpec,
+    DragCurveTable,
+    DragSource,
     FinSetSpec,
     NoseConeKind,
     NoseConeSpec,
     ParachuteSpec,
     RailButtonsSpec,
+    SurfaceFinish,
 )
 from hefesto.domain.components import (
     FinComponent,
@@ -86,6 +90,8 @@ __all__ = [
     "CatalogDatabaseInspection",
     "CatalogOverview",
     "DragCurveSpec",
+    "DragCurveTable",
+    "DragSource",
     "EnvironmentSpec",
     "Era5DatasetKind",
     "ExecutionAuditReport",
@@ -133,7 +139,9 @@ __all__ = [
     "SafetyReport",
     "SavedMotorInspection",
     "SavedRocketInspection",
+    "SURFACE_ROUGHNESS_M",
     "SimulationConfig",
     "SimulationResult",
+    "SurfaceFinish",
     "TubeComponent",
 ]

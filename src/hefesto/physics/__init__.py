@@ -2,6 +2,22 @@
 
 from __future__ import annotations
 
+from hefesto.physics.aerodynamics import (
+    DEFAULT_MACH_GRID,
+    DEFAULT_PLUME_AREA_FRACTION,
+    REFERENCE_DENSITY_KG_M3,
+    REFERENCE_SOUND_SPEED_M_S,
+    REFERENCE_VISCOSITY_PA_S,
+    base_area_m2,
+    base_drag_coefficient,
+    body_tubes,
+    compute_analytical_drag_curves,
+    plume_area_fraction,
+    pressure_drag_cd,
+    reference_area_m2,
+    skin_friction_drag_cd,
+    total_length_m,
+)
 from hefesto.physics.constants import (
     ALUMINUM_DENSITY_KG_M3,
     COMPOSITE_DENSITY_KG_M3,
@@ -88,6 +104,20 @@ from hefesto.physics.structure import (
 
 __all__ = [
     "ALUMINUM_DENSITY_KG_M3",
+    "DEFAULT_MACH_GRID",
+    "DEFAULT_PLUME_AREA_FRACTION",
+    "REFERENCE_DENSITY_KG_M3",
+    "REFERENCE_SOUND_SPEED_M_S",
+    "REFERENCE_VISCOSITY_PA_S",
+    "base_area_m2",
+    "base_drag_coefficient",
+    "body_tubes",
+    "compute_analytical_drag_curves",
+    "plume_area_fraction",
+    "pressure_drag_cd",
+    "reference_area_m2",
+    "skin_friction_drag_cd",
+    "total_length_m",
     "COMPOSITE_DENSITY_KG_M3",
     "ComponentMassProperties",
     "DEFAULT_CASE_YIELD_STRENGTH_PA",

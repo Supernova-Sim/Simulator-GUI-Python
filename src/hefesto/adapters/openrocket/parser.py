@@ -11,6 +11,7 @@ from pathlib import Path, PurePosixPath
 from xml.etree import ElementTree as ET
 
 from hefesto.domain import (
+    DragCurveTable,
     FinComponent,
     FinSetSpec,
     NoseConeKind,
@@ -21,6 +22,7 @@ from hefesto.domain import (
     PointMassComponent,
     RailButtonsSpec,
     RocketComponent,
+    SurfaceFinish,
     TubeComponent,
 )
 
@@ -31,6 +33,19 @@ _DEFAULT_FIN_THICKNESS_M = 0.003
 _DEFAULT_RAIL_BUTTON_OUTER_DIAMETER_M = 0.04
 _DEFAULT_RAIL_BUTTON_HEIGHT_M = 0.02
 _DEFAULT_RAIL_BUTTON_DENSITY_KG_M3 = 1050.0
+
+# OpenRocket finish levels collapsed onto the four-level Hefesto surface-finish scale.
+_SURFACE_FINISH_BY_ORK: dict[str, SurfaceFinish] = {
+    "polished": SurfaceFinish.SMOOTH,
+    "smooth": SurfaceFinish.SMOOTH,
+    "normal": SurfaceFinish.REGULAR,
+    "rough": SurfaceFinish.ROUGH,
+    "unfinished": SurfaceFinish.UNFINISHED,
+}
+_DRAG_TABLE_MACH_STEP = 0.01
+_DRAG_TABLE_MIN_DATAPOINTS = 8
+# The rest state (v ~ 0) has a degenerate Reynolds number and an unphysical Cd.
+_DRAG_TABLE_MIN_MACH = 0.02
 
 _UNSUPPORTED_COMPONENT_TAGS = frozenset(
     {
@@ -503,6 +518,166 @@ def _infer_stage_radius_m(stage_subcomponents: ET.Element | None) -> float:
             if r is not None and r > 0.0:
                 return r
     return 0.05
+
+
+def _read_surface_finish(rocket_elem: ET.Element) -> SurfaceFinish:
+    """Map the dominant OpenRocket <finish> (airframe first, then nose) onto the domain scale."""
+    for tag in ("bodytube", "nosecone"):
+        for element in rocket_elem.iter(tag):
+            raw = (element.findtext("finish") or "").strip().lower()
+            if raw:
+                return _SURFACE_FINISH_BY_ORK.get(raw, SurfaceFinish.REGULAR)
+    return SurfaceFinish.REGULAR
+
+
+def _interpolate_curve(mach: float, curve: list[tuple[float, float]]) -> float:
+    """Linear interpolation over a strictly increasing curve with constant extrapolation."""
+    if mach <= curve[0][0]:
+        return curve[0][1]
+    for (mach_lo, cd_lo), (mach_hi, cd_hi) in zip(curve, curve[1:], strict=False):
+        if mach <= mach_hi:
+            if mach_hi <= mach_lo:
+                return cd_hi
+            return cd_lo + (cd_hi - cd_lo) * (mach - mach_lo) / (mach_hi - mach_lo)
+    return curve[-1][1]
+
+
+def _phase_drag_curve(
+    samples: list[tuple[float, float, float, float]],
+    *,
+    powered: bool,
+) -> list[tuple[float, float]]:
+    """Collapse one flight phase into a strictly increasing (mach, cd) curve."""
+    points = sorted((mach, cd) for _time, mach, cd, thrust in samples if (thrust > 0.0) is powered)
+    merged: list[tuple[float, float]] = []
+    for mach, cd in points:
+        if merged and abs(mach - merged[-1][0]) <= 1e-6:
+            previous_mach, previous_cd = merged[-1]
+            merged[-1] = (previous_mach, 0.5 * (previous_cd + cd))
+        else:
+            merged.append((mach, cd))
+    return merged
+
+
+def _flight_apogee_time(flightdata: ET.Element, databranch: ET.Element) -> float | None:
+    """Return the OpenRocket apogee event time, else the time of maximum altitude."""
+    for event in databranch.findall("event"):
+        if (event.attrib.get("type") or "").strip().lower() == "apogee":
+            try:
+                return float(event.attrib.get("time", ""))
+            except ValueError:
+                break
+    best_time: float | None = None
+    best_altitude = -math.inf
+    types = (databranch.attrib.get("types") or "").split(",")
+    if "altitude" in types:
+        alt_index = types.index("altitude")
+        time_index = types.index("time") if "time" in types else None
+        for datapoint in databranch.findall("datapoint"):
+            values = _datapoint_values(datapoint)
+            if values is None or alt_index >= len(values):
+                continue
+            altitude = values[alt_index]
+            if not math.isfinite(altitude) or altitude < best_altitude:
+                continue
+            best_altitude = altitude
+            if time_index is not None and time_index < len(values):
+                best_time = values[time_index]
+    return best_time
+
+
+def _datapoint_values(datapoint: ET.Element) -> list[float] | None:
+    if datapoint.text is None:
+        return None
+    try:
+        return [float(token) for token in datapoint.text.split(",")]
+    except ValueError:
+        return None
+
+
+def _extract_flight_drag_table(
+    root: ET.Element,
+    warnings: list[OrkImportWarning],
+) -> DragCurveTable | None:
+    """Extract power_off/power_on Cd(Mach) from embedded <flightdata> datapoints."""
+    flightdatas = root.findall(".//flightdata")
+    if len(flightdatas) > 1:
+        warnings.append(
+            OrkImportWarning(
+                severity="info",
+                component_name="Simulações Salvas (.ork)",
+                message=(
+                    f"Detectadas {len(flightdatas)} simulações de voo; a primeira com "
+                    "datapoints Mach/CD foi usada como curva ork_sim."
+                ),
+            )
+        )
+
+    for flightdata in flightdatas:
+        branches = [*flightdata.findall("databranch"), *flightdata.findall("branch")]
+        for databranch in branches:
+            types = [token.strip() for token in (databranch.attrib.get("types") or "").split(",")]
+            datapoints = databranch.findall("datapoint")
+            if len(datapoints) < _DRAG_TABLE_MIN_DATAPOINTS:
+                continue
+            if not {"mach_number", "drag_coeff", "thrust_force"}.issubset(types):
+                continue
+
+            mach_index = types.index("mach_number")
+            cd_index = types.index("drag_coeff")
+            thrust_index = types.index("thrust_force")
+            time_index = types.index("time") if "time" in types else None
+            apogee_time = _flight_apogee_time(flightdata, databranch)
+
+            samples: list[tuple[float, float, float, float]] = []
+            for position, datapoint in enumerate(datapoints):
+                values = _datapoint_values(datapoint)
+                if values is None or max(mach_index, cd_index, thrust_index) >= len(values):
+                    continue
+                mach = values[mach_index]
+                cd = values[cd_index]
+                thrust = values[thrust_index]
+                if not all(math.isfinite(value) for value in (mach, cd, thrust)):
+                    continue
+                if mach < _DRAG_TABLE_MIN_MACH or cd < 0.0:
+                    continue
+                time_s = (
+                    values[time_index]
+                    if time_index is not None and time_index < len(values)
+                    else float(position)
+                )
+                if not math.isfinite(time_s):
+                    continue
+                if apogee_time is not None and time_s > apogee_time + 1e-9:
+                    continue
+                samples.append((time_s, mach, cd, thrust))
+
+            power_off = _phase_drag_curve(samples, powered=False)
+            power_on = _phase_drag_curve(samples, powered=True)
+            if len(power_off) < 2 or len(power_on) < 2:
+                warnings.append(
+                    OrkImportWarning(
+                        severity="warning",
+                        component_name="Aerodinâmica (Cd)",
+                        message=(
+                            "Datapoints de voo sem amostras das fases com e sem empuxo; "
+                            "a curva ork_sim não foi extraída."
+                        ),
+                    )
+                )
+                continue
+
+            max_mach = max(power_off[-1][0], power_on[-1][0])
+            steps = round(max_mach / _DRAG_TABLE_MACH_STEP)
+            grid = [round(index * _DRAG_TABLE_MACH_STEP, 10) for index in range(steps + 1)]
+            return DragCurveTable(
+                mach=grid,
+                cd_power_off=[_interpolate_curve(mach, power_off) for mach in grid],
+                cd_power_on=[_interpolate_curve(mach, power_on) for mach in grid],
+                source="ork_sim",
+            )
+
+    return None
 
 
 def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
@@ -1149,6 +1324,8 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
         embedded_rse_names=embedded_rse_names,
         stored_datapoint_count=stored_datapoint_count,
         has_mass_or_cg_overrides=has_overrides,
+        surface_finish=_read_surface_finish(rocket_elem),
+        drag_table=_extract_flight_drag_table(root, warnings),
         warnings=tuple(warnings),
     )
 
