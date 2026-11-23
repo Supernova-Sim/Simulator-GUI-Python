@@ -241,7 +241,7 @@ def execute_flight(
 
 def run_flight(
     mission: MissionSpec,
-    atmosphere_path: Path | str,
+    atmosphere_path: Path | str | None = None,
     *,
     output_selection: OutputSelection | None = None,
     drag_model: DragModelProtocol | None = None,
@@ -252,7 +252,9 @@ def run_flight(
     fin_geometry_mode: FinGeometryMode = "freeform",
 ) -> FlightResult:
     """Build Environment, SolidMotor, and Rocket from MissionSpec and execute 6-DOF flight."""
-    environment = build_environment(mission.environment, atmosphere_path)
+    environment = build_environment(
+        mission.environment, atmosphere_path, isa=mission.atmosphere
+    )
     rocket = build_rocket(
         mission.rocket,
         drag_model=drag_model,

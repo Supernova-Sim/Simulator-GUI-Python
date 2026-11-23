@@ -2,14 +2,26 @@
   "name": "Hefesto v1.2",
   "coordinate_system": "nose_to_tail",
   "radius_m": 0.079,
-  "center_of_mass_without_motor_m": 1.436418272237925,
+  "center_of_mass_without_motor_m": 1.314346896471025,
   "inertia_kg_m2": [
-    6.967837979709317,
-    6.967837979709317,
+    8.794096751963098,
+    8.794096751963098,
     0.06203603371666439
   ],
-  "motor_position_m": 2.5974999999999997,
+  "motor_position_m": 2.625,
   "components": [
+    {
+      "kind": "point_mass",
+      "name": "Paraquedas unreefed (paraquedas)",
+      "mass_kg": 0.65,
+      "position_m": 0.43000000000000005
+    },
+    {
+      "kind": "point_mass",
+      "name": "Paraquedas reefed (paraquedas)",
+      "mass_kg": 0.65,
+      "position_m": 0.43000000000000005
+    },
     {
       "kind": "tube",
       "name": "Módulo Aviônica",
@@ -167,6 +179,18 @@
       "thickness_m": 0.004,
       "density_kg_m3": 2700.0,
       "position_m": 2.494430237401083
+    },
+    {
+      "kind": "point_mass",
+      "name": "Rail Button #1",
+      "mass_kg": 0.023824660587579902,
+      "position_m": 2.182738317757009
+    },
+    {
+      "kind": "point_mass",
+      "name": "Rail Button #2",
+      "mass_kg": 0.023824660587579902,
+      "position_m": 1.2727383177570089
     }
   ],
   "dry_mass_override_kg": null,
@@ -177,7 +201,13 @@
     "bluffness": 0.0,
     "power": null,
     "base_radius_m": 0.079,
-    "name": "Coifa"
+    "name": "Coifa",
+    "shell": {
+      "kind": "point_mass",
+      "name": "Coifa (casca)",
+      "mass_kg": 0.5442113886585497,
+      "position_m": 0.27775917598155114
+    }
   },
   "fins": {
     "name": "Aletas",
@@ -209,10 +239,10 @@
     "sweep_length_m": null
   },
   "rail_buttons": {
-    "upper_button_position_m": 1.275,
-    "lower_button_position_m": 2.185,
+    "upper_button_position_m": 1.258,
+    "lower_button_position_m": 2.168,
     "angular_position_deg": 45.0,
-    "radius_m": 0.079
+    "radius_m": 0.02
   },
   "parachutes": [
     {

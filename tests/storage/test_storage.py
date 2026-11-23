@@ -236,8 +236,8 @@ def test_asset_store_enforces_whitelist_anti_traversal_and_lists_real_assets(
     # Real repository assets check
     real_store = AssetStore(resolve_storage_paths(REPO_ROOT))
     entries = real_store.list_assets()
-    assert len(entries) == 14
-    assert len(real_store.list_assets(AssetCategory.MOTORS)) == 7
+    assert len(entries) == 15
+    assert len(real_store.list_assets(AssetCategory.MOTORS)) == 8
     assert len(real_store.list_assets(AssetCategory.DRAG)) == 2
     assert len(real_store.list_assets(AssetCategory.ATMOSPHERE)) == 5
     assert real_store.resolve_asset(AssetCategory.MOTORS, "medusa_knsb_a.eng").is_file()

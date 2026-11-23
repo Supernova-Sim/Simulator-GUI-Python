@@ -309,10 +309,7 @@ def derive_dry_mass(rocket: RocketSpec) -> float:
     """Return RocketSpec dry mass, honoring dry_mass_override_kg when specified."""
     if rocket.dry_mass_override_kg is not None:
         return rocket.dry_mass_override_kg
-    return sum(
-        derive_component_properties(component, rocket.radius_m).mass_kg
-        for component in rocket.components
-    )
+    return derive_rocket_structure(rocket).dry_mass_kg
 
 
 def derive_rocket_structure(
@@ -324,7 +321,11 @@ def derive_rocket_structure(
         derive_component_properties(component, rocket.radius_m)
         for component in rocket.components
     ]
-    return aggregate_structure(derived_components, nose_cone=nose_cone)
+    # Imported nose shell lives on the nose spec so it is counted exactly once.
+    shell = nose_cone
+    if shell is None and rocket.nose_cone.shell is not None:
+        shell = derive_point_mass_properties(rocket.nose_cone.shell)
+    return aggregate_structure(derived_components, nose_cone=shell)
 
 
 def compute_grain_stack_cg_m(

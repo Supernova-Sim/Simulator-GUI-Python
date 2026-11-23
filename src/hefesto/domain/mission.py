@@ -160,6 +160,20 @@ class LaunchConfig(BaseModel):
     ode_solver: Literal["LSODA", "RK45", "DOP853"] = "LSODA"
 
 
+class IsaAtmosphereSpec(BaseModel):
+    """Optional ISA atmosphere override used instead of the site's ERA5 NetCDF file."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    type: Literal["isa"] = "isa"
+    elevation_m: float = Field(ge=-500.0, le=9000.0)
+    base_temperature_k: float = Field(gt=0.0, le=1000.0)
+    base_pressure_pa: float = Field(gt=0.0, le=200_000.0)
+    wind_speed_ms: float = Field(default=0.0, ge=0.0, le=200.0)
+    # Azimuth the wind blows towards (OpenRocket .ork convention), degrees from North.
+    wind_direction_deg: float = Field(default=0.0, ge=0.0, lt=360.0)
+
+
 class MissionPreset(BaseModel):
     """Catalog mission preset linking rocket and environment presets."""
 
@@ -170,6 +184,7 @@ class MissionPreset(BaseModel):
     environment_preset_name: str
     launch: LaunchConfig = Field(default_factory=LaunchConfig)
     safety_limits: SafetyLimits = Field(default_factory=SafetyLimits)
+    atmosphere: IsaAtmosphereSpec | None = None
 
     @field_validator("name", "rocket_preset_name", "environment_preset_name")
     @classmethod
@@ -187,6 +202,7 @@ class MissionSpec(BaseModel):
     environment: EnvironmentSpec
     launch: LaunchConfig = Field(default_factory=LaunchConfig)
     safety_limits: SafetyLimits = Field(default_factory=SafetyLimits)
+    atmosphere: IsaAtmosphereSpec | None = None
 
     @field_validator("name")
     @classmethod
@@ -286,6 +302,7 @@ __all__ = [
     "AssetCategory",
     "AssetEntry",
     "CatalogOverview",
+    "IsaAtmosphereSpec",
     "LaunchConfig",
     "MissionPreset",
     "MissionSpec",

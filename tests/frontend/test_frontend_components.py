@@ -465,7 +465,7 @@ def test_all_three_pages_render_headless_and_support_snapshot_crud(tmp_path: Pat
         tables = [el for el in assets_client.elements.values() if isinstance(el, ui.table)]
         assert len(uploads) == 1
         assert len(tables) == 1
-        assert len(tables[0].rows) == 14
+        assert len(tables[0].rows) == 15
     assets_client.delete()
 
     assert not (root / "data" / "runs").exists()
@@ -737,7 +737,7 @@ def test_execution_audit_panel_and_assets_database_subtabs_render(tmp_path: Path
         tables = [el for el in db_client.elements.values() if isinstance(el, ui.table)]
         assert len(uploads) == 1
         assert len(tables) == 1
-        assert len(tables[0].rows) == 14
+        assert len(tables[0].rows) == 15
     db_client.delete()
 
     # Quick-load helpers from catalog browser.

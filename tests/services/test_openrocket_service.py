@@ -158,4 +158,30 @@ def test_import_and_save_ork_rocket_persists_and_blocks_golden_master(tmp_path: 
     assert reloaded_preset.name == "Ork Demo Custom"
     reloaded_spec = load_rocket_spec("ork_demo_v1", repo_root=repo)
     assert reloaded_spec.radius_m == pytest.approx(0.075)
-    assert any(c.name == "Ogiva (casca)" for c in reloaded_spec.components)
+    # Nose shell lives on the nose spec (never duplicated as a loose component).
+    assert reloaded_spec.nose_cone.shell is not None
+    assert reloaded_spec.nose_cone.shell.name == "Ogiva (casca)"
+    assert not any(c.name == "Ogiva (casca)" for c in reloaded_spec.components)
+
+
+def test_catalog_nose_shell_is_counted_exactly_once_per_preset() -> None:
+    from hefesto.physics import derive_dry_mass
+
+    # Golden Master keeps its measured nose mass as a component, no derived shell.
+    v1 = load_rocket_spec("hefesto_v1")
+    assert v1.nose_cone.shell is None
+    assert derive_dry_mass(v1) == pytest.approx(18.85049031412732, rel=1e-12)
+
+    # 1.41 predates the shell-on-nose pipeline: same mass, legacy representation.
+    legacy = load_rocket_spec("hefesto_1.41")
+    assert legacy.nose_cone.shell is None
+    assert any(c.name == "Coifa (casca)" for c in legacy.components)
+    assert derive_dry_mass(legacy) == pytest.approx(15.721961000306269, rel=1e-12)
+
+    # Re-imported 1.4 carries the shell on the nose spec only (OpenRocket: 15.758719 kg).
+    imported = load_rocket_spec("hefesto_1.4")
+    assert imported.nose_cone.shell is not None
+    assert not any(c.name == "Coifa (casca)" for c in imported.components)
+    assert derive_dry_mass(imported) == pytest.approx(15.769610321481428, rel=1e-12)
+    assert imported.motor_position_m == pytest.approx(2.625)
+    assert imported.rail_buttons.radius_m == pytest.approx(0.02)

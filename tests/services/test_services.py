@@ -82,8 +82,8 @@ def test_catalog_asset_and_structure_services_compose_config_and_export_all() ->
     assert DEFAULT_ROCKET_ID in overview.rocket_presets
     assert DEFAULT_MOTOR_ID in overview.motor_presets
     assert DEFAULT_SITE_ID in overview.environment_presets
-    assert overview.mission_presets == ()
-    assert len(overview.assets) == 14
+    assert "ork_parity" in overview.mission_presets
+    assert len(overview.assets) == 15
     assert len(list_assets(AssetCategory.ATMOSPHERE)) == 5
     assert asset_exists(AssetCategory.MOTORS, "medusa_knsb_a.ric")
     assert resolve_asset_path(AssetCategory.DRAG, "power_off.csv").is_file()
@@ -664,7 +664,7 @@ def test_inspect_saved_motor_catalog_database_and_execution_audit_report(
     assert any(r.preset_id == DEFAULT_ROCKET_ID for r in db.rockets)
     assert any(s.preset_id == DEFAULT_SITE_ID for s in db.sites)
     assert any(lim.preset_id == DEFAULT_LIMITS_ID for lim in db.limits)
-    assert len(db.assets) == 14
+    assert len(db.assets) == 15
     assert db.runs == ()
 
     # 3) ExecutionAuditReport comparing base .ric vs applied MotorOverride + edited rocket.
@@ -761,3 +761,52 @@ def test_casing_length_update_survives_compose_and_updates_motor_summary(tmp_pat
     assert summary.propellant_mass_fraction == pytest.approx(
         summary.propellant_mass_kg / summary.total_loaded_mass_kg
     )
+
+
+def test_ork_parity_mission_runs_on_isa_without_touching_the_era5_netcdf() -> None:
+    config = compose_simulation_config(
+        mission_id="ork_parity", output_selection=OutputSelection.none()
+    )
+    mission = config.mission
+
+    assert mission.launch.inclination_deg == pytest.approx(84.0)
+    assert mission.launch.heading_deg == pytest.approx(270.0)
+    assert mission.launch.rail_length_m == pytest.approx(6.48)
+    assert mission.atmosphere is not None
+    assert mission.atmosphere.type == "isa"
+    assert mission.atmosphere.elevation_m == pytest.approx(1000.0)
+    assert mission.atmosphere.base_temperature_k == pytest.approx(299.15)
+    assert mission.atmosphere.base_pressure_pa == pytest.approx(91000.0)
+    assert mission.atmosphere.wind_speed_ms == pytest.approx(5.2)
+    assert mission.atmosphere.wind_direction_deg == pytest.approx(270.0)
+    # Re-imported .ork design: shell on the nose spec, OpenRocket-like dry mass.
+    assert mission.rocket.nose_cone.shell is not None
+    assert mission.rocket.motor_position_m == pytest.approx(2.625)
+
+    fast_config = config.model_copy(
+        update={
+            "mission": mission.model_copy(
+                update={
+                    "launch": LaunchConfig(
+                        inclination_deg=84.0,
+                        heading_deg=270.0,
+                        rail_length_m=6.48,
+                        max_time_s=60.0,
+                        terminate_on_apogee=True,
+                    )
+                }
+            )
+        }
+    )
+    with patch(
+        "hefesto.services.simulation_service.resolve_asset_path",
+        side_effect=AssertionError("ISA missions must never resolve the ERA5 asset"),
+    ):
+        result = run_deterministic(fast_config, repo_root=REPO_ROOT)
+
+    flight = result.flight
+    assert flight.dry_mass_kg == pytest.approx(15.769610321481428, rel=1e-12)
+    assert flight.apogee_msl_m == pytest.approx(flight.apogee_agl_m + 1000.0, rel=1e-12)
+    # Legacy Cd table still drives the flight; the analytical aero model is a later stage.
+    assert 3600.0 < flight.apogee_agl_m < 4000.0
+    assert flight.rail_exit_velocity_ms > 25.0

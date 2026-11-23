@@ -1,0 +1,31 @@
+{
+  "name": "OpenRocket Reference (ISA)",
+  "atmosphere_asset": "irec_era5_oper.nc",
+  "dataset_kind": "oper",
+  "ensemble_member": null,
+  "date_utc": [
+    2026,
+    6,
+    15,
+    12
+  ],
+  "latitude_deg": 31.049806,
+  "longitude_deg": -103.547306,
+  "elevation_m": 1000,
+  "datum": "SIRGAS2000",
+  "timezone": "UTC",
+  "max_expected_height_m": 20000,
+  "variable_map": {
+    "time": "valid_time",
+    "latitude": "latitude",
+    "longitude": "longitude",
+    "level": "pressure_level",
+    "temperature": "t",
+    "surface_geopotential_height": null,
+    "geopotential_height": null,
+    "geopotential": "z",
+    "u_wind": "u",
+    "v_wind": "v",
+    "ensemble_number": "number"
+  }
+}

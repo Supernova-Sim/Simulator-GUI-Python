@@ -1,0 +1,30 @@
+{
+  "name": "ork_parity",
+  "rocket_preset_name": "hefesto_1.4",
+  "environment_preset_name": "ork_reference",
+  "launch": {
+    "inclination_deg": 84,
+    "heading_deg": 270,
+    "rail_length_m": 6.48,
+    "max_time_s": 600,
+    "terminate_on_apogee": false,
+    "rtol": 0.000001,
+    "ode_solver": "LSODA"
+  },
+  "safety_limits": {
+    "min_case_safety_factor": 2,
+    "target_case_safety_factor": 3,
+    "max_chamber_pressure_pa": 8000000,
+    "max_kn": 250,
+    "max_mass_flux_kg_m2_s": 1406,
+    "min_port_to_throat_ratio": 2
+  },
+  "atmosphere": {
+    "type": "isa",
+    "elevation_m": 1000,
+    "base_temperature_k": 299.15,
+    "base_pressure_pa": 91000,
+    "wind_speed_ms": 5.2,
+    "wind_direction_deg": 270
+  }
+}

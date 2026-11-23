@@ -80,6 +80,11 @@ def compute_rocket_dry_mass_kg(
         else:
             raise TypeError(f"Unsupported RocketComponent: {type(component)!r}")
 
+    # Mirrors physics.structure.derive_rocket_structure: adapters cannot import physics.
+    shell = rocket.nose_cone.shell
+    if shell is not None:
+        total_mass_kg += shell.mass_kg
+
     return _require_positive_finite(total_mass_kg, "dry_mass_kg")
 
 

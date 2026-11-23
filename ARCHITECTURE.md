@@ -75,6 +75,7 @@ flowchart LR
 3. **Curvas e atmosfera:**
    - Curvas de empuxo são passadas ao `SolidMotor` apenas em memória como `list[tuple[float, float]]` finita (evitando `NaN` inicial ao passar `Path` de `.eng` e tolerando linhas vazias pós-cabeçalho).
    - Atmosfera opera **exclusivamente** via arquivo `.nc` existente (sem fallback para ISA), suportando tanto conjuntos ERA5 `enda` (com dimensão `number`) quanto determinísticos `oper` (sem `number`).
+   - Exceção explícita (não é fallback): missões com `atmosphere: {"type": "isa", ...}` (ex.: `data/catalog/missions/ork_parity.json`) usam o perfil ISA declarado no preset e **não** leem o `.nc` do site; sem esse bloco, o caminho ERA5 permanece obrigatório e fail-closed.
    - Em `RocketPy 1.13.0`, usar `effective_1rl` / `effective_2rl` (nunca `effective1rl`).
 
 ---

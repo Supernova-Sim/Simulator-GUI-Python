@@ -13,6 +13,7 @@ from hefesto.domain._validators import (
     require_relative_asset,
     require_xy_curve,
 )
+from hefesto.domain.components import PointMassComponent
 
 
 class NoseConeKind(StrEnum):
@@ -37,6 +38,8 @@ class NoseConeSpec(BaseModel):
     power: float | None = Field(default=None, gt=0.0)
     base_radius_m: float | None = Field(default=None, gt=0.0)
     name: str = "Nose Cone"
+    # Imported nose shell as a lumped mass; presets carrying it in `components` leave it None.
+    shell: PointMassComponent | None = None
 
     @field_validator("name")
     @classmethod

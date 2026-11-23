@@ -36,6 +36,7 @@ from hefesto.domain import (
     GrainInhibition,
     GrainSpec,
     InterpolationMethod,
+    IsaAtmosphereSpec,
     LaunchConfig,
     MissionSpec,
     MotorCasingSpec,
@@ -43,6 +44,7 @@ from hefesto.domain import (
     NetCdfVariableMap,
     NoseConeSpec,
     NozzleSpec,
+    PointMassComponent,
     RocketSpec,
 )
 from hefesto.storage import (
@@ -656,3 +658,61 @@ def test_rocket_builder_respects_mass_mode_and_fin_geometry_mode() -> None:
         compute_rocket_dry_mass_kg(mission.rocket, mass_mode="invalid")  # type: ignore[arg-type]
     with pytest.raises(ValueError, match="fin_geometry_mode"):
         build_rocket(mission.rocket, fin_geometry_mode="elliptical")  # type: ignore[arg-type]
+
+
+def test_compute_rocket_dry_mass_includes_nose_shell_and_matches_physics_layer() -> None:
+    from hefesto.physics import derive_dry_mass
+
+    mission, _ = _load_real_mission()
+    rocket = mission.rocket
+    shell = PointMassComponent(name="Nose Shell", mass_kg=0.5442113886585497, position_m=0.2777)
+    with_shell = rocket.model_copy(
+        update={"nose_cone": rocket.nose_cone.model_copy(update={"shell": shell})}
+    )
+
+    assert compute_rocket_dry_mass_kg(with_shell) == pytest.approx(
+        compute_rocket_dry_mass_kg(rocket) + shell.mass_kg, rel=1e-12
+    )
+    # Cross-layer parity: adapters duplicate the component sum (no physics import allowed).
+    assert compute_rocket_dry_mass_kg(with_shell) == pytest.approx(
+        derive_dry_mass(with_shell), rel=1e-12
+    )
+    assert build_rocket(with_shell).mass == pytest.approx(derive_dry_mass(with_shell), rel=1e-12)
+
+
+def test_isa_environment_reproduces_ork_reference_profile_and_keeps_era5_default() -> None:
+    from hefesto.adapters.rocketpy.environment_builder import build_isa_profiles, build_isa_wind
+
+    isa = IsaAtmosphereSpec(
+        elevation_m=1000.0,
+        base_temperature_k=299.15,
+        base_pressure_pa=91000.0,
+        wind_speed_ms=5.2,
+        wind_direction_deg=270.0,
+    )
+    pressure, temperature = build_isa_profiles(isa, max_height_m=20000.0)
+    heights = [height for height, _ in pressure]
+    assert heights[0] == 0.0 and heights[-1] == pytest.approx(20000.0)
+    assert all(left[1] > right[1] for left, right in zip(pressure, pressure[1:], strict=False))
+    assert all(
+        left[1] >= right[1] for left, right in zip(temperature, temperature[1:], strict=False)
+    )
+    # Sampled at the launch elevation: exactly the configured base state.
+    assert temperature[0][1] == pytest.approx(299.15 + 0.0065 * 1000.0, rel=1e-12)
+    assert temperature[12][1] == pytest.approx(299.15, rel=1e-12)
+    assert pressure[12][1] == pytest.approx(91000.0, rel=1e-12)
+    assert len({value for height, value in temperature if height > 11_000.0}) == 1
+    assert build_isa_wind(isa) == pytest.approx((-5.2, 0.0), abs=1e-12)
+
+    mission, _ = _load_real_mission(site_id="ork_reference")
+    env = build_environment(mission.environment, None, isa=isa)
+    assert env.elevation == pytest.approx(1000.0)
+    assert env.temperature(1000.0) == pytest.approx(299.15, rel=1e-6)
+    assert env.pressure(1000.0) == pytest.approx(91000.0, rel=1e-6)
+    assert env.density(1000.0) == pytest.approx(1.0597, rel=1e-3)
+    assert env.wind_velocity_x(1000.0) == pytest.approx(-5.2, rel=1e-9)
+    assert env.wind_velocity_y(1000.0) == pytest.approx(0.0, abs=1e-9)
+
+    # Default path is still ERA5-only and fails closed without a .nc file.
+    with pytest.raises(ValueError, match=r".nc"):
+        build_environment(mission.environment, None)

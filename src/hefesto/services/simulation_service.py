@@ -111,6 +111,7 @@ def build_mission_from_preset(
         environment=environment,
         launch=mission_preset.launch,
         safety_limits=safety_limits,
+        atmosphere=mission_preset.atmosphere,
     )
 
 
@@ -186,10 +187,15 @@ def run_deterministic(
         motor=resolved_motor,
     )
 
-    atmosphere_path = resolve_asset_path(
-        AssetCategory.ATMOSPHERE,
-        mission.environment.atmosphere_asset,
-        repo_root=repo_root,
+    # ISA missions never touch the site's NetCDF file; ERA5 stays the default path.
+    atmosphere_path = (
+        None
+        if mission.atmosphere is not None
+        else resolve_asset_path(
+            AssetCategory.ATMOSPHERE,
+            mission.environment.atmosphere_asset,
+            repo_root=repo_root,
+        )
     )
     resolved_rocket = mission.rocket.model_copy(update={"motor": resolved_motor})
     resolved_mission = mission.model_copy(update={"rocket": resolved_rocket})

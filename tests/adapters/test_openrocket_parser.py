@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import math
 import zipfile
 
 import pytest
@@ -191,12 +192,15 @@ def test_parse_ork_zip_coordinates_inheritance_and_warnings() -> None:
     # Motor mount innertube ends at 1.45
     assert parsed.detected_motor_mount_position_m == pytest.approx(1.45)
 
-    # Point mass
-    masses = [c for c in parsed.components if isinstance(c, PointMassComponent)]
-    assert len(masses) == 1
-    assert masses[0].name == "Avionica"
-    assert masses[0].mass_kg == pytest.approx(0.8)
-    assert masses[0].position_m == pytest.approx(0.60)
+    # Point masses: the masscomponent plus one lumped mass per rail button instance.
+    masses = {c.name: c for c in parsed.components if isinstance(c, PointMassComponent)}
+    assert set(masses) == {"Avionica", "Rail Button #1", "Rail Button #2"}
+    assert masses["Avionica"].mass_kg == pytest.approx(0.8)
+    assert masses["Avionica"].position_m == pytest.approx(0.60)
+    # Solid standoff fallback (no ORK base/flange heights): pi*R^2*L*1050 with R=0.02, L=0.01.
+    solid_button_kg = 1050.0 * math.pi * 0.02**2 * 0.01
+    assert masses["Rail Button #1"].mass_kg == pytest.approx(solid_button_kg)
+    assert masses["Rail Button #1"].position_m == pytest.approx(0.605)
 
     # Fins synchronized
     fin_comps = [c for c in parsed.components if isinstance(c, FinComponent)]
@@ -353,3 +357,111 @@ def test_parse_ork_extracts_nose_metadata_and_parachute_masses() -> None:
     assert "Paraquedas A (paraquedas)" in pm
     assert pm["Paraquedas A (paraquedas)"].mass_kg == pytest.approx(0.65)
     assert pm["Paraquedas A (paraquedas)"].position_m == pytest.approx(0.43)
+
+
+RAIL_BUTTON_ORK_XML = """<?xml version='1.0' encoding='utf-8'?>
+<openrocket version="1.9">
+  <rocket>
+    <name>Rail Button Rocket</name>
+    <subcomponents>
+      <stage>
+        <name>Sustainer</name>
+        <subcomponents>
+          <bodytube>
+            <name>Corpo</name>
+            <length>1.00</length>
+            <thickness>0.002</thickness>
+            <radius>0.079</radius>
+            <subcomponents>
+              <railbutton>
+                <name>Botao</name>
+                <instancecount>2</instancecount>
+                <instanceseparation>-0.50</instanceseparation>
+                <axialoffset method="bottom">-0.10</axialoffset>
+                <outerdiameter>0.04</outerdiameter>
+                <innerdiameter>0.013</innerdiameter>
+                <height>0.027</height>
+                <baseheight>0.006</baseheight>
+                <flangeheight>0.011</flangeheight>
+                <material type="bulk" density="1050.0">ABS</material>
+              </railbutton>
+            </subcomponents>
+          </bodytube>
+        </subcomponents>
+      </stage>
+    </subcomponents>
+  </rocket>
+</openrocket>
+"""
+
+MOTOR_MOUNT_BODYTUBE_XML = """<?xml version='1.0' encoding='utf-8'?>
+<openrocket version="1.9">
+  <rocket>
+    <name>Motor Mount Rocket</name>
+    <subcomponents>
+      <stage>
+        <name>Sustainer</name>
+        <subcomponents>
+          <bodytube>
+            <name>Propulsao</name>
+            <length>1.00</length>
+            <thickness>0.002</thickness>
+            <radius>0.079</radius>
+            <motormount>
+              <overhang>0.0</overhang>
+            </motormount>
+          </bodytube>
+          <bodytube>
+            <name>Aletas</name>
+            <length>0.40</length>
+            <thickness>0.002</thickness>
+            <radius>0.079</radius>
+            <motormount>
+              <overhang>-0.02</overhang>
+              <motor configid="cfg-1" />
+            </motormount>
+          </bodytube>
+        </subcomponents>
+      </stage>
+    </subcomponents>
+  </rocket>
+</openrocket>
+"""
+
+
+def test_parse_ork_rail_button_mass_uses_bobbin_volume_and_standoff_radius() -> None:
+    parsed = parse_ork_bytes(RAIL_BUTTON_ORK_XML.encode("utf-8"))
+
+    # Standoff (ork outerdiameter/2), never the body radius.
+    assert parsed.radius_m == pytest.approx(0.079)
+    assert parsed.rail_buttons.radius_m == pytest.approx(0.02)
+    # bottom -0.10 => start = 1.00 - 0.10 - 0.027; second instance separated by -0.50.
+    assert parsed.rail_buttons.upper_button_position_m == pytest.approx(0.373)
+    assert parsed.rail_buttons.lower_button_position_m == pytest.approx(0.873)
+
+    per_button_kg = (
+        1050.0
+        * math.pi
+        * (
+            0.02**2 * (0.011 + 0.006)  # flange + base standoff discs
+            + 0.0065**2 * (0.027 - 0.006 - 0.011)  # shank
+        )
+    )
+    buttons = {
+        c.name: c
+        for c in parsed.components
+        if isinstance(c, PointMassComponent) and c.name.startswith("Botao")
+    }
+    assert set(buttons) == {"Botao #1", "Botao #2"}
+    for button in buttons.values():
+        assert button.mass_kg == pytest.approx(per_button_kg)
+    assert buttons["Botao #1"].position_m == pytest.approx(0.873 + 0.014738, rel=1e-5)
+    assert buttons["Botao #2"].position_m == pytest.approx(0.373 + 0.014738, rel=1e-5)
+
+
+def test_parse_ork_detects_motormount_inside_bodytube_and_prefers_motor_bearing_mount() -> None:
+    parsed = parse_ork_bytes(MOTOR_MOUNT_BODYTUBE_XML.encode("utf-8"))
+
+    # Aft ends are 1.00 (Propulsao) and 1.40 (Aletas); only the mount holding <motor>
+    # defines the motor station, shifted forward by its -0.02 m overhang.
+    assert parsed.detected_motor_mount_position_m == pytest.approx(1.38)

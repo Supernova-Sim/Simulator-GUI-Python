@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from hefesto.adapters.openrocket import parse_ork_bytes
 from hefesto.domain import (
+    NoseConeSpec,
     OrkImportSummary,
     OrkImportWarning,
     OrkParsedDesign,
@@ -30,7 +31,7 @@ from hefesto.services.rocket_service import (
 )
 from hefesto.storage import AssetStore
 
-_PARSER_CACHE_VERSION = "v3"
+_PARSER_CACHE_VERSION = "v4"
 
 
 def list_ork_assets(repo_root: Path | str | None = None) -> tuple[str, ...]:
@@ -88,11 +89,12 @@ def _default_motor_position_m(parsed: OrkParsedDesign) -> float:
     return max(0.1, max_tail)
 
 
-def _resolve_nose_cone_mass_component(parsed: OrkParsedDesign) -> PointMassComponent | None:
+def _resolve_nose_cone_shell(parsed: OrkParsedDesign) -> NoseConeSpec:
+    """Attach the imported nose shell to the nose spec so dry mass counts it exactly once."""
     if parsed.nose_cone_override_mass_kg is None and (
         parsed.nose_cone_wall_thickness_m is None or parsed.nose_cone_density_kg_m3 is None
     ):
-        return None
+        return parsed.nose_cone
     shell = derive_nose_cone_properties(
         parsed.nose_cone,
         wall_thickness_m=parsed.nose_cone_wall_thickness_m or 0.002,
@@ -105,17 +107,21 @@ def _resolve_nose_cone_mass_component(parsed: OrkParsedDesign) -> PointMassCompo
         else shell.mass_kg
     )
     if mass_kg <= 0.0:
-        return None
+        return parsed.nose_cone
     cg_m = (
         parsed.nose_cone_override_cg_m
         if parsed.nose_cone_override_mass_kg is not None
         and parsed.nose_cone_override_cg_m is not None
         else shell.cg_m
     )
-    return PointMassComponent(
-        name=f"{parsed.nose_cone.name} (casca)",
-        mass_kg=mass_kg,
-        position_m=max(0.0, cg_m),
+    return parsed.nose_cone.model_copy(
+        update={
+            "shell": PointMassComponent(
+                name=f"{parsed.nose_cone.name} (casca)",
+                mass_kg=mass_kg,
+                position_m=max(0.0, cg_m),
+            )
+        }
     )
 
 
@@ -137,20 +143,14 @@ def preview_ork_import(
     power_on_drag = load_drag_curve_asset(power_on_drag_asset, repo_root=repo_root)
 
     motor_pos_m = _default_motor_position_m(parsed)
-    nose_mass_comp = _resolve_nose_cone_mass_component(parsed)
-    effective_components = (
-        (nose_mass_comp, *parsed.components)
-        if nose_mass_comp is not None
-        else parsed.components
-    )
     initial_spec = RocketSpec(
         name=parsed.rocket_name,
         radius_m=parsed.radius_m,
         center_of_mass_without_motor_m=max(0.1, parsed.nose_cone.length_m),
         inertia_kg_m2=(1.0, 1.0, 0.05),
         motor_position_m=motor_pos_m,
-        components=effective_components,
-        nose_cone=parsed.nose_cone,
+        components=parsed.components,
+        nose_cone=_resolve_nose_cone_shell(parsed),
         fins=parsed.fins,
         rail_buttons=parsed.rail_buttons,
         parachutes=parsed.parachutes,

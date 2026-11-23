@@ -845,3 +845,29 @@ def test_edge_cases_and_validation_guards() -> None:
         summarize_thrust_curve(((0.0, 0.0), (1.0, 100.0), (0.5, 50.0)))
     with pytest.raises(ValueError):
         summarize_thrust_curve(((0.0, -5.0), (1.0, 100.0)))
+
+
+def test_derive_rocket_structure_counts_imported_nose_shell_exactly_once() -> None:
+    rocket = _hefesto_rocket()
+    baseline = derive_rocket_structure(rocket)
+    assert rocket.nose_cone.shell is None
+
+    shell = PointMassComponent(name="Nose Shell", mass_kg=0.5442113886585497, position_m=0.2777)
+    with_shell = rocket.model_copy(
+        update={"nose_cone": rocket.nose_cone.model_copy(update={"shell": shell})}
+    )
+    structure = derive_rocket_structure(with_shell)
+
+    assert structure.dry_mass_kg == pytest.approx(baseline.dry_mass_kg + shell.mass_kg, rel=1e-12)
+    assert derive_dry_mass(with_shell) == pytest.approx(structure.dry_mass_kg, rel=1e-12)
+    # Shell sits ahead of the dry CG: CG moves forward and transverse inertia grows.
+    assert structure.center_of_mass_m < baseline.center_of_mass_m
+    assert structure.inertia_kg_m2[0] > baseline.inertia_kg_m2[0]
+    assert len(structure.components) == len(baseline.components) + 1
+
+    # A measured dry mass still wins over the derived shell.
+    measured = with_shell.model_copy(update={"dry_mass_override_kg": 12.0})
+    assert derive_dry_mass(measured) == pytest.approx(12.0)
+    assert derive_rocket_structure(measured).dry_mass_kg == pytest.approx(
+        baseline.dry_mass_kg + shell.mass_kg, rel=1e-12
+    )

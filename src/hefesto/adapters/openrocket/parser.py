@@ -6,6 +6,7 @@ import hashlib
 import io
 import math
 import zipfile
+from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from xml.etree import ElementTree as ET
 
@@ -27,6 +28,9 @@ _DEFAULT_TUBE_DENSITY_KG_M3 = 1850.0
 _DEFAULT_RING_DENSITY_KG_M3 = 650.0
 _DEFAULT_FIN_DENSITY_KG_M3 = 1850.0
 _DEFAULT_FIN_THICKNESS_M = 0.003
+_DEFAULT_RAIL_BUTTON_OUTER_DIAMETER_M = 0.04
+_DEFAULT_RAIL_BUTTON_HEIGHT_M = 0.02
+_DEFAULT_RAIL_BUTTON_DENSITY_KG_M3 = 1050.0
 
 _UNSUPPORTED_COMPONENT_TAGS = frozenset(
     {
@@ -259,6 +263,84 @@ def _read_instances(elem: ET.Element) -> tuple[int, float]:
     return count, sep
 
 
+def _first_positive_dimension(elem: ET.Element, tags: tuple[str, ...], default: float) -> float:
+    """Return the first positive numeric value among tags, tolerating 'auto' and absence."""
+    for tag in tags:
+        if elem.find(tag) is None:
+            continue
+        _, value = _parse_ork_dimension(elem, tag, None)
+        if value is not None and value > 0.0:
+            return value
+    return default
+
+
+@dataclass(frozen=True)
+class _RailButtonGeometry:
+    """Rail button height, lumped mass, and CG offset from its forward face."""
+
+    height_m: float
+    mass_kg: float
+    cg_from_start_m: float
+
+
+def _read_rail_button_geometry(
+    elem: ET.Element,
+    comp_name: str,
+    warnings: list[OrkImportWarning],
+) -> _RailButtonGeometry:
+    """Derive rail button volume/CG with OpenRocket's bobbin profile (flange + shank + base)."""
+    outer_d = _first_positive_dimension(
+        elem, ("outerdiameter",), _DEFAULT_RAIL_BUTTON_OUTER_DIAMETER_M
+    )
+    inner_d = _first_positive_dimension(elem, ("innerdiameter",), 0.0)
+    height_m = _first_positive_dimension(
+        elem, ("height", "length"), _DEFAULT_RAIL_BUTTON_HEIGHT_M
+    )
+    base_h = _first_positive_dimension(elem, ("baseheight",), 0.0)
+    flange_h = _first_positive_dimension(elem, ("flangeheight",), 0.0)
+    screw_h = _first_positive_dimension(elem, ("screwheight",), 0.0)
+    if base_h + flange_h <= 0.0:
+        # OpenRocket heights absent: degenerate profile is a solid standoff cylinder.
+        base_h = height_m
+    inner_h = max(0.0, height_m - base_h - flange_h)
+    r_out = outer_d / 2.0
+    r_in = inner_d / 2.0
+    volume_m3 = math.pi * (
+        r_out**2 * (flange_h + base_h) + r_in**2 * inner_h + (2.0 / 3.0) * r_out**2 * screw_h
+    )
+    density = _material_density(elem, _DEFAULT_RAIL_BUTTON_DENSITY_KG_M3, comp_name, warnings)
+    # Section weights are volumes/pi; ORK CG sections: base, shank, flange, screw tip.
+    sections = (
+        (r_out**2 * base_h, base_h / 2.0),
+        (r_in**2 * inner_h, base_h + inner_h / 2.0),
+        (r_out**2 * flange_h, height_m - flange_h / 2.0),
+        ((2.0 / 3.0) * r_out**2 * screw_h, height_m + 4.0 * screw_h / (3.0 * math.pi)),
+    )
+    weight_sum = sum(weight for weight, _ in sections)
+    cg_from_start_m = (
+        sum(weight * station for weight, station in sections) / weight_sum
+        if weight_sum > 0.0
+        else height_m / 2.0
+    )
+    return _RailButtonGeometry(
+        height_m=height_m,
+        mass_kg=volume_m3 * density,
+        cg_from_start_m=cg_from_start_m,
+    )
+
+
+def _read_motor_mount_station(
+    mount: ET.Element,
+    *,
+    comp_start_m: float,
+    comp_length_m: float,
+) -> tuple[float, bool]:
+    """Return (motor nozzle station, mount carries a <motor>) for one <motormount>."""
+    overhang_m = _float_text(mount, "overhang", 0.0) or 0.0
+    has_motor = mount.find("motor") is not None
+    return max(0.0, comp_start_m + comp_length_m + overhang_m), has_motor
+
+
 def _check_overrides(
     elem: ET.Element,
     comp_name: str,
@@ -467,6 +549,7 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
         "override_cg_m": None,
     }
     detected_motor_mount_pos: float | None = None
+    motor_mount_is_explicit = False
     has_overrides = _check_overrides(rocket_elem, rocket_name, warnings)
 
     rocket_sub = rocket_elem.find("subcomponents")
@@ -490,6 +573,7 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
     stage_sub = primary_stage.find("subcomponents")
     stage_radius_m = _infer_stage_radius_m(stage_sub)
     max_body_radius_m = stage_radius_m
+    rail_button_radii_m: list[float] = []
 
     def walk_subcomponents(
         sub_elem: ET.Element | None,
@@ -502,8 +586,20 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
         is_sequential: bool,
     ) -> None:
         nonlocal detected_motor_mount_pos, has_overrides, max_body_radius_m
+        nonlocal motor_mount_is_explicit
         if sub_elem is None:
             return
+
+        def record_motor_mount(elem: ET.Element, start_m: float, length_m: float) -> None:
+            """Record the mount station; a mount holding <motor> outranks loose mounts."""
+            nonlocal detected_motor_mount_pos, motor_mount_is_explicit
+            for mount in elem.findall("motormount"):
+                station_m, carries_motor = _read_motor_mount_station(
+                    mount, comp_start_m=start_m, comp_length_m=length_m
+                )
+                if carries_motor or not motor_mount_is_explicit:
+                    detected_motor_mount_pos = station_m
+                    motor_mount_is_explicit = carries_motor
 
         cursor_m = parent_start_m
         for child in sub_elem:
@@ -614,6 +710,7 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
                         position_m=start_m + length_m / 2.0,
                     )
                 )
+                record_motor_mount(child, start_m, length_m)
                 walk_subcomponents(
                     child.find("subcomponents"),
                     parent_start_m=start_m,
@@ -687,8 +784,7 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
                             position_m=inst_start + length_m / 2.0,
                         )
                     )
-                    if tag == "innertube" and child.find("motormount") is not None:
-                        detected_motor_mount_pos = inst_start + length_m
+                    record_motor_mount(child, inst_start, length_m)
                     walk_subcomponents(
                         child.find("subcomponents"),
                         parent_start_m=inst_start,
@@ -892,11 +988,17 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
                     )
 
             elif tag == "railbutton":
-                length_m = max(0.0, _float_text(child, "length", 0.01) or 0.01)
+                button = _read_rail_button_geometry(child, comp_name, warnings)
+                rail_button_radii_m.append(
+                    _first_positive_dimension(
+                        child, ("outerdiameter",), _DEFAULT_RAIL_BUTTON_OUTER_DIAMETER_M
+                    )
+                    / 2.0
+                )
                 base_start = _resolve_start_m(
                     method=method,
                     offset_m=offset_m,
-                    comp_length_m=length_m,
+                    comp_length_m=button.height_m,
                     cursor_m=cursor_m,
                     parent_start_m=parent_start_m,
                     parent_length_m=parent_length_m,
@@ -904,7 +1006,17 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
                 )
                 count, sep = _read_instances(child)
                 for idx in range(count):
-                    rail_button_positions.append(max(0.0, base_start + idx * sep))
+                    inst_start = max(0.0, base_start + idx * sep)
+                    rail_button_positions.append(inst_start)
+                    if button.mass_kg <= 0.0:
+                        continue
+                    components.append(
+                        PointMassComponent(
+                            name=comp_name if count == 1 else f"{comp_name} #{idx + 1}",
+                            mass_kg=button.mass_kg,
+                            position_m=inst_start + button.cg_from_start_m,
+                        )
+                    )
 
             elif tag in _UNSUPPORTED_COMPONENT_TAGS:
                 warnings.append(
@@ -991,11 +1103,15 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
             )
 
     distinct_buttons = sorted(set(round(pos, 6) for pos in rail_button_positions))
+    # Rail button radius is the standoff from the body surface (ORK outerdiameter/2), not R_body.
+    button_radius_m = max(
+        rail_button_radii_m, default=_DEFAULT_RAIL_BUTTON_OUTER_DIAMETER_M / 2.0
+    )
     if len(distinct_buttons) >= 2:
         rail_buttons = RailButtonsSpec(
             upper_button_position_m=distinct_buttons[0],
             lower_button_position_m=distinct_buttons[-1],
-            radius_m=max_body_radius_m,
+            radius_m=button_radius_m,
         )
     else:
         upper_fallback = nose_cone.length_m + 0.1
@@ -1013,7 +1129,7 @@ def parse_ork_bytes(raw_bytes: bytes) -> OrkParsedDesign:
         rail_buttons = RailButtonsSpec(
             upper_button_position_m=upper_fallback,
             lower_button_position_m=lower_fallback,
-            radius_m=max_body_radius_m,
+            radius_m=button_radius_m,
         )
 
     return OrkParsedDesign(
