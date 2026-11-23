@@ -2,6 +2,18 @@
 
 from __future__ import annotations
 
+from frontend.components.aerodynamics_panel import (
+    DEFAULT_CHART_MAX_MACH,
+    DRAG_SOURCE_OPTIONS,
+    DRAG_SUMMARY_MACHES,
+    EXTENDED_CHART_MAX_MACH,
+    SURFACE_FINISH_OPTIONS,
+    AerodynamicsView,
+    DragSummaryRow,
+    build_drag_curve_figure,
+    build_drag_summary_rows,
+    render_aerodynamics_panel,
+)
 from frontend.components.execution_audit_panel import render_execution_audit_panel
 from frontend.components.metrics_cards import (
     BALLISTICS_METRIC_CATALOG,
@@ -19,6 +31,7 @@ from frontend.components.metrics_cards import (
     render_metric_selector,
     render_simulation_metrics_summary,
 )
+from frontend.components.motor_import_panel import render_motor_import_dialog
 from frontend.components.motor_overrides_editor import (
     format_override_label,
     format_override_option_label,
@@ -49,8 +62,15 @@ from frontend.components.safety_panel import (
 __all__ = [
     "BALLISTICS_METRIC_CATALOG",
     "DEFAULT_BALLISTICS_METRIC_KEYS",
+    "DEFAULT_CHART_MAX_MACH",
     "DEFAULT_FLIGHT_METRIC_KEYS",
+    "DRAG_SOURCE_OPTIONS",
+    "DRAG_SUMMARY_MACHES",
+    "EXTENDED_CHART_MAX_MACH",
     "FLIGHT_METRIC_CATALOG",
+    "SURFACE_FINISH_OPTIONS",
+    "AerodynamicsView",
+    "DragSummaryRow",
     "MetricCardItem",
     "MetricCatalogEntry",
     "MetricTone",
@@ -58,6 +78,8 @@ __all__ = [
     "build_aerodynamics_figure",
     "build_all_panel_figures",
     "build_ballistics_metric_items",
+    "build_drag_curve_figure",
+    "build_drag_summary_rows",
     "build_flight_metric_items",
     "build_kinematics_figure",
     "build_propulsion_figure",
@@ -68,6 +90,7 @@ __all__ = [
     "format_override_option_label",
     "parse_override_value",
     "render_aerodynamics_chart",
+    "render_aerodynamics_panel",
     "render_alerts_banner",
     "render_ballistics_metrics_cards",
     "render_execution_audit_panel",
@@ -75,6 +98,7 @@ __all__ = [
     "render_kinematics_chart",
     "render_metric_card",
     "render_metric_selector",
+    "render_motor_import_dialog",
     "render_motor_overrides_editor",
     "render_propulsion_chart",
     "render_safety_panel",

@@ -110,6 +110,49 @@ class MotorPreset(BaseModel):
         return self
 
 
+class RicMotorAsset(BaseModel):
+    """Auto-discovered OpenMotor .ric motor without an equivalent catalog preset."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    preset_id: str
+    name: str
+    motor_asset: str
+    warnings: tuple[str, ...] = ()
+
+    @field_validator("preset_id", "name")
+    @classmethod
+    def _validate_texts(cls, value: str) -> str:
+        return require_non_empty_text(value, "ric motor metadata")
+
+    @field_validator("motor_asset")
+    @classmethod
+    def _validate_asset(cls, value: str) -> str:
+        return require_relative_asset(value, "ric motor asset")
+
+
+class RicMotorCacheEntry(BaseModel):
+    """Cached .ric -> MotorPreset conversion keyed by path plus mtime/size/sha256."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    relative_path: str
+    mtime_ns: int = Field(ge=0)
+    size_bytes: int = Field(ge=0)
+    sha256: str
+    preset: MotorPreset | None = None
+    warnings: tuple[str, ...] = ()
+
+
+class RicMotorCache(BaseModel):
+    """Persistent index written to data/cache/motors/discovery.json."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    version: int = Field(default=1, ge=1)
+    entries: tuple[RicMotorCacheEntry, ...] = ()
+
+
 class RocketPreset(BaseModel):
     """Catalog rocket preset referencing relative drag CSVs and motor preset name."""
 
@@ -301,6 +344,7 @@ class CatalogOverview(BaseModel):
     schema_version: int = Field(default=1, ge=1)
     assets: tuple[AssetEntry, ...] = ()
     motor_presets: tuple[str, ...] = ()
+    discovered_ric_motors: tuple[RicMotorAsset, ...] = ()
     rocket_presets: tuple[str, ...] = ()
     environment_presets: tuple[str, ...] = ()
     mission_presets: tuple[str, ...] = ()
@@ -326,6 +370,9 @@ __all__ = [
     "MissionSpec",
     "MotorPreset",
     "OutputSelection",
+    "RicMotorAsset",
+    "RicMotorCache",
+    "RicMotorCacheEntry",
     "RocketPreset",
     "SimulationConfig",
 ]

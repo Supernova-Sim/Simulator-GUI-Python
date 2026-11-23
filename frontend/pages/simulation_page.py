@@ -17,6 +17,7 @@ from frontend.components import (
     render_execution_audit_panel,
     render_flight_metrics_cards,
     render_metric_selector,
+    render_motor_import_dialog,
     render_motor_overrides_editor,
     render_safety_panel,
     render_simulation_metrics_summary,
@@ -217,12 +218,6 @@ def render_simulation_page(state: AppState) -> ui.column:
 
     catalog = state.catalog
     rocket_options = list(catalog.rocket_presets) if catalog else [state.selected_rocket_id]
-    motor_options: dict[str, str] = {"": "Padrão do Foguete"}
-    if catalog is not None:
-        for motor_id in catalog.motor_presets:
-            motor_options[motor_id] = motor_id
-    elif state.selected_motor_id:
-        motor_options[state.selected_motor_id] = state.selected_motor_id
 
     site_options = list(catalog.environment_presets) if catalog else [state.selected_site_id]
     limits_options = list(list_limits(repo_root=state.repo_root)) or [state.selected_limits_id]
@@ -328,7 +323,30 @@ def render_simulation_page(state: AppState) -> ui.column:
                 with ui.column().classes("w-full p-2"):
                     render_execution_audit_panel(state.current_audit_report)
 
+    @ui.refreshable
+    def render_motor_picker() -> None:
+        with ui.column().classes("w-full gap-1"):
+            ui.select(
+                options=state.selectable_motor_options(),
+                value=state.selected_motor_id or "",
+                label="Motor",
+                on_change=lambda e: setattr(
+                    state, "selected_motor_id", str(e.value) if e.value else None
+                ),
+            ).classes("w-full")
+            ui.button(
+                "Importar motor (.ric)",
+                icon="upload_file",
+                on_click=motor_import_dialog.open,
+            ).props("flat dense color=primary no-caps")
+
     with root:
+        async def _on_motor_imported() -> None:
+            render_motor_picker.refresh()
+            await execute_motor_check_async(state)
+
+        motor_import_dialog = render_motor_import_dialog(state, on_imported=_on_motor_imported)
+
         if state.working_rocket_spec is not None:
             with ui.card().classes("w-full p-3 border-l-4 border-sky-500 bg-sky-50"):
                 with ui.row().classes("w-full items-center justify-between flex-wrap gap-2"):
@@ -382,14 +400,7 @@ def render_simulation_page(state: AppState) -> ui.column:
                     label="Foguete",
                     on_change=lambda e: setattr(state, "selected_rocket_id", str(e.value)),
                 ).classes("w-full")
-                ui.select(
-                    options=motor_options,
-                    value=state.selected_motor_id or "",
-                    label="Motor",
-                    on_change=lambda e: setattr(
-                        state, "selected_motor_id", str(e.value) if e.value else None
-                    ),
-                ).classes("w-full")
+                render_motor_picker()
                 ui.select(
                     options=site_options,
                     value=state.selected_site_id,

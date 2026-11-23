@@ -1,4 +1,9 @@
-"""Application service layer exports for Hefesto."""
+"""Application service layer: orchestration and typed, fail-closed use cases.
+
+Composes domain, physics, storage, and adapters into the flows the GUI calls (import,
+ballistics, flight runs, catalog CRUD). Signatures never expose dict[str, Any], and
+services import domain/physics/storage/adapters/services but never frontend.
+"""
 
 from __future__ import annotations
 
@@ -33,6 +38,10 @@ from hefesto.services.catalog_service import (
     save_rocket_preset,
     save_site_preset,
 )
+from hefesto.services.motor_discovery_service import (
+    discover_ric_motors,
+    import_openmotor_ric,
+)
 from hefesto.services.motor_service import (
     ServiceAlert,
     SimulationServiceError,
@@ -60,13 +69,18 @@ from hefesto.services.rocket_service import (
     CASING_MATERIAL_LABELS,
     build_rocket_spec,
     calculate_rocket_dry_mass_kg,
+    import_rasaero_drag_csv,
+    interpolate_drag_curve,
+    list_rasaero_csv_angles,
     load_rocket_spec,
+    preview_rocket_drag_curves,
     recalculate_rocket_structure,
     rocket_preset_from_spec,
     summarize_rocket_structure,
     sync_rocket_fins,
     trapezoidal_to_shape_points,
     update_rocket_motor_casing_length,
+    with_analytical_drag,
 )
 from hefesto.services.run_service import (
     build_execution_audit_report,
@@ -102,18 +116,23 @@ __all__ = [
     "combine_motor_overrides",
     "compose_simulation_config",
     "delete_run_snapshot",
+    "discover_ric_motors",
     "evaluate_safety",
     "get_catalog_overview",
     "import_and_save_ork_rocket",
+    "import_openmotor_ric",
+    "import_rasaero_drag_csv",
     "inspect_catalog_database",
     "inspect_saved_motor",
     "inspect_saved_rocket",
+    "interpolate_drag_curve",
     "list_assets",
     "list_available_motor_overrides",
     "list_limits",
     "list_missions",
     "list_motors",
     "list_ork_assets",
+    "list_rasaero_csv_angles",
     "list_rockets",
     "list_run_snapshots",
     "list_sites",
@@ -128,6 +147,7 @@ __all__ = [
     "load_site_preset",
     "load_thrust_curve_asset",
     "preview_ork_import",
+    "preview_rocket_drag_curves",
     "recalculate_casing",
     "recalculate_rocket_structure",
     "resolve_asset_path",
@@ -150,4 +170,5 @@ __all__ = [
     "trapezoidal_to_shape_points",
     "update_rocket_motor_casing_length",
     "validate_motor_overrides",
+    "with_analytical_drag",
 ]

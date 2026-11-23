@@ -65,6 +65,10 @@ class StoragePaths:
     def openrocket_cache_dir(self) -> Path:
         return self.data_dir / "cache" / "openrocket"
 
+    @property
+    def motors_cache_dir(self) -> Path:
+        return self.data_dir / "cache" / "motors"
+
     def asset_category_dir(self, category: AssetCategory) -> Path:
         return self.assets_dir / category.value
 

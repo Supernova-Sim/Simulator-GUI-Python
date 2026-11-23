@@ -1,4 +1,9 @@
-"""Storage layer exports for paths, raw assets, curve parsers, catalog JSON, and run snapshots."""
+"""Filesystem layer: canonical paths, atomic writes, curve parsers, and JSON stores.
+
+Owns data/assets resolution, data/catalog CRUD, data/runs snapshots, and data/cache
+artifacts. No simulator or UI imports here. Storage imports only hefesto.domain and
+hefesto.storage; services and adapters consume it.
+"""
 
 from __future__ import annotations
 

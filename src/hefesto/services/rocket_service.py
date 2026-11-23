@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from bisect import bisect_right
+from collections.abc import Sequence
 from pathlib import Path
 
-from hefesto.adapters.aerodynamics import parse_rasaero_csv_file
+from hefesto.adapters.aerodynamics import parse_rasaero_csv_file, parse_rasaero_csv_text
 from hefesto.domain import (
     AssetCategory,
     CasingResizeResult,
@@ -154,6 +156,115 @@ def with_analytical_drag(rocket: RocketSpec) -> RocketSpec:
     return rocket.model_copy(
         update={"power_off_drag": power_off_drag, "power_on_drag": power_on_drag}
     )
+
+
+def interpolate_drag_curve(
+    mach: Sequence[float],
+    cd: Sequence[float],
+    target_mach: float,
+) -> float:
+    """Linearly interpolate Cd at target_mach, clamping to the curve ends (RocketPy parity)."""
+    if len(mach) != len(cd) or len(mach) < 2:
+        raise ValueError(
+            f"drag curve needs matching mach/cd samples with at least 2 points, "
+            f"got {len(mach)} mach and {len(cd)} cd"
+        )
+    if target_mach <= mach[0]:
+        return cd[0]
+    if target_mach >= mach[-1]:
+        return cd[-1]
+    upper = bisect_right(mach, target_mach)
+    m0, m1 = mach[upper - 1], mach[upper]
+    c0, c1 = cd[upper - 1], cd[upper]
+    if m1 <= m0:
+        return c0
+    return c0 + (c1 - c0) * (target_mach - m0) / (m1 - m0)
+
+
+def _drag_table_from_curves(rocket: RocketSpec) -> DragCurveTable:
+    """Merge the stored in-memory curve pair onto a single Mach grid."""
+    off_mach = [mach for mach, _ in rocket.power_off_drag.points]
+    on_mach = [mach for mach, _ in rocket.power_on_drag.points]
+    off_cd = [cd for _, cd in rocket.power_off_drag.points]
+    on_cd = [cd for _, cd in rocket.power_on_drag.points]
+    if off_mach == on_mach:
+        return DragCurveTable(
+            mach=off_mach,
+            cd_power_off=off_cd,
+            cd_power_on=on_cd,
+            source=rocket.drag_source,
+        )
+    grid = sorted({*off_mach, *on_mach})
+    return DragCurveTable(
+        mach=grid,
+        cd_power_off=[interpolate_drag_curve(off_mach, off_cd, mach) for mach in grid],
+        cd_power_on=[interpolate_drag_curve(on_mach, on_cd, mach) for mach in grid],
+        source=rocket.drag_source,
+    )
+
+
+def preview_rocket_drag_curves(rocket: RocketSpec) -> DragCurveTable:
+    """Materialize the active power_off/power_on Cd(Mach) table for any RocketSpec.drag_source."""
+    if rocket.drag_source == "analytical":
+        return compute_analytical_drag_curves(rocket)
+    return _drag_table_from_curves(rocket)
+
+
+_RASAERO_ALPHA_TOLERANCE_DEG = 1e-6
+
+
+def _rasaero_alpha_row(table: DragCurveTable, alpha_deg: float, filename: str) -> int | None:
+    """Return the alpha grid row for alpha_deg, or None for single-alpha exports."""
+    if not table.alpha_deg:
+        if abs(alpha_deg) > _RASAERO_ALPHA_TOLERANCE_DEG:
+            raise ValueError(
+                f"{filename}: export contains only alpha=0 rows, requested alpha={alpha_deg:g}"
+            )
+        return None
+    for index, alpha in enumerate(table.alpha_deg):
+        if abs(alpha - alpha_deg) <= _RASAERO_ALPHA_TOLERANCE_DEG:
+            return index
+    raise ValueError(
+        f"{filename}: alpha={alpha_deg:g} not in the RASAero II export; "
+        f"available angles: {table.alpha_deg}"
+    )
+
+
+def list_rasaero_csv_angles(csv_content: str, filename: str = "rasaero.csv") -> tuple[float, ...]:
+    """List the angle-of-attack rows exported by RASAero II (empty for a single axial table)."""
+    if not csv_content.strip():
+        raise ValueError(f"{filename}: RASAero CSV is empty")
+    return tuple(parse_rasaero_csv_text(csv_content, source_name=filename).alpha_deg)
+
+
+def import_rasaero_drag_csv(
+    rocket: RocketSpec,
+    csv_content: str,
+    filename: str = "rasaero.csv",
+    alpha_deg: float = 0.0,
+) -> RocketSpec:
+    """Parse a RASAero II CSV export into the rocket's active drag curves and validate the spec."""
+    if not csv_content.strip():
+        raise ValueError(f"{filename}: RASAero CSV is empty")
+    table = parse_rasaero_csv_text(csv_content, source_name=filename)
+    row = _rasaero_alpha_row(table, alpha_deg, filename)
+    if row is None:
+        power_off_drag, power_on_drag = table.to_specs()
+    else:
+        power_off_drag = DragCurveSpec(
+            points=tuple(zip(table.mach, table.cd_alpha_power_off[row], strict=True))
+        )
+        power_on_drag = DragCurveSpec(
+            points=tuple(zip(table.mach, table.cd_alpha_power_on[row], strict=True))
+        )
+    updated = rocket.model_copy(
+        update={
+            "drag_source": "rasaero_csv",
+            "power_off_drag": power_off_drag,
+            "power_on_drag": power_on_drag,
+        }
+    )
+    return RocketSpec.model_validate(updated.model_dump())
 
 
 def build_rocket_spec(
@@ -378,7 +489,11 @@ __all__ = [
     "CASING_MATERIAL_LABELS",
     "build_rocket_spec",
     "calculate_rocket_dry_mass_kg",
+    "import_rasaero_drag_csv",
+    "interpolate_drag_curve",
+    "list_rasaero_csv_angles",
     "load_rocket_spec",
+    "preview_rocket_drag_curves",
     "recalculate_rocket_structure",
     "rocket_preset_from_spec",
     "summarize_rocket_structure",

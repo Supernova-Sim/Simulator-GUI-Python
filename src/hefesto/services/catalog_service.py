@@ -26,6 +26,10 @@ from hefesto.services.asset_service import (
     list_assets,
     resolve_paths,
 )
+from hefesto.services.motor_discovery_service import (
+    discover_ric_motors,
+    load_motor_preset_any,
+)
 from hefesto.services.motor_service import inspect_saved_motor
 from hefesto.services.rocket_service import load_rocket_spec, summarize_rocket_structure
 from hefesto.storage import CatalogStore, RunStore
@@ -36,8 +40,9 @@ def _catalog_store(repo_root: Path | str | None = None) -> CatalogStore:
 
 
 def get_catalog_overview(repo_root: Path | str | None = None) -> CatalogOverview:
-    """Return a picklable CatalogOverview DTO of available assets and presets."""
-    return _catalog_store(repo_root).overview()
+    """Return a picklable CatalogOverview DTO of assets, presets, and discovered .ric motors."""
+    overview = _catalog_store(repo_root).overview()
+    return overview.model_copy(update={"discovered_ric_motors": discover_ric_motors(repo_root)})
 
 
 def list_rockets(repo_root: Path | str | None = None) -> tuple[str, ...]:
@@ -71,8 +76,8 @@ def load_motor_preset(
     preset_id: str = DEFAULT_MOTOR_ID,
     repo_root: Path | str | None = None,
 ) -> MotorPreset:
-    """Load a MotorPreset from data/catalog/motors/."""
-    return _catalog_store(repo_root).load_motor(preset_id)
+    """Load a catalog MotorPreset, falling back to an equivalent auto-discovered .ric."""
+    return load_motor_preset_any(preset_id, repo_root=repo_root)
 
 
 def save_motor_preset(

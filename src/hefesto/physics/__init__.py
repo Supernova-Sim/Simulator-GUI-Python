@@ -1,4 +1,9 @@
-"""Physics calculations, geometry guards, propulsion, safety, and inertia engine for Hefesto."""
+"""Pure calculation layer: propulsion, geometry guards, structure, inertia, safety.
+
+Deterministic math only (NumPy allowed): no filesystem, network, or simulator
+objects. Services/adapters consume it and frontend reaches it only via services;
+physics imports only hefesto.domain and hefesto.physics.
+"""
 
 from __future__ import annotations
 

@@ -18,6 +18,8 @@ from hefesto.domain import (
     CasingResizeResult,
     CasingScalingMode,
     CatalogOverview,
+    DragCurveTable,
+    DragSource,
     ExecutionAuditReport,
     FinGeometryMode,
     GeometryValidationError,
@@ -25,12 +27,14 @@ from hefesto.domain import (
     MassMode,
     MotorOverride,
     MotorOverrideOption,
+    MotorPreset,
     OutputSelection,
     RocketSpec,
     RunSummary,
     SafetyReport,
     SimulationConfig,
     SimulationResult,
+    SurfaceFinish,
 )
 from hefesto.services import (
     DEFAULT_LIMITS_ID,
@@ -43,9 +47,13 @@ from hefesto.services import (
     compose_simulation_config,
     delete_run_snapshot,
     get_catalog_overview,
+    import_openmotor_ric,
+    import_rasaero_drag_csv,
     list_available_motor_overrides,
     list_limits,
+    list_rasaero_csv_angles,
     list_run_snapshots,
+    load_drag_curve_asset,
     load_motor_preset,
     load_motor_spec,
     load_rocket_preset,
@@ -58,6 +66,7 @@ from hefesto.services import (
     save_rocket_preset,
     save_run_snapshot,
     update_rocket_motor_casing_length,
+    with_analytical_drag,
 )
 
 _CLIENT_STATE_KEY = "hefesto_app_state"
@@ -90,6 +99,12 @@ class AppState:
     last_casing_resize_result: CasingResizeResult | None = None
     selected_flight_metrics: tuple[str, ...] = DEFAULT_FLIGHT_METRIC_KEYS
     selected_ballistics_metrics: tuple[str, ...] = DEFAULT_BALLISTICS_METRIC_KEYS
+    rasaero_csv_content: str | None = None
+    rasaero_csv_filename: str = "rasaero.csv"
+    rasaero_alpha_deg: float = 0.0
+    rasaero_alpha_options: tuple[float, ...] = ()
+    rasaero_mach_range: tuple[float, float] | None = None
+    drag_chart_max_mach: float = 1.5
     auto_save_runs: bool = False
     simulation_config: SimulationConfig | None = None
     current_result: SimulationResult | None = None
@@ -149,12 +164,13 @@ class AppState:
 
         if overview.rocket_presets and self.selected_rocket_id not in overview.rocket_presets:
             self.selected_rocket_id = overview.rocket_presets[0]
+        available_motors = self.available_motor_ids()
         if (
             self.selected_motor_id is not None
-            and overview.motor_presets
-            and self.selected_motor_id not in overview.motor_presets
+            and available_motors
+            and self.selected_motor_id not in available_motors
         ):
-            self.selected_motor_id = overview.motor_presets[0]
+            self.selected_motor_id = available_motors[0]
         if (
             overview.environment_presets
             and self.selected_site_id not in overview.environment_presets
@@ -226,6 +242,9 @@ class AppState:
         self.working_rocket_spec = reloaded
         self.has_unsaved_rocket_changes = False
         self.dry_mass_override_kg = reloaded.dry_mass_override_kg
+        self.rasaero_csv_content = None
+        self.rasaero_alpha_options = ()
+        self.rasaero_mach_range = None
         self.status_message = f"Foguete restaurado para o preset '{self.selected_rocket_id}'."
         self.clear_error()
         self.notify()
@@ -246,6 +265,11 @@ class AppState:
                 f"Não é permitido sobrescrever o preset Golden Master '{DEFAULT_ROCKET_ID}'."
             )
         rocket = self.ensure_working_rocket()
+        if rocket.drag_source == "rasaero_csv":
+            raise ValueError(
+                "Curvas CSV do RASAero II vivem apenas na sessão (o preset guarda um asset de "
+                "arrasto). Volte para 'CSV Legado' ou 'Analítico Geométrico' antes de salvar."
+            )
         resolved_name = (
             preset_name.strip() if preset_name and preset_name.strip() else cleaned_id
         )
@@ -271,6 +295,31 @@ class AppState:
         self.status_message = f"Preset de foguete salvo: {cleaned_id}"
         self.notify()
         return saved_path
+
+    def available_motor_ids(self) -> tuple[str, ...]:
+        """List selectable motor ids: catalog presets first, then auto-discovered .ric."""
+        overview = self.catalog
+        if overview is None:
+            return () if self.selected_motor_id is None else (self.selected_motor_id,)
+        return (
+            *overview.motor_presets,
+            *(asset.preset_id for asset in overview.discovered_ric_motors),
+        )
+
+    def selectable_motor_options(self) -> dict[str, str]:
+        """Build motor dropdown options, flagging motors that came from a raw .ric asset."""
+        options: dict[str, str] = {"": "Padrão do Foguete"}
+        overview = self.catalog
+        if overview is None:
+            if self.selected_motor_id:
+                options[self.selected_motor_id] = self.selected_motor_id
+            return options
+        for motor_id in overview.motor_presets:
+            options[motor_id] = motor_id
+        for asset in overview.discovered_ric_motors:
+            suffix = " (.ric ⚠)" if asset.warnings else " (.ric)"
+            options[asset.preset_id] = f"{asset.preset_id}{suffix}"
+        return options
 
     def available_motor_override_options(self) -> tuple[MotorOverrideOption, ...]:
         """List guided OpenMotor override options for the currently selected motor preset."""
@@ -365,6 +414,35 @@ class AppState:
         self.clear_error()
         self.notify()
 
+    def import_motor_ric(
+        self,
+        filename: str,
+        raw_bytes: bytes,
+        *,
+        save_to_catalog: bool = True,
+    ) -> MotorPreset:
+        """Import an uploaded .ric motor and bind it to the active rocket."""
+        preset = import_openmotor_ric(
+            filename,
+            raw_bytes,
+            save_to_catalog=save_to_catalog,
+            repo_root=self.repo_root,
+        )
+        self.refresh_catalog()
+        self.selected_motor_id = preset.name
+        self.motor_overrides = ()
+        motor_spec = load_motor_spec(preset.name, simulate_ric=True, repo_root=self.repo_root)
+        rocket = self.ensure_working_rocket()
+        updated = recalculate_rocket_structure(rocket.model_copy(update={"motor": motor_spec}))
+        self.working_rocket_spec = updated
+        self.has_unsaved_rocket_changes = True
+        self.clear_error()
+        self.status_message = (
+            f"Motor '{preset.name}' importado de '{filename}' e aplicado ao foguete ativo."
+        )
+        self.notify()
+        return preset
+
     def load_rocket_into_config(self, rocket_id: str) -> RocketSpec:
         """Select a catalog rocket preset and load it as the active working_rocket_spec."""
         self.selected_rocket_id = rocket_id
@@ -441,6 +519,94 @@ class AppState:
         self.clear_error()
         self.notify()
         return updated_rocket
+
+    def preset_ork_drag_table(self) -> DragCurveTable | None:
+        """Return the Cd table extracted from the preset's OpenRocket <flightdata>, if any."""
+        if not self.catalog or self.selected_rocket_id not in self.catalog.rocket_presets:
+            return None
+        try:
+            return load_rocket_preset(self.selected_rocket_id, repo_root=self.repo_root).drag_table
+        except (FileNotFoundError, ValueError):
+            return None
+
+    def import_rasaero_csv(
+        self,
+        csv_content: str,
+        filename: str = "rasaero.csv",
+        *,
+        alpha_deg: float = 0.0,
+    ) -> RocketSpec:
+        """Install a RASAero II CSV as the session Cd source and remember it for alpha swaps."""
+        updated = import_rasaero_drag_csv(
+            self.ensure_working_rocket(), csv_content, filename, alpha_deg
+        )
+        self.rasaero_csv_content = csv_content
+        self.rasaero_csv_filename = filename
+        self.rasaero_alpha_deg = alpha_deg
+        self.rasaero_alpha_options = list_rasaero_csv_angles(csv_content, filename)
+        self.rasaero_mach_range = (
+            updated.power_off_drag.points[0][0],
+            updated.power_off_drag.points[-1][0],
+        )
+        self.status_message = f"Curvas RASAero II importadas de '{filename}'."
+        return self.update_working_rocket(updated)
+
+    def set_rasaero_alpha(self, alpha_deg: float) -> RocketSpec:
+        """Re-import the session RASAero II CSV at another angle of attack."""
+        if self.rasaero_csv_content is None:
+            raise ValueError("Nenhum CSV do RASAero II importado nesta sessão.")
+        return self.import_rasaero_csv(
+            self.rasaero_csv_content, self.rasaero_csv_filename, alpha_deg=alpha_deg
+        )
+
+    def set_working_drag_source(self, drag_source: DragSource) -> RocketSpec:
+        """Switch the active Cd source, materializing whichever curves that source needs."""
+        if drag_source == "rasaero_csv":
+            if self.rasaero_csv_content is None:
+                raise ValueError(
+                    "Importe um CSV do RASAero II antes de selecionar esta fonte."
+                )
+            return self.import_rasaero_csv(
+                self.rasaero_csv_content,
+                self.rasaero_csv_filename,
+                alpha_deg=self.rasaero_alpha_deg,
+            )
+        rocket = self.ensure_working_rocket()
+        if drag_source == "ork_sim":
+            table = self.preset_ork_drag_table()
+            if table is None:
+                raise ValueError(
+                    "Este foguete não tem curva de arrasto extraída de <flightdata> (.ork)."
+                )
+            power_off_drag, power_on_drag = table.to_specs()
+            updated = rocket.model_copy(
+                update={"power_off_drag": power_off_drag, "power_on_drag": power_on_drag}
+            )
+        elif drag_source == "legacy_csv":
+            preset = load_rocket_preset(self.selected_rocket_id, repo_root=self.repo_root)
+            updated = rocket.model_copy(
+                update={
+                    "power_off_drag": load_drag_curve_asset(
+                        preset.power_off_drag_asset, repo_root=self.repo_root
+                    ),
+                    "power_on_drag": load_drag_curve_asset(
+                        preset.power_on_drag_asset, repo_root=self.repo_root
+                    ),
+                }
+            )
+        else:
+            updated = rocket
+        updated = updated.model_copy(update={"drag_source": drag_source})
+        if drag_source == "analytical":
+            updated = with_analytical_drag(updated)
+        return self.update_working_rocket(updated)
+
+    def set_working_surface_finish(self, finish: SurfaceFinish) -> RocketSpec:
+        """Change the surface roughness and refresh analytical drag immediately."""
+        rocket = self.ensure_working_rocket().model_copy(update={"surface_finish": finish})
+        if rocket.drag_source == "analytical":
+            rocket = with_analytical_drag(rocket)
+        return self.update_working_rocket(rocket)
 
     def run_simulation(
         self,

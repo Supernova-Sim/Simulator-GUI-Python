@@ -52,6 +52,7 @@ from hefesto.services.asset_service import (
     resolve_asset_path,
     resolve_paths,
 )
+from hefesto.services.motor_discovery_service import load_motor_preset_any
 from hefesto.storage import CatalogStore
 
 
@@ -173,7 +174,7 @@ def run_motor_ballistics_for_preset(
     repo_root: Path | str | None = None,
 ) -> BallisticsResult:
     """Load a MotorPreset and execute OpenMotor .ric ballistics with combined overrides."""
-    preset = CatalogStore(resolve_paths(repo_root)).load_motor(motor_id)
+    preset = load_motor_preset_any(motor_id, repo_root=repo_root)
     combined = combine_motor_overrides(preset.overrides, overrides)
     validate_motor_overrides(
         combined,
@@ -296,7 +297,7 @@ def load_motor_spec(
     repo_root: Path | str | None = None,
 ) -> MotorSpec:
     """Load a MotorPreset by ID and build its in-memory MotorSpec."""
-    preset = CatalogStore(resolve_paths(repo_root)).load_motor(motor_id)
+    preset = load_motor_preset_any(motor_id, repo_root=repo_root)
     return build_motor_spec(
         preset,
         overrides=overrides,
@@ -311,10 +312,10 @@ def _try_load_motor_preset(
     *,
     repo_root: Path | str | None = None,
 ) -> MotorPreset | None:
-    store = CatalogStore(resolve_paths(repo_root))
-    if motor_name in store.list_motors():
-        return store.load_motor(motor_name)
-    return None
+    try:
+        return load_motor_preset_any(motor_name, repo_root=repo_root)
+    except FileNotFoundError:
+        return None
 
 
 def resolve_motor_for_simulation(

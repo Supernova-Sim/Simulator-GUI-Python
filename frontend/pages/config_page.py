@@ -11,6 +11,8 @@ from pydantic import ValidationError
 from frontend.components import (
     BALLISTICS_METRIC_CATALOG,
     FLIGHT_METRIC_CATALOG,
+    AerodynamicsView,
+    render_aerodynamics_panel,
     render_metric_selector,
     render_motor_overrides_editor,
 )
@@ -18,12 +20,14 @@ from frontend.state import AppState
 from hefesto.domain import (
     AssetCategory,
     CasingScalingMode,
+    DragSource,
     FinComponent,
     FinGeometryMode,
     NoseConeKind,
     OrkImportSummary,
     ParachuteSpec,
     PointMassComponent,
+    SurfaceFinish,
     TubeComponent,
 )
 from hefesto.services import (
@@ -33,6 +37,7 @@ from hefesto.services import (
     import_and_save_ork_rocket,
     list_ork_assets,
     preview_ork_import,
+    preview_rocket_drag_curves,
     recalculate_rocket_structure,
     summarize_rocket_structure,
     sync_rocket_fins,
@@ -511,8 +516,10 @@ def render_config_page(state: AppState) -> ui.column:
                             "position_m": float(nose_pos_in.value or 0.0),
                         }
                     )
-                    updated = state.ensure_working_rocket().model_copy(
-                        update={"nose_cone": new_nose}
+                    updated = recalculate_rocket_structure(
+                        state.ensure_working_rocket().model_copy(
+                            update={"nose_cone": new_nose}
+                        )
                     )
                     state.update_working_rocket(updated)
                     ui.notify("Ogiva atualizada.", type="positive")
@@ -782,6 +789,71 @@ def render_config_page(state: AppState) -> ui.column:
 
             _render_casing_feedback()
 
+    @ui.refreshable
+    def render_aerodynamics_section() -> None:
+        rocket = state.ensure_working_rocket()
+        try:
+            table = preview_rocket_drag_curves(rocket)
+        except ValueError as exc:
+            with ui.card().classes("w-full p-4 border-l-4 border-rose-500 bg-rose-50"):
+                ui.label("Falha ao materializar as curvas Cd(Mach)").classes(
+                    "text-sm font-semibold text-rose-900"
+                )
+                ui.label(str(exc)).classes("text-xs text-rose-800")
+            return
+
+        def _on_source_change(drag_source: DragSource) -> None:
+            try:
+                state.set_working_drag_source(drag_source)
+                ui.notify(f"Fonte de arrasto ativa: {drag_source}", type="positive")
+            except (FileNotFoundError, ValueError) as exc:
+                ui.notify(f"Fonte indisponível: {exc}", type="negative")
+                render_aerodynamics_section.refresh()
+
+        def _on_finish_change(finish: SurfaceFinish) -> None:
+            state.set_working_surface_finish(finish)
+            ui.notify(f"Acabamento superficial: {finish.value}", type="info")
+
+        def _on_csv_import(csv_content: str, filename: str) -> None:
+            try:
+                state.import_rasaero_csv(csv_content, filename)
+                ui.notify(f"CSV do RASAero II importado: {filename}", type="positive")
+            except (FileNotFoundError, ValueError) as exc:
+                ui.notify(f"CSV do RASAero II inválido: {exc}", type="negative")
+                render_aerodynamics_section.refresh()
+
+        def _on_alpha_change(alpha_deg: float) -> None:
+            try:
+                state.set_rasaero_alpha(alpha_deg)
+                ui.notify(f"Ângulo de ataque aplicado: {alpha_deg:g}°", type="info")
+            except (FileNotFoundError, ValueError) as exc:
+                ui.notify(f"Falha ao trocar o ângulo de ataque: {exc}", type="negative")
+                render_aerodynamics_section.refresh()
+
+        def _on_chart_range_change(max_mach: float) -> None:
+            state.drag_chart_max_mach = max_mach
+            state.notify()
+
+        render_aerodynamics_panel(
+            AerodynamicsView(
+                rocket=rocket,
+                table=table,
+                ork_table_available=state.preset_ork_drag_table() is not None,
+                rasaero_alpha_options=state.rasaero_alpha_options,
+                rasaero_alpha_deg=state.rasaero_alpha_deg,
+                rasaero_filename=(
+                    state.rasaero_csv_filename if state.rasaero_csv_content else None
+                ),
+                rasaero_mach_range=state.rasaero_mach_range,
+                chart_max_mach=state.drag_chart_max_mach,
+            ),
+            on_source_change=_on_source_change,
+            on_finish_change=_on_finish_change,
+            on_csv_import=_on_csv_import,
+            on_alpha_change=_on_alpha_change,
+            on_chart_range_change=_on_chart_range_change,
+        )
+
     with root:
         uploaded_ork: dict[str, bytes | str | None] = {"bytes": None, "filename": None}
         ork_preview_state: dict[str, OrkImportSummary | None] = {"summary": None}
@@ -795,11 +867,7 @@ def render_config_page(state: AppState) -> ui.column:
                 ui.button(icon="close", on_click=ork_dialog.close).props("flat round dense")
 
             catalog = state.catalog
-            motor_choices = (
-                list(catalog.motor_presets)
-                if catalog and catalog.motor_presets
-                else [DEFAULT_MOTOR_ID]
-            )
+            motor_choices = list(state.available_motor_ids()) or [DEFAULT_MOTOR_ID]
             drag_choices = (
                 [entry.relative_path for entry in catalog.assets_for(AssetCategory.DRAG)]
                 if catalog
@@ -1070,6 +1138,7 @@ def render_config_page(state: AppState) -> ui.column:
         render_structure_summary_card()
         render_components_section()
         render_aero_recovery_section()
+        render_aerodynamics_section()
         render_motor_casing_section()
 
         with ui.card().classes("w-full p-4 shadow-sm"):
@@ -1164,6 +1233,7 @@ def render_config_page(state: AppState) -> ui.column:
 
     def _refresh_summary() -> None:
         render_structure_summary_card.refresh()
+        render_aerodynamics_section.refresh()
 
     unsub = state.subscribe(_refresh_summary)
     _attach_client_cleanup(unsub)

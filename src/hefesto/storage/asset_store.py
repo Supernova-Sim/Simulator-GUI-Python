@@ -21,9 +21,12 @@ ASSET_EXTENSION_WHITELIST: dict[AssetCategory, frozenset[str]] = {
     AssetCategory.ATMOSPHERE: frozenset({".nc"}),
 }
 
+_RIC_EXTENSION = ".ric"
+_MOTOR_DISCOVERY_CACHE_FILE = "discovery.json"
+
 
 class AssetStore:
-    """Read-only asset resolver and indexer under data/assets/{motors,drag,atmosphere}/."""
+    """Asset resolver/indexer plus atomic uploads of user-provided .ork/.ric assets."""
 
     def __init__(self, paths: StoragePaths | None = None) -> None:
         self.paths = resolve_storage_paths() if paths is None else paths
@@ -133,6 +136,36 @@ class AssetStore:
         slug = validate_safe_slug(stem, "ork_filename")
         target = resolve_safe_relative_path(self.paths.openrocket_assets_dir, f"{slug}.ork")
         return atomic_write_bytes(target, content)
+
+    def save_motor_ric_asset(self, filename: str, content: bytes) -> Path:
+        """Persist an OpenMotor .ric motor atomically under data/assets/motors/."""
+        cleaned = filename.strip()
+        stem = (
+            cleaned[: -len(_RIC_EXTENSION)]
+            if cleaned.lower().endswith(_RIC_EXTENSION)
+            else cleaned
+        )
+        slug = validate_safe_slug(stem, "ric_filename")
+        target = resolve_safe_relative_path(
+            self.paths.asset_category_dir(AssetCategory.MOTORS), f"{slug}{_RIC_EXTENSION}"
+        )
+        return atomic_write_bytes(target, content)
+
+    def load_motor_discovery_cache(self) -> str | None:
+        """Return the cached .ric motor discovery JSON, or None when absent."""
+        target = resolve_safe_relative_path(
+            self.paths.motors_cache_dir, _MOTOR_DISCOVERY_CACHE_FILE
+        )
+        if not target.is_file():
+            return None
+        return target.read_text(encoding="utf-8")
+
+    def save_motor_discovery_cache(self, payload_json: str) -> Path:
+        """Persist the .ric motor discovery JSON under data/cache/motors/ atomically."""
+        target = resolve_safe_relative_path(
+            self.paths.motors_cache_dir, _MOTOR_DISCOVERY_CACHE_FILE
+        )
+        return atomic_write_text(target, payload_json)
 
     def load_openrocket_cache(self, sha256: str, parser_version: str = "v1") -> str | None:
         """Return cached OrkParsedDesign JSON for sha256 + parser_version, or None."""

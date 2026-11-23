@@ -1,4 +1,9 @@
-"""External simulation and aerodynamics adapter layer exports for Hefesto."""
+"""External integration layer: OpenMotor, RocketPy, OpenRocket, and RASAero adapters.
+
+All third-party simulator calls are isolated and translated into domain models, so
+no other layer imports rocketpy/openmotor/motorlib/uilib. Only services consume it;
+adapters import only hefesto.domain and hefesto.adapters.
+"""
 
 from __future__ import annotations
 

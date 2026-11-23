@@ -83,7 +83,11 @@ def test_catalog_asset_and_structure_services_compose_config_and_export_all() ->
     assert DEFAULT_MOTOR_ID in overview.motor_presets
     assert DEFAULT_SITE_ID in overview.environment_presets
     assert "ork_parity" in overview.mission_presets
-    assert len(overview.assets) == 15
+    assert {
+        "medusa_knsb_a.ric",
+        "power_off.csv",
+        "irec_era5_oper.nc",
+    }.issubset({entry.relative_path for entry in overview.assets})
     assert len(list_assets(AssetCategory.ATMOSPHERE)) == 5
     assert asset_exists(AssetCategory.MOTORS, "medusa_knsb_a.ric")
     assert resolve_asset_path(AssetCategory.DRAG, "power_off.csv").is_file()

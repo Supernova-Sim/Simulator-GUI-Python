@@ -1,4 +1,9 @@
-"""Pure domain layer exports for Hefesto."""
+"""Pure domain layer: typed Pydantic models, enums, and fail-closed validation.
+
+No I/O, filesystem, or simulator libraries: the AST Gate forbids pathlib/json/
+openmotor/rocketpy and open() here. Every layer may import hefesto.domain, so these
+models are the shared contract; domain imports only hefesto.domain.
+"""
 
 from __future__ import annotations
 
@@ -35,6 +40,9 @@ from hefesto.domain.mission import (
     MissionSpec,
     MotorPreset,
     OutputSelection,
+    RicMotorAsset,
+    RicMotorCache,
+    RicMotorCacheEntry,
     RocketPreset,
     SimulationConfig,
 )
@@ -129,6 +137,9 @@ __all__ = [
     "ParachuteSpec",
     "PointMassComponent",
     "RailButtonsSpec",
+    "RicMotorAsset",
+    "RicMotorCache",
+    "RicMotorCacheEntry",
     "RocketComponent",
     "RocketPreset",
     "RocketSpec",
