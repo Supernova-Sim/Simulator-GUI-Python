@@ -685,6 +685,7 @@ def test_inspect_saved_motor_catalog_database_and_execution_audit_report(
     )
     cfg = compose_simulation_config(
         rocket_spec=edited_rocket,
+        rocket_preset_id=DEFAULT_ROCKET_ID,
         launch=LaunchConfig(terminate_on_apogee=True),
         motor_overrides=(
             MotorOverride(path="nozzle.throat", value=0.036),
@@ -872,7 +873,12 @@ def test_auto_size_rocket_motor_casing_meets_target_safety_factor(tmp_path: Path
         compute_case_hoop_stress_pa,
         compute_minimum_casing_wall_thickness_m,
     )
-    from hefesto.services import auto_size_rocket_motor_casing, run_motor_ballistics_for_preset
+    from hefesto.services import (
+        DEFAULT_TARGET_CASE_SAFETY_FACTOR,
+        auto_size_rocket_motor_casing,
+        run_ballistics_check,
+        run_motor_ballistics_for_preset,
+    )
 
     root = _seed_isolated_workspace(tmp_path)
     base_rocket = load_rocket_spec(DEFAULT_ROCKET_ID, repo_root=root)
@@ -882,13 +888,14 @@ def test_auto_size_rocket_motor_casing_meets_target_safety_factor(tmp_path: Path
         ballistics.peak_chamber_pressure_pa,
         base_casing.inner_radius_m,
         base_casing.yield_strength_pa,
-        1.5,
+        3.0,
     )
 
-    sized_rocket = auto_size_rocket_motor_casing(base_rocket, 1.5, repo_root=root)
+    assert DEFAULT_TARGET_CASE_SAFETY_FACTOR == pytest.approx(3.0)
+    sized_rocket = auto_size_rocket_motor_casing(base_rocket, repo_root=root)
     sized_casing = sized_rocket.motor.casing
     assert sized_casing.wall_thickness_m == pytest.approx(expected_wall_m)
-    assert sized_casing.wall_thickness_m < base_casing.wall_thickness_m
+    assert sized_casing.wall_thickness_m > base_casing.wall_thickness_m
     assert sized_casing.length_m == pytest.approx(base_casing.length_m)
 
     hoop_stress_pa = compute_case_hoop_stress_pa(
@@ -897,10 +904,26 @@ def test_auto_size_rocket_motor_casing_meets_target_safety_factor(tmp_path: Path
         sized_casing.wall_thickness_m,
     )
     assert hoop_stress_pa is not None
-    assert sized_casing.yield_strength_pa / hoop_stress_pa >= 1.5
-    assert sized_casing.dry_mass_kg < base_casing.dry_mass_kg
+    assert sized_casing.yield_strength_pa / hoop_stress_pa >= 3.0
+    assert sized_casing.dry_mass_kg > base_casing.dry_mass_kg
     assert sized_rocket.center_of_mass_without_motor_m > 0.0
     assert sized_rocket.inertia_kg_m2[0] > 0.0
+
+    # The auto-sized wall must pass the same motor check the UI runs afterwards.
+    _, safety = run_ballistics_check(
+        base_rocket.motor.name,
+        limits_id=DEFAULT_LIMITS_ID,
+        casing=sized_casing,
+        repo_root=root,
+    )
+    fs_check = next(
+        check for check in safety.checks if check.criterion == SafetyCriterion.CASE_SAFETY_FACTOR
+    )
+    assert fs_check.passed is True
+    assert fs_check.value is not None and fs_check.value >= 2.0
+
+    with pytest.raises(ValueError, match="min_case_safety_factor"):
+        auto_size_rocket_motor_casing(base_rocket, 1.5, repo_root=root)
 
 
 def test_run_ballistics_check_prefers_active_casing_over_preset(tmp_path: Path) -> None:
@@ -935,3 +958,81 @@ def test_run_ballistics_check_prefers_active_casing_over_preset(tmp_path: Path) 
     )
     assert preset_safety.hoop_stress_pa == pytest.approx(preset_hoop_pa)
     assert safety.hoop_stress_pa > preset_safety.hoop_stress_pa
+
+
+def test_mission_preset_combines_site_atmosphere_and_launch_with_active_rocket(
+    tmp_path: Path,
+) -> None:
+    root = _seed_isolated_workspace(tmp_path)
+    active_rocket = load_rocket_spec(DEFAULT_ROCKET_ID, repo_root=root)
+
+    cfg = compose_simulation_config(
+        mission_id="ork_parity",
+        rocket_spec=active_rocket,
+        rocket_preset_id=DEFAULT_ROCKET_ID,
+        repo_root=root,
+    )
+    mission = cfg.mission
+    assert mission.name == "ork_parity"
+    assert mission.rocket == active_rocket
+    assert mission.rocket_preset_id == DEFAULT_ROCKET_ID
+    assert mission.environment.name == "OpenRocket Reference (ISA)"
+    assert mission.atmosphere is not None
+    assert mission.atmosphere.type == "isa"
+    assert mission.atmosphere.elevation_m == pytest.approx(1000.0)
+    assert mission.launch.inclination_deg == pytest.approx(84.0)
+    assert mission.launch.rail_length_m == pytest.approx(6.48)
+
+    pure_mission = build_mission_from_preset("ork_parity", repo_root=root)
+    assert pure_mission.rocket_preset_id == "hefesto_1.4"
+
+    # An explicit UI launch config overrides only the launch, never the mission atmosphere.
+    custom_launch = LaunchConfig(inclination_deg=88.0, terminate_on_apogee=True)
+    cfg_custom = compose_simulation_config(
+        mission_id="ork_parity",
+        rocket_spec=active_rocket,
+        rocket_preset_id=DEFAULT_ROCKET_ID,
+        launch=custom_launch,
+        repo_root=root,
+    )
+    assert cfg_custom.mission.launch == custom_launch
+    assert cfg_custom.mission.environment == mission.environment
+    assert cfg_custom.mission.atmosphere == mission.atmosphere
+
+
+def test_execution_audit_uses_real_rocket_preset_id_not_display_name(tmp_path: Path) -> None:
+    from hefesto.services import build_execution_audit_report
+
+    root = _seed_isolated_workspace(tmp_path)
+    active_rocket = load_rocket_spec("hefesto_1.4", repo_root=root)
+    cfg = compose_simulation_config(
+        rocket_spec=active_rocket,
+        rocket_preset_id="hefesto_1.4",
+        launch=LaunchConfig(terminate_on_apogee=True),
+        output_selection=OutputSelection.none(),
+        repo_root=root,
+    )
+    result = run_deterministic(cfg, repo_root=root)
+    report = build_execution_audit_report(result, cfg, repo_root=root)
+
+    assert report.rocket_name == "Hefesto v1.2"  # display name is not an ID
+    assert report.rocket_preset_id == "hefesto_1.4"
+    assert report.rocket_modified_in_session is False
+    assert report.rocket_modification_notes == ()
+
+    # A config without a recorded preset id stays honest instead of falling back to v1.
+    no_id_cfg = cfg.model_copy(
+        update={"mission": cfg.mission.model_copy(update={"rocket_preset_id": None})}
+    )
+    no_id_report = build_execution_audit_report(result, no_id_cfg, repo_root=root)
+    assert no_id_report.rocket_preset_id is None
+    assert any("não registrado" in note for note in no_id_report.rocket_modification_notes)
+
+    # Snapshots without an executed config are unverifiable, not silently "pure v1".
+    unknown = build_execution_audit_report(
+        result.model_copy(update={"executed_config": None}),
+        None,
+        repo_root=root,
+    )
+    assert unknown.rocket_preset_id is None
+    assert any("não verificável" in note for note in unknown.rocket_modification_notes)

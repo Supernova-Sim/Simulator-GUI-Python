@@ -305,3 +305,77 @@ def test_preview_ork_import_rejects_ork_sim_without_flightdata(tmp_path: Path) -
             drag_source="ork_sim",
             repo_root=repo,
         )
+
+
+def test_import_and_save_ork_rocket_requires_explicit_overwrite(tmp_path: Path) -> None:
+    repo = _setup_isolated_repo(tmp_path)
+    first_xml = SIMPLE_ORK_XML.replace("Hefesto Ork Demo", "Ork First")
+    second_xml = SIMPLE_ORK_XML.replace("Hefesto Ork Demo", "Ork Second")
+    first_bytes = _make_ork_bytes(first_xml)
+    second_bytes = _make_ork_bytes(second_xml)
+
+    import_and_save_ork_rocket(
+        first_bytes,
+        rocket_id="ork_guard",
+        base_motor_id="medusa_knsb_a",
+        power_off_drag_asset="power_off.csv",
+        power_on_drag_asset="power_on.csv",
+        repo_root=repo,
+    )
+    preset_path = repo / "data" / "catalog" / "rockets" / "ork_guard.json"
+    asset_path = repo / "data" / "assets" / "openrocket" / "ork_guard.ork"
+    preset_bytes = preset_path.read_bytes()
+    asset_bytes = asset_path.read_bytes()
+
+    with pytest.raises(FileExistsError, match="ork_guard"):
+        import_and_save_ork_rocket(
+            second_bytes,
+            rocket_id="ork_guard",
+            base_motor_id="medusa_knsb_a",
+            power_off_drag_asset="power_off.csv",
+            power_on_drag_asset="power_on.csv",
+            repo_root=repo,
+        )
+    assert preset_path.read_bytes() == preset_bytes
+    assert asset_path.read_bytes() == asset_bytes
+
+    import_and_save_ork_rocket(
+        second_bytes,
+        rocket_id="ork_guard",
+        base_motor_id="medusa_knsb_a",
+        power_off_drag_asset="power_off.csv",
+        power_on_drag_asset="power_on.csv",
+        overwrite=True,
+        repo_root=repo,
+    )
+    assert load_rocket_preset("ork_guard", repo_root=repo).name == "Ork Second"
+    assert asset_path.read_bytes() == second_bytes
+
+
+def test_rocket_preset_from_spec_materializes_ork_sim_drag_table(tmp_path: Path) -> None:
+    from hefesto.services import (
+        load_rocket_spec,
+        rocket_preset_from_spec,
+        save_rocket_preset,
+    )
+
+    repo = _setup_isolated_repo(tmp_path)
+    import_and_save_ork_rocket(
+        _make_ork_bytes(FLIGHTDATA_ORK_XML),
+        rocket_id="ork_sim_source",
+        base_motor_id="medusa_knsb_a",
+        power_off_drag_asset="power_off.csv",
+        power_on_drag_asset="power_on.csv",
+        drag_source="ork_sim",
+        repo_root=repo,
+    )
+    source_spec = load_rocket_spec("ork_sim_source", repo_root=repo)
+    preset = rocket_preset_from_spec(source_spec, motor_preset_name="medusa_knsb_a")
+    assert preset.drag_table is not None
+    assert preset.drag_table.source == "ork_sim"
+    save_rocket_preset(preset, preset_id="ork_sim_roundtrip", repo_root=repo)
+
+    reloaded = load_rocket_spec("ork_sim_roundtrip", repo_root=repo)
+    assert reloaded.drag_source == "ork_sim"
+    assert reloaded.power_off_drag.points[round(0.3 / 0.01)][1] == pytest.approx(0.73)
+    assert reloaded.power_on_drag.points[round(0.3 / 0.01)][1] == pytest.approx(0.63)

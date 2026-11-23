@@ -61,10 +61,14 @@ def load_rocket_preset(
 def save_rocket_preset(
     preset: RocketPreset,
     preset_id: str | None = None,
+    *,
+    overwrite: bool = False,
     repo_root: Path | str | None = None,
 ) -> Path:
-    """Persist a RocketPreset atomically into data/catalog/rockets/."""
-    return _catalog_store(repo_root).save_rocket(preset, preset_id=preset_id)
+    """Persist a RocketPreset atomically, refusing to replace an existing id by default."""
+    return _catalog_store(repo_root).save_rocket(
+        preset, preset_id=preset_id, overwrite=overwrite
+    )
 
 
 def list_motors(repo_root: Path | str | None = None) -> tuple[str, ...]:
@@ -83,10 +87,14 @@ def load_motor_preset(
 def save_motor_preset(
     preset: MotorPreset,
     preset_id: str | None = None,
+    *,
+    overwrite: bool = False,
     repo_root: Path | str | None = None,
 ) -> Path:
-    """Persist a MotorPreset atomically into data/catalog/motors/."""
-    return _catalog_store(repo_root).save_motor(preset, preset_id=preset_id)
+    """Persist a MotorPreset atomically, refusing to replace an existing id by default."""
+    return _catalog_store(repo_root).save_motor(
+        preset, preset_id=preset_id, overwrite=overwrite
+    )
 
 
 def list_sites(repo_root: Path | str | None = None) -> tuple[str, ...]:
@@ -149,10 +157,14 @@ def load_mission_preset(
 def save_mission_preset(
     preset: MissionPreset,
     preset_id: str | None = None,
+    *,
+    overwrite: bool = False,
     repo_root: Path | str | None = None,
 ) -> Path:
-    """Persist a MissionPreset atomically into data/catalog/missions/."""
-    return _catalog_store(repo_root).save_mission(preset, preset_id=preset_id)
+    """Persist a MissionPreset atomically, refusing to replace an existing id by default."""
+    return _catalog_store(repo_root).save_mission(
+        preset, preset_id=preset_id, overwrite=overwrite
+    )
 
 
 def inspect_saved_rocket(

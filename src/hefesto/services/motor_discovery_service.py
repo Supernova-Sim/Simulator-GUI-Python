@@ -424,6 +424,7 @@ def import_openmotor_ric(
     raw_bytes: bytes,
     save_to_catalog: bool = True,
     *,
+    overwrite: bool = False,
     repo_root: Path | str | None = None,
 ) -> MotorPreset:
     """Validate an uploaded .ric, store it atomically, and optionally persist its preset."""
@@ -432,6 +433,10 @@ def import_openmotor_ric(
     slug = _sanitize_ric_slug(filename)
     paths = resolve_paths(repo_root)
     store = AssetStore(paths)
+    if save_to_catalog and not overwrite and slug in CatalogStore(paths).list_motors():
+        raise FileExistsError(
+            f"Motor preset '{slug}' already exists; pass overwrite=True to replace it."
+        )
     relative_path = f"{slug}{_RIC_EXTENSION}"
     thrust_curve_asset = _thrust_curve_asset(store, slug)
     casing_template = _catalog_casing_templates(store).get(_sha256(raw_bytes))
@@ -451,7 +456,7 @@ def import_openmotor_ric(
 
     store.save_motor_ric_asset(relative_path, raw_bytes)
     if save_to_catalog:
-        CatalogStore(paths).save_motor(preset, preset_id=slug)
+        CatalogStore(paths).save_motor(preset, preset_id=slug, overwrite=overwrite)
     _upsert_cache_entry(
         store,
         preset,

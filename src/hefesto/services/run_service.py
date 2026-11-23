@@ -19,7 +19,7 @@ from hefesto.domain import (
     SimulationResult,
 )
 from hefesto.physics import derive_component_properties
-from hefesto.services.asset_service import DEFAULT_ROCKET_ID, resolve_paths
+from hefesto.services.asset_service import resolve_paths
 from hefesto.services.catalog_service import (
     list_motors,
     list_rockets,
@@ -214,10 +214,8 @@ def build_execution_audit_report(
     if effective_config is not None:
         exec_rocket = effective_config.mission.rocket
         rocket_name = exec_rocket.name
-        rocket_preset_id = (
-            exec_rocket.name if exec_rocket.name in available_rockets else DEFAULT_ROCKET_ID
-        )
-        if rocket_preset_id in available_rockets:
+        rocket_preset_id = effective_config.mission.rocket_preset_id
+        if rocket_preset_id is not None and rocket_preset_id in available_rockets:
             base_rocket = load_rocket_spec(
                 rocket_preset_id,
                 motor=exec_rocket.motor,
@@ -229,8 +227,17 @@ def build_execution_audit_report(
                 mass_mode=effective_config.mass_mode,
             )
         else:
-            rocket_modified = True
-            mod_notes = ("Foguete customizado em sessão (sem preset correspondente no catálogo)",)
+            rocket_modified = False
+            if rocket_preset_id is not None:
+                mod_notes = (
+                    f"Preset de origem '{rocket_preset_id}' não encontrado no catálogo; "
+                    "comparação por ID indisponível",
+                )
+            else:
+                mod_notes = (
+                    "Preset de origem não registrado na configuração executada; "
+                    "comparação por ID indisponível",
+                )
 
         nose = exec_rocket.nose_cone
         nose_summary = (
@@ -255,9 +262,12 @@ def build_execution_audit_report(
         atmosphere_asset = effective_config.mission.environment.atmosphere_asset
     else:
         rocket_name = result.mission_name
-        rocket_preset_id = DEFAULT_ROCKET_ID
+        rocket_preset_id = None
         rocket_modified = False
-        mod_notes = ()
+        mod_notes = (
+            "Configuração executada não disponível no snapshot; identidade do preset "
+            "não verificável",
+        )
         components_summary = ()
         fins_summary = ""
         mass_mode = "calculated"

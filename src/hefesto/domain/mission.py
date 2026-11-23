@@ -260,6 +260,7 @@ class MissionSpec(BaseModel):
 
     name: str
     rocket: RocketSpec
+    rocket_preset_id: str | None = None
     environment: EnvironmentSpec
     launch: LaunchConfig = Field(default_factory=LaunchConfig)
     safety_limits: SafetyLimits = Field(default_factory=SafetyLimits)
@@ -269,6 +270,13 @@ class MissionSpec(BaseModel):
     @classmethod
     def _validate_name(cls, value: str) -> str:
         return require_non_empty_text(value, "name")
+
+    @field_validator("rocket_preset_id")
+    @classmethod
+    def _validate_rocket_preset_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return require_non_empty_text(value, "rocket_preset_id")
 
 
 class OutputSelection(BaseModel):

@@ -369,13 +369,13 @@ def test_minimum_casing_wall_thickness_meets_target_safety_factor() -> None:
     pressure_pa = 5_000_000.0
     inner_radius_m = 0.05395
     yield_pa = 145_000_000.0
-    target_fs = 1.5
+    target_fs = 3.0
 
     wall_m = compute_minimum_casing_wall_thickness_m(
         pressure_pa, inner_radius_m, yield_pa, target_fs
     )
-    # Ideal t = FS*P0*r_i/yield = 2.7905 mm rounds up to the 0.1 mm grid.
-    assert wall_m == pytest.approx(0.0028, rel=1e-12)
+    # Ideal t = FS*P0*r_i/yield = 5.5810 mm rounds up to the 0.1 mm grid.
+    assert wall_m == pytest.approx(0.0056, rel=1e-12)
     steps = wall_m / 0.0001
     assert abs(steps - round(steps)) < 1e-9
 
@@ -399,10 +399,10 @@ def test_minimum_casing_wall_thickness_meets_target_safety_factor() -> None:
     coarse_m = compute_minimum_casing_wall_thickness_m(
         pressure_pa, inner_radius_m, yield_pa, target_fs, step_m=0.001
     )
-    assert coarse_m == pytest.approx(0.003, rel=1e-12)
+    assert coarse_m == pytest.approx(0.006, rel=1e-12)
     assert yield_pa * coarse_m / (pressure_pa * inner_radius_m) >= target_fs
     relaxed_m = compute_minimum_casing_wall_thickness_m(
-        pressure_pa, inner_radius_m, yield_pa, 1.0
+        pressure_pa, inner_radius_m, yield_pa, 2.0
     )
     assert relaxed_m < wall_m
 
@@ -416,7 +416,7 @@ def test_minimum_casing_wall_thickness_meets_target_safety_factor() -> None:
         compute_minimum_casing_wall_thickness_m(
             pressure_pa, inner_radius_m, yield_pa, step_m=0.0
         )
-    with pytest.raises(GeometryValidationError, match=">= 1.0"):
+    with pytest.raises(GeometryValidationError, match=">="):
         compute_minimum_casing_wall_thickness_m(
             pressure_pa, inner_radius_m, yield_pa, target_safety_factor=0.9
         )

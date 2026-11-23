@@ -408,7 +408,7 @@ class ExecutionAuditReport(BaseModel):
     effective_grains: tuple[GrainSpec, ...] = ()
     motor_summary: MotorPhysicalSummary | None = None
     rocket_name: str
-    rocket_preset_id: str
+    rocket_preset_id: str | None = None
     rocket_modified_in_session: bool = False
     rocket_modification_notes: tuple[str, ...] = ()
     mass_mode: MassMode = "calculated"
@@ -422,10 +422,17 @@ class ExecutionAuditReport(BaseModel):
     components_summary: tuple[str, ...] = ()
     fins_summary: str = ""
 
-    @field_validator("run_id", "mission_name", "motor_preset_id", "rocket_name", "rocket_preset_id")
+    @field_validator("run_id", "mission_name", "motor_preset_id", "rocket_name")
     @classmethod
     def _validate_texts(cls, value: str) -> str:
         return require_non_empty_text(value, "execution audit text")
+
+    @field_validator("rocket_preset_id")
+    @classmethod
+    def _validate_optional_rocket_preset_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return require_non_empty_text(value, "rocket_preset_id")
 
 
 __all__ = [

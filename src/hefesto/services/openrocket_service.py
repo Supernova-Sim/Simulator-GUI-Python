@@ -32,7 +32,7 @@ from hefesto.services.rocket_service import (
     rocket_preset_from_spec,
     summarize_rocket_structure,
 )
-from hefesto.storage import AssetStore
+from hefesto.storage import AssetStore, CatalogStore
 
 _PARSER_CACHE_VERSION = "v5"
 
@@ -45,10 +45,14 @@ def list_ork_assets(repo_root: Path | str | None = None) -> tuple[str, ...]:
 def save_ork_asset(
     filename: str,
     content: bytes,
+    *,
+    overwrite: bool = False,
     repo_root: Path | str | None = None,
 ) -> Path:
-    """Persist an .ork file atomically under data/assets/openrocket/."""
-    return AssetStore(resolve_paths(repo_root)).save_openrocket_asset(filename, content)
+    """Persist an .ork file atomically under data/assets/openrocket/ without silent replace."""
+    return AssetStore(resolve_paths(repo_root)).save_openrocket_asset(
+        filename, content, overwrite=overwrite
+    )
 
 
 def _resolve_ork_bytes(
@@ -288,6 +292,7 @@ def import_and_save_ork_rocket(
     rocket_name: str | None = None,
     drag_source: DragSource = "analytical",
     save_ork_asset_file: bool = True,
+    overwrite: bool = False,
     repo_root: Path | str | None = None,
 ) -> OrkImportSummary:
     """Import an .ork design, optionally store the .ork asset, and export RocketPreset JSON."""
@@ -298,6 +303,22 @@ def import_and_save_ork_rocket(
         raise ValueError(
             f"Não é permitido sobrescrever o preset Golden Master '{DEFAULT_ROCKET_ID}'."
         )
+
+    if not overwrite:
+        paths = resolve_paths(repo_root)
+        if cleaned_id in CatalogStore(paths).list_rockets():
+            raise FileExistsError(
+                f"Rocket preset '{cleaned_id}' already exists; pass overwrite=True to replace it."
+            )
+        if save_ork_asset_file and isinstance(ork_bytes_or_asset, bytes):
+            target = AssetStore(paths).resolve_openrocket_asset(
+                f"{cleaned_id}.ork", must_exist=False
+            )
+            if target.exists():
+                raise FileExistsError(
+                    f"OpenRocket asset '{cleaned_id}.ork' already exists; "
+                    "pass overwrite=True to replace it."
+                )
 
     summary = preview_ork_import(
         ork_bytes_or_asset,
@@ -316,7 +337,9 @@ def import_and_save_ork_rocket(
     final_spec = summary.rocket_spec.model_copy(update={"name": resolved_name})
 
     if save_ork_asset_file and isinstance(ork_bytes_or_asset, bytes):
-        save_ork_asset(f"{cleaned_id}.ork", ork_bytes_or_asset, repo_root=repo_root)
+        save_ork_asset(
+            f"{cleaned_id}.ork", ork_bytes_or_asset, overwrite=overwrite, repo_root=repo_root
+        )
 
     preset = rocket_preset_from_spec(
         final_spec,
@@ -325,7 +348,9 @@ def import_and_save_ork_rocket(
         power_on_drag_asset=power_on_drag_asset,
         drag_table=summary.drag_table,
     )
-    save_rocket_preset(preset, preset_id=cleaned_id, repo_root=repo_root)
+    save_rocket_preset(
+        preset, preset_id=cleaned_id, overwrite=overwrite, repo_root=repo_root
+    )
 
     return summary.model_copy(
         update={

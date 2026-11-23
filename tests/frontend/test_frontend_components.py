@@ -101,6 +101,10 @@ def test_app_state_lifecycle_errors_and_manual_snapshots(tmp_path: Path) -> None
     assert ballistics.max_thrust_n > 3000.0
     assert safety.all_passed is True
 
+    # A failed run invalidated the previous flight; recover one before snapshot CRUD.
+    result = state.run_simulation()
+    assert result is not None
+
     # On-demand snapshot CRUD.
     summary = state.save_current_run()
     assert summary is not None
@@ -863,6 +867,13 @@ def test_config_page_rocket_selector_and_ork_import_ui(tmp_path: Path) -> None:
             getattr(btn, "text", "") == "Exportar para o Banco e Selecionar"
             for btn in buttons
         )
+        checkboxes = [
+            getattr(el, "text", "")
+            for el in client.elements.values()
+            if isinstance(el, ui.checkbox)
+        ]
+        assert any("Sobrescrever preset existente" in text for text in checkboxes)
+        assert any("Sobrescrever preset/.ork existente" in text for text in checkboxes)
     client.delete()
 
     switched = state.load_rocket_into_config("ui_ork_v1")
@@ -958,7 +969,7 @@ def test_config_page_motor_casing_update_and_restore(tmp_path: Path) -> None:
         assert numbers_by_label["Hardware fixo / fechamentos (kg)"].value == pytest.approx(
             hardware_before_kg + 2.0
         )
-        assert numbers_by_label["FS Alvo"].value == pytest.approx(1.5)
+        assert numbers_by_label["FS Alvo"].value == pytest.approx(3.0)
         buttons = [
             el
             for el in client.elements.values()
@@ -994,15 +1005,15 @@ def test_state_auto_size_casing_wall_and_motor_check(tmp_path: Path) -> None:
         ballistics.peak_chamber_pressure_pa,
         base_casing.inner_radius_m,
         base_casing.yield_strength_pa,
-        1.5,
+        3.0,
     )
 
-    state.casing_target_safety_factor = 1.5
+    assert state.casing_target_safety_factor == pytest.approx(3.0)
     sized_rocket = state.auto_size_motor_casing_wall()
     sized_casing = sized_rocket.motor.casing
     assert sized_casing.wall_thickness_m == pytest.approx(expected_wall_m)
-    assert sized_casing.wall_thickness_m < base_casing.wall_thickness_m
-    assert sized_casing.dry_mass_kg < base_casing.dry_mass_kg
+    assert sized_casing.wall_thickness_m > base_casing.wall_thickness_m
+    assert sized_casing.dry_mass_kg > base_casing.dry_mass_kg
     assert state.has_unsaved_rocket_changes is True
 
     motor_check = state.run_motor_check()
@@ -1019,7 +1030,7 @@ def test_state_auto_size_casing_wall_and_motor_check(tmp_path: Path) -> None:
     assert hoop_stress_pa is not None
     assert safety.hoop_stress_pa == pytest.approx(hoop_stress_pa)
     assert fs_check.value == pytest.approx(sized_casing.yield_strength_pa / hoop_stress_pa)
-    assert fs_check.value >= 1.5
+    assert fs_check.value >= 2.0
 
     page_obj = page("/smoke-config-autosize")
     with Client(page_obj) as client:
@@ -1032,7 +1043,7 @@ def test_state_auto_size_casing_wall_and_motor_check(tmp_path: Path) -> None:
         assert numbers_by_label["Espessura da parede (mm)"].value == pytest.approx(
             expected_wall_m * 1000.0
         )
-        assert numbers_by_label["FS Alvo"].value == pytest.approx(1.5)
+        assert numbers_by_label["FS Alvo"].value == pytest.approx(3.0)
         assert numbers_by_label["Hardware fixo / fechamentos (kg)"].value == pytest.approx(
             state.fixed_hardware_mass_kg()
         )
@@ -1093,3 +1104,230 @@ def test_state_motor_selection_binds_ric_motor_and_casing_edits_reach_check(
         check for check in safety.checks if check.criterion == SafetyCriterion.CASE_SAFETY_FACTOR
     )
     assert fs_check.value == pytest.approx(edited_casing.yield_strength_pa / expected_hoop_pa)
+
+
+def test_state_save_preset_requires_explicit_overwrite_and_protects_golden_master(
+    tmp_path: Path,
+) -> None:
+    from hefesto.domain import PointMassComponent
+    from hefesto.services import DEFAULT_ROCKET_ID, recalculate_rocket_structure
+
+    root = _seed_isolated_workspace(tmp_path)
+    state = create_app_state(repo_root=str(root), initialize=True)
+    working = state.ensure_working_rocket()
+    saved_path = state.save_working_rocket_preset("hefesto_saved_once")
+    original_bytes = saved_path.read_bytes()
+
+    edited = recalculate_rocket_structure(
+        working.model_copy(
+            update={
+                "components": (
+                    *working.components,
+                    PointMassComponent(name="Overwrite Payload", mass_kg=0.4, position_m=1.2),
+                )
+            }
+        )
+    )
+    state.update_working_rocket(edited)
+    with pytest.raises(FileExistsError, match="hefesto_saved_once"):
+        state.save_working_rocket_preset("hefesto_saved_once")
+    assert saved_path.read_bytes() == original_bytes
+
+    state.save_working_rocket_preset("hefesto_saved_once", overwrite=True)
+    assert saved_path.read_bytes() != original_bytes
+    assert any(
+        component.name == "Overwrite Payload"
+        for component in state.load_rocket_into_config("hefesto_saved_once").components
+    )
+
+    with pytest.raises(ValueError, match=DEFAULT_ROCKET_ID):
+        state.save_working_rocket_preset(DEFAULT_ROCKET_ID, overwrite=True)
+
+
+@pytest.mark.anyio
+async def test_simulation_page_reloads_rocket_and_mission_without_stale_results(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from nicegui.testing import user_simulation
+
+    from frontend.app import register_pages
+    from frontend.state import get_client_state
+
+    root = _seed_isolated_workspace(tmp_path)
+    monkeypatch.setenv("NICEGUI_STORAGE_PATH", str(tmp_path / ".nicegui"))
+    async with user_simulation() as user:
+        register_pages(repo_root=str(root))
+        await user.open("/")
+        client = user.client
+        assert client is not None
+        with client:
+            state = get_client_state(repo_root=str(root))
+            state.launch_config = LaunchConfig(terminate_on_apogee=True)
+            result = state.run_simulation()
+        assert result is not None
+        await user.should_see(result.run_id)
+
+        selects = {
+            str(element.props.get("label")): element
+            for element in user.find(kind=ui.select).elements
+            if element.props.get("label") is not None
+        }
+        with client:
+            selects["Foguete"].value = "hefesto_1.4"
+
+        assert state.selected_rocket_id == "hefesto_1.4"
+        assert state.working_rocket_spec is not None
+        assert state.working_rocket_spec.name == "Hefesto v1.2"
+        assert state.current_result is None
+        assert state.safety_preview is None
+        assert state.ballistics_preview is None
+        await user.should_see("Nenhuma simulação de voo 6-DOF executada.")
+        await user.should_not_see(result.run_id)
+
+        with client:
+            selects["Missão (Preset)"].value = "ork_parity"
+
+        assert state.selected_mission_id == "ork_parity"
+        assert state.selected_site_id == "ork_reference"
+        assert state.launch_config.inclination_deg == pytest.approx(84.0)
+        assert state.launch_config.rail_length_m == pytest.approx(6.48)
+        await user.should_see("ISA")
+
+        cfg = state.compose_config()
+        assert cfg.mission.rocket_preset_id == "hefesto_1.4"
+        assert cfg.mission.rocket.name == "Hefesto v1.2"
+        assert cfg.mission.environment.name == "OpenRocket Reference (ISA)"
+        assert cfg.mission.atmosphere is not None
+        assert cfg.mission.atmosphere.type == "isa"
+
+
+def test_config_page_mass_mode_contract_disables_and_ignores_override(
+    tmp_path: Path,
+) -> None:
+    from frontend.pages import render_config_page
+
+    root = _seed_isolated_workspace(tmp_path)
+    state = create_app_state(repo_root=str(root), initialize=True)
+    state.mass_mode = "calculated"
+    state.dry_mass_override_kg = 21.0
+
+    calculated_cfg = state.compose_config()
+    assert calculated_cfg.mass_mode == "calculated"
+    assert calculated_cfg.mission.rocket.dry_mass_override_kg is None
+
+    cfg_page = page("/smoke-config-mass-mode")
+    with Client(cfg_page) as client:
+        render_config_page(state)
+        numbers = {
+            str(el.props.get("label")): el
+            for el in client.elements.values()
+            if isinstance(el, ui.number)
+        }
+        selects = {
+            str(el.props.get("label")): el
+            for el in client.elements.values()
+            if isinstance(el, ui.select)
+        }
+
+        def _labels() -> list[str]:
+            return [
+                getattr(el, "text", "")
+                for el in client.elements.values()
+                if isinstance(el, ui.label)
+            ]
+
+        assert not numbers["Massa Seca Medida (kg)"].enabled
+        assert any("IGNORADO" in text for text in _labels())
+
+        selects["MassMode"].value = "measured"
+        assert numbers["Massa Seca Medida (kg)"].enabled
+        assert any("OBRIGATÓRIO" in text for text in _labels())
+
+        measured_cfg = state.compose_config()
+        assert measured_cfg.mass_mode == "measured"
+        assert measured_cfg.mission.rocket.dry_mass_override_kg == pytest.approx(21.0)
+
+        state.dry_mass_override_kg = None
+        with pytest.raises(ValueError, match="measured"):
+            state.compose_config()
+    client.delete()
+
+
+def test_state_saves_ork_sim_preset_by_materializing_active_curves(tmp_path: Path) -> None:
+    from hefesto.services import load_rocket_preset, load_rocket_spec
+
+    root = _seed_isolated_workspace(tmp_path)
+    state = create_app_state(repo_root=str(root), initialize=True)
+    base_spec = state.ensure_working_rocket()
+    state.update_working_rocket(base_spec.model_copy(update={"drag_source": "ork_sim"}))
+
+    saved_path = state.save_working_rocket_preset("ork_sim_state")
+    assert saved_path.is_file()
+
+    preset = load_rocket_preset("ork_sim_state", repo_root=root)
+    assert preset.drag_source == "ork_sim"
+    assert preset.drag_table is not None
+    assert preset.drag_table.source == "ork_sim"
+
+    reloaded = load_rocket_spec("ork_sim_state", repo_root=root)
+    assert reloaded.drag_source == "ork_sim"
+    assert reloaded.power_off_drag.asset_name is None
+    assert reloaded.power_on_drag.asset_name is None
+    assert reloaded.power_off_drag.points == base_spec.power_off_drag.points
+    assert reloaded.power_on_drag.points == base_spec.power_on_drag.points
+
+
+def test_state_invalidates_stale_results_on_motor_casing_drag_and_mission_mutations(
+    tmp_path: Path,
+) -> None:
+    root = _seed_isolated_workspace(tmp_path)
+    state = create_app_state(repo_root=str(root), initialize=True)
+    state.launch_config = LaunchConfig(terminate_on_apogee=True)
+
+    assert state.run_simulation() is not None
+    assert state.current_result is not None
+    assert state.ballistics_preview is not None
+    assert state.safety_preview is not None
+    assert state.current_audit_report is not None
+
+    state.load_motor_into_session("medusa_n3174")
+    assert state.current_result is None
+    assert state.ballistics_preview is None
+    assert state.safety_preview is None
+    assert state.current_audit_report is None
+    assert state.simulation_config is None
+
+    state.load_motor_into_session("m1001voltas")
+    assert state.run_motor_check() is not None
+    assert state.ballistics_preview is not None
+    assert state.safety_preview is not None
+
+    state.apply_motor_casing_update(
+        new_length_m=state.ensure_working_rocket().motor.casing.length_m,
+        wall_thickness_m=0.003,
+    )
+    assert state.current_result is None
+    assert state.ballistics_preview is None
+    assert state.safety_preview is None
+
+    state.set_working_drag_source("analytical")
+    assert state.current_result is None
+    assert state.ballistics_preview is None
+
+    rasaero_csv = (
+        "Mach Number,Angle of Attack (alpha),CD Power-Off,CD Power-On\n"
+        "0.30,0.00,0.4940,0.4900\n"
+        "0.70,0.00,0.5580,0.5540\n"
+        "1.20,0.00,0.6120,0.6060\n"
+    )
+    state.import_rasaero_csv(rasaero_csv, "stale.cs")
+    assert state.current_result is None
+    assert state.ballistics_preview is None
+    assert state.safety_preview is None
+
+    state.apply_mission_preset("ork_parity")
+    assert state.current_result is None
+    assert state.ballistics_preview is None
+    assert state.safety_preview is None
+    assert state.current_audit_report is None

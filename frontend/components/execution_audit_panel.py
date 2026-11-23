@@ -134,13 +134,16 @@ def render_execution_audit_panel(report: ExecutionAuditReport | None) -> None:
                 ui.label("Foguete, Física e Ambiente Executados").classes(
                     "text-sm font-semibold text-slate-800"
                 )
-                if report.rocket_modified_in_session:
+                if report.rocket_preset_id is None:
+                    ui.badge("Preset de origem não registrado", color="grey")
+                elif report.rocket_modified_in_session:
                     ui.badge("Modificado na Sessão (working_rocket_spec)", color="warning")
                 else:
                     ui.badge("Preset Puro do Catálogo", color="positive")
 
+            preset_label = report.rocket_preset_id or "não registrado"
             ui.label(
-                f"Foguete: {report.rocket_name} (preset base: {report.rocket_preset_id})"
+                f"Foguete: {report.rocket_name} (preset base: {preset_label})"
             ).classes("text-xs font-mono text-slate-700")
             ui.label(f"Run ID: {report.run_id} · Missão: {report.mission_name}").classes(
                 "text-xs font-mono text-slate-600"

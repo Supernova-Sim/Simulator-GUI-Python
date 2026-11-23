@@ -188,16 +188,19 @@ def extract_flight_result(
 
 
 def _render_rocket_draw_png_b64(rocket: Rocket) -> str | None:
-    """Render RocketPy's rocket.draw() diagram (with mounted motor) to a base64 PNG."""
+    """Render RocketPy's rocket.draw() diagram to a base64 PNG without leaking MPL state."""
     draw_fn = getattr(rocket, "draw", None)
     if not callable(draw_fn):
         return None
     import matplotlib
-
-    matplotlib.use("Agg", force=False)
     import matplotlib.pyplot as plt
 
+    previous_backend = matplotlib.get_backend()
+    figures_before = set(plt.get_fignums())
+    switched_backend = previous_backend.lower() != "agg"
     try:
+        if switched_backend:
+            plt.switch_backend("Agg")
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "rocket_draw.png"
             with warnings.catch_warnings():
@@ -207,7 +210,18 @@ def _render_rocket_draw_png_b64(rocket: Rocket) -> str | None:
                 return None
             return base64.b64encode(out_path.read_bytes()).decode("ascii")
     finally:
-        plt.close("all")
+        # RocketPy saves via plt.savefig + plt.close(); only reap figures this call created.
+        for figure_number in set(plt.get_fignums()) - figures_before:
+            plt.close(figure_number)
+        if switched_backend:
+            try:
+                plt.switch_backend(previous_backend)
+            except Exception as exc:
+                warnings.warn(
+                    f"Falha ao restaurar o backend matplotlib {previous_backend!r}: {exc}",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
 
 
 def execute_flight(
@@ -233,7 +247,15 @@ def execute_flight(
             verbose=False,
         )
     result = extract_flight_result(flight, selection=output_selection)
-    draw_b64 = _render_rocket_draw_png_b64(rocket)
+    try:
+        draw_b64 = _render_rocket_draw_png_b64(rocket)
+    except Exception as exc:
+        warnings.warn(
+            f"Falha ao gerar o diagrama do foguete (FlightResult preservado): {exc}",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        draw_b64 = None
     if draw_b64 is not None:
         return result.model_copy(update={"rocket_draw_png_b64": draw_b64})
     return result

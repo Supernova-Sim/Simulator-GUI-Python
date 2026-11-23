@@ -7,6 +7,10 @@ services import domain/physics/storage/adapters/services but never frontend.
 
 from __future__ import annotations
 
+from hefesto.physics import (
+    DEFAULT_MIN_CASE_SAFETY_FACTOR,
+    DEFAULT_TARGET_CASE_SAFETY_FACTOR,
+)
 from hefesto.services.asset_service import (
     asset_exists,
     list_assets,
@@ -101,9 +105,11 @@ from hefesto.services.simulation_service import (
 
 __all__ = [
     "DEFAULT_LIMITS_ID",
+    "DEFAULT_MIN_CASE_SAFETY_FACTOR",
     "DEFAULT_MOTOR_ID",
     "DEFAULT_ROCKET_ID",
     "DEFAULT_SITE_ID",
+    "DEFAULT_TARGET_CASE_SAFETY_FACTOR",
     "CASING_MATERIAL_DENSITY_PRESETS",
     "CASING_MATERIAL_LABELS",
     "ServiceAlert",

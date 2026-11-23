@@ -104,7 +104,7 @@ def _sample_motor_preset(name: str = "medusa_knsb_a") -> MotorPreset:
     )
 
 
-def _sample_rocket_preset(name: str = "hefesto_v1") -> RocketPreset:
+def _sample_rocket_preset(name: str = "hefesto_demo") -> RocketPreset:
     return RocketPreset(
         name=name,
         radius_m=0.079,
@@ -379,7 +379,7 @@ def test_catalog_store_crud_overview_and_security_guards(tmp_path: Path) -> None
     limits = SafetyLimits(max_kn=240.0)
     mission = MissionPreset(
         name="irec_nominal_88deg",
-        rocket_preset_name="hefesto_v1",
+        rocket_preset_name="hefesto_demo",
         environment_preset_name="irec_oper",
         launch=LaunchConfig(),
         safety_limits=limits,
@@ -392,7 +392,7 @@ def test_catalog_store_crud_overview_and_security_guards(tmp_path: Path) -> None
     store.save_mission(mission)
 
     assert store.load_motor("medusa_knsb_a") == motor
-    assert store.load_rocket("hefesto_v1") == rocket
+    assert store.load_rocket("hefesto_demo") == rocket
     assert store.load_site("irec_oper") == site
     assert store.load_limits("default") == limits
     assert store.load_mission("irec_nominal_88deg") == mission
@@ -400,7 +400,7 @@ def test_catalog_store_crud_overview_and_security_guards(tmp_path: Path) -> None
     overview = store.overview()
     assert isinstance(overview, CatalogOverview)
     assert overview.motor_presets == ("medusa_knsb_a",)
-    assert overview.rocket_presets == ("hefesto_v1",)
+    assert overview.rocket_presets == ("hefesto_demo",)
     assert overview.environment_presets == ("irec_oper",)
     assert overview.mission_presets == ("irec_nominal_88deg",)
     assert len(overview.assets) == 1
@@ -506,3 +506,52 @@ def test_repository_catalog_presets_exist_and_reference_only_relative_assets() -
     # Verify default limits load cleanly
     default_limits = catalog_store.load_limits("default")
     assert default_limits == SafetyLimits()
+
+
+def test_catalog_and_ork_stores_refuse_silent_overwrite_and_protect_golden_master(
+    tmp_path: Path,
+) -> None:
+    paths = resolve_storage_paths(tmp_path)
+    store = CatalogStore(paths)
+    rocket = _sample_rocket_preset("hefesto_demo")
+    store.save_rocket(rocket)
+    rocket_path = paths.rockets_catalog_dir / "hefesto_demo.json"
+    original_bytes = rocket_path.read_bytes()
+
+    changed = rocket.model_copy(update={"name": "Changed Name"})
+    with pytest.raises(FileExistsError, match="hefesto_demo"):
+        store.save_rocket(changed, preset_id="hefesto_demo")
+    assert rocket_path.read_bytes() == original_bytes
+    store.save_rocket(changed, preset_id="hefesto_demo", overwrite=True)
+    assert store.load_rocket("hefesto_demo").name == "Changed Name"
+
+    # hefesto_v1 is write-protected even when the file does not exist yet.
+    with pytest.raises(ValueError, match="Golden Master"):
+        store.save_rocket(_sample_rocket_preset("hefesto_v1"), preset_id="hefesto_v1")
+    assert not (paths.rockets_catalog_dir / "hefesto_v1.json").exists()
+
+    motor = _sample_motor_preset()
+    store.save_motor(motor)
+    with pytest.raises(FileExistsError, match="medusa_knsb_a"):
+        store.save_motor(motor)
+    store.save_motor(motor, overwrite=True)
+
+    mission = MissionPreset(
+        name="demo_mission",
+        rocket_preset_name="hefesto_demo",
+        environment_preset_name="irec_oper",
+    )
+    store.save_mission(mission)
+    with pytest.raises(FileExistsError, match="demo_mission"):
+        store.save_mission(mission)
+    store.save_mission(mission, overwrite=True)
+
+    # .ork assets follow the same explicit-overwrite contract.
+    asset_store = AssetStore(paths)
+    ork_bytes = b"PK\x03\x04first-ork"
+    ork_path = asset_store.save_openrocket_asset("demo.ork", ork_bytes)
+    with pytest.raises(FileExistsError, match="demo.ork"):
+        asset_store.save_openrocket_asset("demo.ork", b"PK\x03\x04second-ork")
+    assert ork_path.read_bytes() == ork_bytes
+    asset_store.save_openrocket_asset("demo.ork", b"PK\x03\x04third-ork", overwrite=True)
+    assert ork_path.read_bytes() == b"PK\x03\x04third-ork"

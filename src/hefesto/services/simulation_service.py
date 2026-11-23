@@ -53,6 +53,7 @@ def build_mission_from_selection(
     launch: LaunchConfig | None = None,
     mission_name: str | None = None,
     rocket_spec: RocketSpec | None = None,
+    rocket_preset_id: str | None = None,
     repo_root: Path | str | None = None,
 ) -> MissionSpec:
     """Compose a MissionSpec from explicit catalog preset IDs or an in-memory RocketSpec."""
@@ -63,11 +64,13 @@ def build_mission_from_selection(
         else:
             resolved_rocket = rocket_spec
         resolved_motor_id = resolved_rocket.motor.name
+        resolved_preset_id = rocket_preset_id
     else:
         rocket_preset = load_rocket_preset(rocket_id, repo_root=repo_root)
         resolved_motor_id = rocket_preset.motor_preset_name if motor_id is None else motor_id
         motor_spec = load_motor_spec(resolved_motor_id, repo_root=repo_root)
         resolved_rocket = build_rocket_spec(rocket_preset, motor=motor_spec, repo_root=repo_root)
+        resolved_preset_id = rocket_id if rocket_preset_id is None else rocket_preset_id
 
     environment = load_site_preset(site_id, repo_root=repo_root)
     safety_limits = load_limits_preset(limits_id, repo_root=repo_root)
@@ -80,6 +83,7 @@ def build_mission_from_selection(
     return MissionSpec(
         name=resolved_name,
         rocket=resolved_rocket,
+        rocket_preset_id=resolved_preset_id,
         environment=environment,
         launch=LaunchConfig() if launch is None else launch,
         safety_limits=safety_limits,
@@ -91,14 +95,35 @@ def build_mission_from_preset(
     *,
     motor_id: str | None = None,
     limits_id: str | None = None,
+    rocket_spec: RocketSpec | None = None,
+    rocket_preset_id: str | None = None,
     repo_root: Path | str | None = None,
 ) -> MissionSpec:
-    """Compose a MissionSpec from a persisted MissionPreset in data/catalog/missions/."""
+    """Compose a MissionSpec from a persisted MissionPreset in data/catalog/missions/.
+
+    rocket_spec, when supplied, replaces the mission's own vehicle (and optional motor)
+    while keeping the mission's site/atmosphere/launch/safety limits.
+    """
     mission_preset = load_mission_preset(mission_id, repo_root=repo_root)
-    rocket_preset = load_rocket_preset(mission_preset.rocket_preset_name, repo_root=repo_root)
-    resolved_motor_id = rocket_preset.motor_preset_name if motor_id is None else motor_id
-    motor_spec = load_motor_spec(resolved_motor_id, repo_root=repo_root)
-    rocket_spec = build_rocket_spec(rocket_preset, motor=motor_spec, repo_root=repo_root)
+    if rocket_spec is not None:
+        resolved_rocket = rocket_spec
+        if motor_id is not None and motor_id != rocket_spec.motor.name:
+            resolved_rocket = rocket_spec.model_copy(
+                update={"motor": load_motor_spec(motor_id, repo_root=repo_root)}
+            )
+        resolved_preset_id = rocket_preset_id
+    else:
+        rocket_preset = load_rocket_preset(
+            mission_preset.rocket_preset_name, repo_root=repo_root
+        )
+        resolved_motor_id = rocket_preset.motor_preset_name if motor_id is None else motor_id
+        motor_spec = load_motor_spec(resolved_motor_id, repo_root=repo_root)
+        resolved_rocket = build_rocket_spec(rocket_preset, motor=motor_spec, repo_root=repo_root)
+        resolved_preset_id = (
+            mission_preset.rocket_preset_name
+            if rocket_preset_id is None
+            else rocket_preset_id
+        )
     environment = load_site_preset(mission_preset.environment_preset_name, repo_root=repo_root)
     safety_limits = (
         mission_preset.safety_limits
@@ -108,7 +133,8 @@ def build_mission_from_preset(
 
     return MissionSpec(
         name=mission_preset.name,
-        rocket=rocket_spec,
+        rocket=resolved_rocket,
+        rocket_preset_id=resolved_preset_id,
         environment=environment,
         launch=mission_preset.launch,
         safety_limits=safety_limits,
@@ -131,13 +157,21 @@ def compose_simulation_config(
     motor_overrides: tuple[MotorOverride, ...] = (),
     output_selection: OutputSelection | None = None,
     rocket_spec: RocketSpec | None = None,
+    rocket_preset_id: str | None = None,
     repo_root: Path | str | None = None,
 ) -> SimulationConfig:
-    """Build a picklable SimulationConfig from either MissionPreset or explicit selection."""
-    if mission_id is not None and rocket_spec is None:
+    """Build a picklable SimulationConfig from either MissionPreset or explicit selection.
+
+    Mission presets keep their site/atmosphere/launch/limits; when an in-memory
+    RocketSpec is supplied it supplies the vehicle (and active motor), so a mission
+    is never silently discarded just because the UI holds a working rocket.
+    """
+    if mission_id is not None:
         mission = build_mission_from_preset(
             mission_id,
             motor_id=motor_id,
+            rocket_spec=rocket_spec,
+            rocket_preset_id=rocket_preset_id,
             repo_root=repo_root,
         )
         if launch is not None:
@@ -150,6 +184,7 @@ def compose_simulation_config(
             limits_id=limits_id,
             launch=launch,
             rocket_spec=rocket_spec,
+            rocket_preset_id=rocket_preset_id,
             repo_root=repo_root,
         )
 

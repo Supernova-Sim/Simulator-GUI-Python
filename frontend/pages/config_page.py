@@ -35,6 +35,7 @@ from hefesto.domain import (
 from hefesto.services import (
     CASING_MATERIAL_DENSITY_PRESETS,
     CASING_MATERIAL_LABELS,
+    DEFAULT_MIN_CASE_SAFETY_FACTOR,
     DEFAULT_MOTOR_ID,
     SimulationServiceError,
     import_and_save_ork_rocket,
@@ -93,7 +94,7 @@ def _set_target_safety_factor(state: AppState, raw_value: float | int | None) ->
     if raw_value is None:
         return
     numeric = float(raw_value)
-    if numeric >= 1.0:
+    if numeric >= DEFAULT_MIN_CASE_SAFETY_FACTOR:
         state.casing_target_safety_factor = numeric
 
 
@@ -109,7 +110,11 @@ def render_config_page(state: AppState) -> ui.column:
     def render_structure_summary_card() -> None:
         rocket = state.ensure_working_rocket()
         summary = summarize_rocket_structure(rocket)
-        override_active = state.mass_mode == "measured" or rocket.dry_mass_override_kg is not None
+        override_val = (
+            f"{rocket.dry_mass_override_kg:.3f} kg"
+            if rocket.dry_mass_override_kg is not None
+            else "não definida"
+        )
 
         with ui.card().classes("w-full p-4 shadow-sm border-l-4 border-sky-500"):
             with ui.row().classes("w-full items-center justify-between flex-wrap gap-2"):
@@ -150,20 +155,39 @@ def render_config_page(state: AppState) -> ui.column:
                         "text-lg font-bold text-slate-900"
                     )
 
-            if override_active:
+            if state.mass_mode == "measured":
+                measured = rocket.dry_mass_override_kg is not None
+                with ui.row().classes(
+                    "w-full items-center gap-2 mt-2 p-2 rounded border "
+                    + (
+                        "bg-sky-50 border-sky-200"
+                        if measured
+                        else "bg-amber-50 border-amber-200"
+                    )
+                ):
+                    ui.icon("scale" if measured else "warning_amber").classes(
+                        "text-sky-700" if measured else "text-amber-700"
+                    )
+                    ui.label(
+                        (
+                            f"Modo Medida (measured): o voo 6-DOF usará a massa seca "
+                            f"informada ({override_val}), não a massa calculada dos "
+                            f"componentes."
+                        )
+                        if measured
+                        else (
+                            "Modo Medida (measured) exige o campo 'Massa Seca Medida (kg)' "
+                            "preenchido; a simulação será bloqueada enquanto estiver vazio."
+                        )
+                    ).classes("text-xs font-medium text-slate-800")
+            elif rocket.dry_mass_override_kg is not None:
                 with ui.row().classes(
                     "w-full items-center gap-2 mt-2 p-2 rounded bg-amber-50 border border-amber-200"
                 ):
                     ui.icon("warning_amber").classes("text-amber-700")
-                    override_val = (
-                        f"{rocket.dry_mass_override_kg:.3f} kg"
-                        if rocket.dry_mass_override_kg is not None
-                        else "não definida"
-                    )
                     ui.label(
-                        f"Sobrescrita de massa ativa (mass_mode={state.mass_mode}, "
-                        f"dry_mass_override_kg={override_val}): a simulação 6-DOF "
-                        "usará o valor medido."
+                        f"Modo Calculada (calculated): dry_mass_override_kg={override_val} "
+                        "é IGNORADO e o voo 6-DOF usará a massa seca calculada dos componentes."
                     ).classes("text-xs font-medium text-amber-900")
 
     @ui.refreshable
@@ -879,7 +903,7 @@ def render_config_page(state: AppState) -> ui.column:
                 fs_in = ui.number(
                     label="FS Alvo",
                     value=state.casing_target_safety_factor,
-                    min=1.0,
+                    min=DEFAULT_MIN_CASE_SAFETY_FACTOR,
                     step=0.1,
                     format="%.2f",
                     on_change=lambda e: _set_target_safety_factor(state, e.value),
@@ -1014,6 +1038,10 @@ def render_config_page(state: AppState) -> ui.column:
                     label="Nome de exibição (opcional)",
                     placeholder="Meu Foguete",
                 ).classes("w-full")
+                ork_overwrite_switch = ui.checkbox(
+                    "Sobrescrever preset/.ork existente (destrutivo)",
+                    value=False,
+                ).classes("text-xs text-amber-900")
                 default_motor = (
                     state.selected_motor_id
                     if state.selected_motor_id in motor_choices
@@ -1116,6 +1144,7 @@ def render_config_page(state: AppState) -> ui.column:
                         power_off_drag_asset=str(ork_drag_off_sel.value or default_off),
                         power_on_drag_asset=str(ork_drag_on_sel.value or default_on),
                         rocket_name=(ork_name_in.value or "").strip() or None,
+                        overwrite=bool(ork_overwrite_switch.value),
                         repo_root=state.repo_root,
                     )
                     state.refresh_catalog()
@@ -1130,6 +1159,12 @@ def render_config_page(state: AppState) -> ui.column:
                     ui.notify(
                         f"Foguete '{summary.rocket_id}' importado e selecionado.",
                         type="positive",
+                    )
+                except FileExistsError as exc:
+                    ui.notify(
+                        f"ID/.ork já existe: {exc} Marque 'Sobrescrever preset/.ork "
+                        "existente' para confirmar.",
+                        type="warning",
                     )
                 except (FileNotFoundError, ValueError, OSError) as exc:
                     ui.notify(f"Falha ao exportar .ork: {exc}", type="negative")
@@ -1217,16 +1252,27 @@ def render_config_page(state: AppState) -> ui.column:
                     label="Nome de Exibição (opcional)",
                     placeholder="Hefesto Modificado",
                 ).classes("w-64")
+                overwrite_preset_switch = ui.checkbox(
+                    "Sobrescrever preset existente (destrutivo)",
+                    value=False,
+                ).classes("text-xs text-amber-900")
 
                 def _save_as_preset() -> None:
                     try:
                         saved_path = state.save_working_rocket_preset(
                             new_preset_id_in.value or "",
                             preset_name=(new_preset_name_in.value or "") or None,
+                            overwrite=bool(overwrite_preset_switch.value),
                         )
                         render_rocket_selector_row.refresh()
                         render_structure_summary_card.refresh()
                         ui.notify(f"Preset salvo em {saved_path.name}.", type="positive")
+                    except FileExistsError as exc:
+                        ui.notify(
+                            f"ID já existe: {exc} Marque a caixa 'Sobrescrever preset "
+                            "existente' para confirmar.",
+                            type="warning",
+                        )
                     except (ValueError, OSError) as exc:
                         ui.notify(f"Falha ao salvar preset: {exc}", type="negative")
 
@@ -1266,56 +1312,74 @@ def render_config_page(state: AppState) -> ui.column:
 
             ui.separator().classes("my-3")
 
+            def _on_dry_mass_change(value: float | int | None) -> None:
+                state.dry_mass_override_kg = float(value) if value is not None else None
+                state.invalidate_simulation_results(clear_ballistics=True)
+
+            def _on_factor_change(attr_name: str, value: float | int | None) -> None:
+                if value is None or float(value) <= 0.0:
+                    return
+                setattr(state, attr_name, float(value))
+                state.invalidate_simulation_results(clear_ballistics=True)
+
             with ui.grid(columns=4).classes(
                 "w-full gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
             ):
-                ui.select(
+                mass_mode_select = ui.select(
                     options={"calculated": "Calculada", "measured": "Medida"},
                     value=state.mass_mode,
                     label="MassMode",
-                    on_change=lambda e: setattr(
-                        state,
-                        "mass_mode",
-                        "measured" if e.value == "measured" else "calculated",
-                    ),
                 ).classes("w-full")
-                ui.number(
+                mass_override_input = ui.number(
                     label="Massa Seca Medida (kg)",
                     value=state.dry_mass_override_kg,
                     min=0.1,
                     step=0.1,
-                    on_change=lambda e: setattr(
-                        state,
-                        "dry_mass_override_kg",
-                        float(e.value) if e.value is not None else None,
-                    ),
+                    on_change=lambda e: _on_dry_mass_change(e.value),
                 ).classes("w-full")
+                mass_override_input.set_enabled(state.mass_mode == "measured")
                 ui.number(
                     label="Fator de Arrasto",
                     value=state.drag_factor,
                     min=0.05,
                     step=0.05,
-                    on_change=lambda e: setattr(
-                        state,
-                        "drag_factor",
-                        float(e.value)
-                        if e.value is not None and float(e.value) > 0
-                        else state.drag_factor,
-                    ),
+                    on_change=lambda e: _on_factor_change("drag_factor", e.value),
                 ).classes("w-full")
                 ui.number(
                     label="Fator de Empuxo",
                     value=state.thrust_factor,
                     min=0.05,
                     step=0.05,
-                    on_change=lambda e: setattr(
-                        state,
-                        "thrust_factor",
-                        float(e.value)
-                        if e.value is not None and float(e.value) > 0
-                        else state.thrust_factor,
-                    ),
+                    on_change=lambda e: _on_factor_change("thrust_factor", e.value),
                 ).classes("w-full")
+
+            def _mass_mode_hint() -> str:
+                if state.mass_mode == "measured":
+                    return (
+                        "Modo Medida (measured): o campo Massa Seca Medida é OBRIGATÓRIO "
+                        "e o voo 6-DOF usará exatamente esse valor."
+                    )
+                return (
+                    "Modo Calculada (calculated): o campo Massa Seca Medida fica "
+                    "desabilitado e é IGNORADO; o voo usa a massa calculada dos componentes."
+                )
+
+            mass_mode_banner = ui.label(_mass_mode_hint()).classes(
+                "w-full text-xs font-medium mt-2 p-2 rounded "
+                + (
+                    "bg-sky-50 border border-sky-200 text-sky-900"
+                    if state.mass_mode == "measured"
+                    else "bg-slate-50 border border-slate-200 text-slate-700"
+                )
+            )
+
+            def _on_mass_mode_change(value: object) -> None:
+                state.mass_mode = "measured" if value == "measured" else "calculated"
+                mass_override_input.set_enabled(state.mass_mode == "measured")
+                mass_mode_banner.set_text(_mass_mode_hint())
+                state.invalidate_simulation_results(clear_ballistics=True)
+
+            mass_mode_select.on_value_change(lambda e: _on_mass_mode_change(e.value))
 
             ui.label("Curvas Extraídas (OutputSelection)").classes(
                 "text-sm font-semibold text-slate-700 mt-3 mb-1"

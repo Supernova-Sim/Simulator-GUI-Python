@@ -26,6 +26,8 @@ from hefesto.domain import (
 )
 from hefesto.physics import (
     ALUMINUM_DENSITY_KG_M3,
+    DEFAULT_MIN_CASE_SAFETY_FACTOR,
+    DEFAULT_TARGET_CASE_SAFETY_FACTOR,
     GEOMETRY_TOLERANCE_M,
     ComponentMassProperties,
     StructureSummary,
@@ -159,11 +161,17 @@ def estimate_motor_casing_fixed_hardware_mass_kg(
 
 def auto_size_rocket_motor_casing(
     rocket: RocketSpec,
-    target_safety_factor: float = 1.5,
+    target_safety_factor: float = DEFAULT_TARGET_CASE_SAFETY_FACTOR,
     *,
+    min_safety_factor: float = DEFAULT_MIN_CASE_SAFETY_FACTOR,
     repo_root: Path | None = None,
 ) -> RocketSpec:
     """Size the casing wall to the thinnest value meeting target FS at the active peak P0."""
+    if target_safety_factor < min_safety_factor:
+        raise ValueError(
+            f"target_safety_factor ({target_safety_factor}) must be >= "
+            f"min_case_safety_factor ({min_safety_factor})"
+        )
     casing = rocket.motor.casing
     ballistics = run_motor_ballistics_for_preset(rocket.motor.name, repo_root=repo_root)
     min_wall_m = compute_minimum_casing_wall_thickness_m(
@@ -171,6 +179,7 @@ def auto_size_rocket_motor_casing(
         casing.inner_radius_m,
         casing.yield_strength_pa,
         target_safety_factor,
+        min_safety_factor=min_safety_factor,
     )
     updated_rocket, _ = update_rocket_motor_casing_length(
         rocket,
@@ -515,6 +524,11 @@ def rocket_preset_from_spec(
     drag_table: DragCurveTable | None = None,
 ) -> RocketPreset:
     """Convert an in-memory RocketSpec into a persistable RocketPreset DTO."""
+    resolved_drag_table: DragCurveTable | None = None
+    if rocket.drag_source == "ork_sim":
+        resolved_drag_table = (
+            drag_table if drag_table is not None else _drag_table_from_curves(rocket)
+        )
     return RocketPreset(
         name=rocket.name,
         coordinate_system=rocket.coordinate_system,
@@ -541,7 +555,7 @@ def rocket_preset_from_spec(
         motor_preset_name=motor_preset_name or rocket.motor.name,
         drag_source=rocket.drag_source,
         surface_finish=rocket.surface_finish,
-        drag_table=drag_table if rocket.drag_source == "ork_sim" else None,
+        drag_table=resolved_drag_table,
     )
 
 

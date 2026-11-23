@@ -129,12 +129,22 @@ class AssetStore:
         ]
         return tuple(items)
 
-    def save_openrocket_asset(self, filename: str, content: bytes) -> Path:
+    def save_openrocket_asset(
+        self,
+        filename: str,
+        content: bytes,
+        *,
+        overwrite: bool = False,
+    ) -> Path:
         """Persist an .ork binary archive atomically under data/assets/openrocket/."""
         cleaned = filename.strip()
         stem = cleaned[:-4] if cleaned.lower().endswith(".ork") else cleaned
         slug = validate_safe_slug(stem, "ork_filename")
         target = resolve_safe_relative_path(self.paths.openrocket_assets_dir, f"{slug}.ork")
+        if target.exists() and not overwrite:
+            raise FileExistsError(
+                f"OpenRocket asset '{slug}.ork' already exists; pass overwrite=True to replace it."
+            )
         return atomic_write_bytes(target, content)
 
     def save_motor_ric_asset(self, filename: str, content: bytes) -> Path:

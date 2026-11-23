@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import pytest
@@ -16,10 +17,12 @@ from hefesto.domain import (
 )
 from hefesto.physics import (
     DEFAULT_MACH_GRID,
+    PLUME_RELIEF_EFFICIENCY,
     base_area_m2,
     base_drag_coefficient,
     compute_analytical_drag_curves,
     plume_area_fraction,
+    plume_relief_fraction,
     pressure_drag_cd,
     reference_area_m2,
     skin_friction_drag_cd,
@@ -101,17 +104,54 @@ def test_drag_is_monotonic_and_power_off_exceeds_power_on(curves: DragCurveTable
         assert off[idx] > on[idx], f"power_off must exceed power_on at Mach {mach_value}"
 
 
-def test_power_on_relief_is_the_nozzle_plume_area(hefesto_rocket) -> None:
-    plume = plume_area_fraction(hefesto_rocket)
-    nozzle_area = 3.141592653589793 * hefesto_rocket.motor.nozzle.throat_radius_m**2
-    assert plume == pytest.approx(nozzle_area / base_area_m2(hefesto_rocket), rel=1e-12)
+def test_power_on_relief_uses_nozzle_exit_area_and_explicit_efficiency(hefesto_rocket) -> None:
+    nozzle = hefesto_rocket.motor.nozzle
+    base_area = base_area_m2(hefesto_rocket)
+    exit_fraction = math.pi * nozzle.exit_radius_m**2 / base_area
+    throat_fraction = math.pi * nozzle.throat_radius_m**2 / base_area
+
+    # Physical invariant: the geometric blockage is the nozzle EXIT area, not the throat.
+    assert plume_area_fraction(hefesto_rocket) == pytest.approx(exit_fraction, rel=1e-12)
+    assert plume_area_fraction(hefesto_rocket) != pytest.approx(throat_fraction, rel=1e-3)
+    assert plume_relief_fraction(hefesto_rocket) == pytest.approx(
+        exit_fraction * PLUME_RELIEF_EFFICIENCY, rel=1e-12
+    )
+
+    # A larger exit radius increases the geometric blockage quadratically...
+    bigger_exit = hefesto_rocket.model_copy(
+        update={
+            "motor": hefesto_rocket.motor.model_copy(
+                update={
+                    "nozzle": nozzle.model_copy(
+                        update={"exit_radius_m": 2.0 * nozzle.exit_radius_m}
+                    )
+                }
+            )
+        }
+    )
+    assert plume_area_fraction(bigger_exit) == pytest.approx(4.0 * exit_fraction, rel=1e-12)
+    # ... while the throat radius alone does not drive the base-drag relief.
+    smaller_throat = hefesto_rocket.model_copy(
+        update={
+            "motor": hefesto_rocket.motor.model_copy(
+                update={
+                    "nozzle": nozzle.model_copy(
+                        update={"throat_radius_m": 0.5 * nozzle.throat_radius_m}
+                    )
+                }
+            )
+        }
+    )
+    assert plume_area_fraction(smaller_throat) == pytest.approx(exit_fraction, rel=1e-12)
 
     table = compute_analytical_drag_curves(hefesto_rocket)
     for mach in (0.1, 0.5, 0.9, 0.95):
         base_cd = base_drag_coefficient(hefesto_rocket, mach)
         off = _interpolate(mach, table.mach, table.cd_power_off)
         on = _interpolate(mach, table.mach, table.cd_power_on)
-        assert off - on == pytest.approx(base_cd * plume, rel=1e-12)
+        assert off - on == pytest.approx(
+            base_cd * plume_relief_fraction(hefesto_rocket), rel=1e-12
+        )
 
 
 def test_finish_roughness_monotonically_increases_skin_friction(hefesto_rocket) -> None:

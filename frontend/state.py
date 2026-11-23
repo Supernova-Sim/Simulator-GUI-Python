@@ -25,6 +25,7 @@ from hefesto.domain import (
     GeometryValidationError,
     LaunchConfig,
     MassMode,
+    MissionPreset,
     MotorOverride,
     MotorOverrideOption,
     MotorPreset,
@@ -39,9 +40,11 @@ from hefesto.domain import (
 )
 from hefesto.services import (
     DEFAULT_LIMITS_ID,
+    DEFAULT_MIN_CASE_SAFETY_FACTOR,
     DEFAULT_MOTOR_ID,
     DEFAULT_ROCKET_ID,
     DEFAULT_SITE_ID,
+    DEFAULT_TARGET_CASE_SAFETY_FACTOR,
     ServiceAlert,
     SimulationServiceError,
     auto_size_rocket_motor_casing,
@@ -57,11 +60,13 @@ from hefesto.services import (
     list_rasaero_csv_angles,
     list_run_snapshots,
     load_drag_curve_asset,
+    load_mission_preset,
     load_motor_preset,
     load_motor_spec,
     load_rocket_preset,
     load_rocket_spec,
     load_run_snapshot,
+    load_site_preset,
     recalculate_rocket_structure,
     rocket_preset_from_spec,
     run_ballistics_check,
@@ -99,7 +104,7 @@ class AppState:
     casing_scaling_mode: CasingScalingMode = "tubular_delta"
     casing_material_preset: str = "aluminum_6061_t6"
     casing_density_kg_m3: float = 2700.0
-    casing_target_safety_factor: float = 1.5
+    casing_target_safety_factor: float = DEFAULT_TARGET_CASE_SAFETY_FACTOR
     last_casing_resize_result: CasingResizeResult | None = None
     selected_flight_metrics: tuple[str, ...] = DEFAULT_FLIGHT_METRIC_KEYS
     selected_ballistics_metrics: tuple[str, ...] = DEFAULT_BALLISTICS_METRIC_KEYS
@@ -140,6 +145,20 @@ class AppState:
         """Notify all registered UI listeners after state transitions."""
         for callback in tuple(self._listeners):
             callback()
+
+    def invalidate_simulation_results(self, *, clear_ballistics: bool = False) -> None:
+        """Drop results produced by a previous rocket/motor/drag configuration.
+
+        Keeping current_result or safety_preview after a mutation would let the metric
+        cards and the safety panel describe different motors at the same time.
+        """
+        self.current_result = None
+        self.current_audit_report = None
+        self.simulation_config = None
+        self.safety_preview = None
+        if clear_ballistics:
+            self.ballistics_preview = None
+            self.last_casing_resize_result = None
 
     def clear_error(self) -> None:
         """Clear previous blocking error and structured service alerts."""
@@ -232,6 +251,7 @@ class AppState:
         self.working_rocket_spec = rocket
         self.has_unsaved_rocket_changes = mark_unsaved
         self.dry_mass_override_kg = rocket.dry_mass_override_kg
+        self.invalidate_simulation_results(clear_ballistics=True)
         self.clear_error()
         self.notify()
         return rocket
@@ -249,6 +269,7 @@ class AppState:
         self.rasaero_csv_content = None
         self.rasaero_alpha_options = ()
         self.rasaero_mach_range = None
+        self.invalidate_simulation_results(clear_ballistics=True)
         self.status_message = f"Foguete restaurado para o preset '{self.selected_rocket_id}'."
         self.clear_error()
         self.notify()
@@ -259,14 +280,24 @@ class AppState:
         preset_id: str,
         *,
         preset_name: str | None = None,
+        overwrite: bool = False,
     ) -> Path:
-        """Persist working_rocket_spec as a new catalog preset without overwriting hefesto_v1."""
+        """Persist working_rocket_spec as a catalog preset, never replacing hefesto_v1."""
         cleaned_id = preset_id.strip()
         if not cleaned_id:
             raise ValueError("Informe um ID válido para o novo preset de foguete.")
         if cleaned_id == DEFAULT_ROCKET_ID:
             raise ValueError(
                 f"Não é permitido sobrescrever o preset Golden Master '{DEFAULT_ROCKET_ID}'."
+            )
+        if (
+            not overwrite
+            and self.catalog is not None
+            and cleaned_id in self.catalog.rocket_presets
+        ):
+            raise FileExistsError(
+                f"Já existe um preset de foguete com o ID '{cleaned_id}'. "
+                "Marque 'Sobrescrever preset existente' para confirmar a substituição."
             )
         rocket = self.ensure_working_rocket()
         if rocket.drag_source == "rasaero_csv":
@@ -291,11 +322,17 @@ class AppState:
             power_off_drag_asset=base_preset.power_off_drag_asset if base_preset else None,
             power_on_drag_asset=base_preset.power_on_drag_asset if base_preset else None,
         )
-        saved_path = save_rocket_preset(preset, preset_id=cleaned_id, repo_root=self.repo_root)
+        saved_path = save_rocket_preset(
+            preset,
+            preset_id=cleaned_id,
+            overwrite=overwrite,
+            repo_root=self.repo_root,
+        )
         self.working_rocket_spec = updated_rocket
         self.has_unsaved_rocket_changes = False
         self.selected_rocket_id = cleaned_id
         self.refresh_catalog()
+        self.invalidate_simulation_results(clear_ballistics=True)
         self.status_message = f"Preset de foguete salvo: {cleaned_id}"
         self.notify()
         return saved_path
@@ -339,6 +376,7 @@ class AppState:
 
     def compose_config(self) -> SimulationConfig:
         """Compose and validate a picklable SimulationConfig from current UI selections."""
+        self.invalidate_simulation_results()
         # Compose in calculated mode first so UI dry_mass_override_kg can be applied
         # before SimulationConfig enforces mass_mode='measured' invariants.
         base_config = compose_simulation_config(
@@ -355,10 +393,15 @@ class AppState:
             motor_overrides=self.motor_overrides,
             output_selection=self.output_selection,
             rocket_spec=self.working_rocket_spec,
+            rocket_preset_id=self.selected_rocket_id,
             repo_root=self.repo_root,
         )
         mission = base_config.mission
-        if self.dry_mass_override_kg is not None:
+        if self.mass_mode == "measured":
+            if self.dry_mass_override_kg is None:
+                raise ValueError(
+                    "mass_mode='measured' exige o campo 'Massa Seca Medida (kg)' preenchido."
+                )
             updated_rocket = mission.rocket.model_copy(
                 update={"dry_mass_override_kg": self.dry_mass_override_kg}
             )
@@ -379,6 +422,7 @@ class AppState:
 
     def set_simulation_config(self, config: SimulationConfig) -> None:
         """Store an externally edited SimulationConfig and sync scalar UI mirror fields."""
+        self.invalidate_simulation_results()
         self.simulation_config = config
         self.launch_config = config.mission.launch
         self.mass_mode = config.mass_mode
@@ -394,6 +438,9 @@ class AppState:
     def apply_simulation_result(self, result: SimulationResult) -> None:
         """Apply a completed or loaded SimulationResult into active telemetry state."""
         self.current_result = result
+        self.simulation_config = (
+            result.executed_config if result.executed_config is not None else self.simulation_config
+        )
         self.ballistics_preview = result.ballistics
         self.safety_preview = result.safety
         config_for_audit = (
@@ -428,6 +475,7 @@ class AppState:
             self.has_unsaved_rocket_changes = True
         self.selected_motor_id = cleaned_id or None
         self.motor_overrides = ()
+        self.invalidate_simulation_results(clear_ballistics=True)
         self.status_message = (
             f"Motor selecionado para simulação: '{cleaned_id}'."
             if cleaned_id
@@ -442,12 +490,14 @@ class AppState:
         raw_bytes: bytes,
         *,
         save_to_catalog: bool = True,
+        overwrite: bool = False,
     ) -> MotorPreset:
         """Import an uploaded .ric motor and bind it to the active rocket."""
         preset = import_openmotor_ric(
             filename,
             raw_bytes,
             save_to_catalog=save_to_catalog,
+            overwrite=overwrite,
             repo_root=self.repo_root,
         )
         self.refresh_catalog()
@@ -458,6 +508,7 @@ class AppState:
         updated = recalculate_rocket_structure(rocket.model_copy(update={"motor": motor_spec}))
         self.working_rocket_spec = updated
         self.has_unsaved_rocket_changes = True
+        self.invalidate_simulation_results(clear_ballistics=True)
         self.clear_error()
         self.status_message = (
             f"Motor '{preset.name}' importado de '{filename}' e aplicado ao foguete ativo."
@@ -470,6 +521,64 @@ class AppState:
         self.selected_rocket_id = rocket_id
         self.last_casing_resize_result = None
         return self.reset_working_rocket()
+
+    def apply_mission_preset(
+        self,
+        mission_id: str,
+        *,
+        load_mission_rocket: bool = False,
+    ) -> MissionPreset:
+        """Apply a mission's site/atmosphere/launch while keeping the active vehicle.
+
+        With load_mission_rocket=True the mission's own rocket preset (and its motor)
+        replaces the active one; otherwise the active working_rocket_spec is kept.
+        """
+        preset = load_mission_preset(mission_id, repo_root=self.repo_root)
+        self.selected_mission_id = mission_id
+        self.selected_site_id = preset.environment_preset_name
+        self.launch_config = preset.launch
+        if load_mission_rocket:
+            self.selected_rocket_id = preset.rocket_preset_name
+            self.selected_motor_id = None
+            self.reset_working_rocket()
+        else:
+            self.invalidate_simulation_results(clear_ballistics=True)
+        self.status_message = f"Missão aplicada: {mission_id} — {self.atmosphere_summary()}"
+        self.clear_error()
+        self.notify()
+        return preset
+
+    def clear_mission_selection(self) -> None:
+        """Drop the mission preset so manual site/launch selections take effect."""
+        if self.selected_mission_id is None:
+            return
+        self.selected_mission_id = None
+        self.invalidate_simulation_results(clear_ballistics=True)
+        self.status_message = f"Missão removida — {self.atmosphere_summary()}"
+        self.notify()
+
+    def atmosphere_summary(self) -> str:
+        """Describe which atmosphere/site the next simulation will execute."""
+        try:
+            if self.selected_mission_id is not None:
+                preset = load_mission_preset(self.selected_mission_id, repo_root=self.repo_root)
+                if preset.atmosphere is not None:
+                    return (
+                        f"Missão '{self.selected_mission_id}': ISA "
+                        f"(elevação {preset.atmosphere.elevation_m:.0f} m, "
+                        f"{preset.atmosphere.wind_speed_ms:.1f} m/s) — sem ERA5."
+                    )
+                environment = load_site_preset(
+                    preset.environment_preset_name, repo_root=self.repo_root
+                )
+                return (
+                    f"Missão '{self.selected_mission_id}': ERA5 "
+                    f"'{environment.atmosphere_asset}' em {environment.name}."
+                )
+            environment = load_site_preset(self.selected_site_id, repo_root=self.repo_root)
+            return f"Manual: ERA5 '{environment.atmosphere_asset}' em {environment.name}."
+        except (FileNotFoundError, ValueError) as exc:
+            return f"Atmosfera indisponível: {exc}"
 
     def apply_motor_casing_update(
         self,
@@ -507,6 +616,7 @@ class AppState:
         )
         self.casing_scaling_mode = resolved_mode
         self.casing_density_kg_m3 = resolved_density
+        self.invalidate_simulation_results(clear_ballistics=True)
         self.last_casing_resize_result = resize_result
         self.working_rocket_spec = updated_rocket
         self.has_unsaved_rocket_changes = True
@@ -532,13 +642,18 @@ class AppState:
             if target_safety_factor is None
             else float(target_safety_factor)
         )
+        if target < DEFAULT_MIN_CASE_SAFETY_FACTOR:
+            raise ValueError(
+                f"FS alvo ({target:.2f}) deve ser >= FS mínimo do domínio "
+                f"({DEFAULT_MIN_CASE_SAFETY_FACTOR:.2f}) para o motor check aprovar a carcaça."
+            )
         updated_rocket = auto_size_rocket_motor_casing(
             self.ensure_working_rocket(),
             target,
             repo_root=Path(self.repo_root) if self.repo_root is not None else None,
         )
         self.casing_target_safety_factor = target
-        self.last_casing_resize_result = None
+        self.invalidate_simulation_results(clear_ballistics=True)
         self.working_rocket_spec = updated_rocket
         self.has_unsaved_rocket_changes = True
         self.clear_error()
@@ -570,7 +685,7 @@ class AppState:
                 }
             )
         )
-        self.last_casing_resize_result = None
+        self.invalidate_simulation_results(clear_ballistics=True)
         self.working_rocket_spec = updated_rocket
         self.has_unsaved_rocket_changes = True
         self.clear_error()
@@ -713,10 +828,22 @@ class AppState:
             self.is_running = False
             self.notify()
 
+    def _current_result_matches_active_motor(self) -> bool:
+        """Return whether current_result was produced by the active motor/casing."""
+        result = self.current_result
+        if result is None or result.executed_config is None:
+            return False
+        return (
+            result.executed_config.mission.rocket.motor
+            == self.ensure_working_rocket().motor
+        )
+
     def run_motor_check(self) -> tuple[BallisticsResult, SafetyReport] | None:
         """Execute ballistics and the 5-criteria check on the active rocket's motor casing."""
         self.is_running = True
         self.clear_error()
+        if self.current_result is not None and not self._current_result_matches_active_motor():
+            self.invalidate_simulation_results(clear_ballistics=True)
         self.status_message = "Executando balística interna do motor..."
         self.notify()
 

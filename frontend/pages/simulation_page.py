@@ -227,6 +227,8 @@ def render_simulation_page(state: AppState) -> ui.column:
     if catalog is not None:
         for mission_id in catalog.mission_presets:
             mission_options[mission_id] = mission_id
+    launch_inputs: dict[str, ui.number] = {}
+    syncing_controls: list[bool] = [False]
 
     root = ui.column().classes("w-full gap-4")
 
@@ -275,15 +277,13 @@ def render_simulation_page(state: AppState) -> ui.column:
             state.selected_ballistics_metrics = keys
             render_results_section.refresh()
 
-        active_motor = (
-            state.simulation_config.mission.rocket.motor
-            if state.simulation_config is not None
-            else (
-                state.working_rocket_spec.motor
-                if state.working_rocket_spec is not None
-                else None
-            )
-        )
+        active_motor = None
+        if state.current_result is not None:
+            executed_config = state.current_result.executed_config
+            if executed_config is not None:
+                active_motor = executed_config.mission.rocket.motor
+        elif state.working_rocket_spec is not None:
+            active_motor = state.working_rocket_spec.motor
 
         if state.current_result is not None:
             render_simulation_metrics_summary(
@@ -392,40 +392,133 @@ def render_simulation_page(state: AppState) -> ui.column:
                 )
 
             with ui.grid(columns=5).classes("w-full gap-3 grid-cols-1 md:grid-cols-5"):
-                ui.select(
+                mission_select = ui.select(
                     options=mission_options,
                     value=state.selected_mission_id or "",
                     label="Missão (Preset)",
-                    on_change=lambda e: setattr(
-                        state, "selected_mission_id", str(e.value) if e.value else None
-                    ),
                 ).classes("w-full")
-                ui.select(
+                rocket_select = ui.select(
                     options=rocket_options,
                     value=state.selected_rocket_id,
                     label="Foguete",
-                    on_change=lambda e: setattr(state, "selected_rocket_id", str(e.value)),
                 ).classes("w-full")
                 render_motor_picker()
-                ui.select(
+                site_select = ui.select(
                     options=site_options,
                     value=state.selected_site_id,
                     label="Sítio / Atmosfera (.nc)",
-                    on_change=lambda e: setattr(state, "selected_site_id", str(e.value)),
                 ).classes("w-full")
-                ui.select(
+                limits_select = ui.select(
                     options=limits_options,
                     value=state.selected_limits_id,
                     label="Limites de Segurança",
-                    on_change=lambda e: setattr(state, "selected_limits_id", str(e.value)),
                 ).classes("w-full")
+
+            with ui.row().classes("w-full items-center gap-3 flex-wrap"):
+                mission_rocket_switch = ui.switch(
+                    "Ao selecionar missão, carregar também o foguete dela",
+                    value=False,
+                ).classes("text-xs")
+                mission_atmosphere_label = ui.label(state.atmosphere_summary()).classes(
+                    "text-xs font-medium text-sky-900"
+                )
+
+            def _refresh_mission_label() -> None:
+                mission_atmosphere_label.set_text(state.atmosphere_summary())
+
+            def _sync_launch_controls() -> None:
+                for key, value in (
+                    ("inclination", state.launch_config.inclination_deg),
+                    ("heading", state.launch_config.heading_deg),
+                    ("rail_length", state.launch_config.rail_length_m),
+                    ("max_time", state.launch_config.max_time_s),
+                ):
+                    control = launch_inputs.get(key)
+                    if control is not None:
+                        control.value = value
+
+            def _on_mission_change(value: object) -> None:
+                if syncing_controls[0]:
+                    return
+                mission_id = str(value) if value else ""
+                try:
+                    syncing_controls[0] = True
+                    if mission_id:
+                        state.apply_mission_preset(
+                            mission_id,
+                            load_mission_rocket=bool(mission_rocket_switch.value),
+                        )
+                        site_select.value = state.selected_site_id
+                        if mission_rocket_switch.value:
+                            rocket_select.value = state.selected_rocket_id
+                            render_motor_picker.refresh()
+                        ui.notify(state.status_message, type="info")
+                    else:
+                        state.clear_mission_selection()
+                    _sync_launch_controls()
+                    _refresh_mission_label()
+                    render_results_section.refresh()
+                except (FileNotFoundError, SimulationServiceError, ValueError) as exc:
+                    ui.notify(f"Falha ao aplicar missão: {exc}", type="negative")
+                finally:
+                    syncing_controls[0] = False
+
+            def _on_rocket_change(value: object) -> None:
+                if syncing_controls[0]:
+                    return
+                rocket_id = str(value) if value else ""
+                if not rocket_id or rocket_id == state.selected_rocket_id:
+                    return
+                previous_id = state.selected_rocket_id
+                try:
+                    state.load_rocket_into_config(rocket_id)
+                    render_motor_picker.refresh()
+                    _refresh_mission_label()
+                    render_results_section.refresh()
+                    ui.notify(
+                        f"Foguete '{rocket_id}' carregado para a simulação.", type="info"
+                    )
+                except (FileNotFoundError, SimulationServiceError, ValueError) as exc:
+                    state.selected_rocket_id = previous_id
+                    ui.notify(f"Falha ao carregar foguete: {exc}", type="negative")
+
+            def _on_site_change(value: object) -> None:
+                if syncing_controls[0]:
+                    return
+                state.selected_site_id = str(value)
+                if state.selected_mission_id is not None:
+                    state.clear_mission_selection()
+                    syncing_controls[0] = True
+                    try:
+                        mission_select.value = ""
+                    finally:
+                        syncing_controls[0] = False
+                    ui.notify(
+                        "Missão removida: sítio manual selecionado.", type="info"
+                    )
+                else:
+                    state.invalidate_simulation_results(clear_ballistics=True)
+                _refresh_mission_label()
+                render_results_section.refresh()
+
+            def _on_limits_change(value: object) -> None:
+                if syncing_controls[0]:
+                    return
+                state.selected_limits_id = str(value)
+                state.invalidate_simulation_results(clear_ballistics=True)
+                render_results_section.refresh()
+
+            mission_select.on_value_change(lambda e: _on_mission_change(e.value))
+            rocket_select.on_value_change(lambda e: _on_rocket_change(e.value))
+            site_select.on_value_change(lambda e: _on_site_change(e.value))
+            limits_select.on_value_change(lambda e: _on_limits_change(e.value))
 
             ui.separator().classes("my-3")
 
             with ui.grid(columns=4).classes(
                 "w-full gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
             ):
-                ui.number(
+                launch_inputs["inclination"] = ui.number(
                     label="Inclinação da Rampa (°)",
                     value=state.launch_config.inclination_deg,
                     min=1.0,
@@ -433,7 +526,7 @@ def render_simulation_page(state: AppState) -> ui.column:
                     step=0.5,
                     on_change=lambda e: _update_launch(state, inclination_deg=e.value),
                 ).classes("w-full")
-                ui.number(
+                launch_inputs["heading"] = ui.number(
                     label="Azimute / Heading (°)",
                     value=state.launch_config.heading_deg,
                     min=0.0,
@@ -441,20 +534,26 @@ def render_simulation_page(state: AppState) -> ui.column:
                     step=5.0,
                     on_change=lambda e: _update_launch(state, heading_deg=e.value),
                 ).classes("w-full")
-                ui.number(
+                launch_inputs["rail_length"] = ui.number(
                     label="Comprimento do Trilho (m)",
                     value=state.launch_config.rail_length_m,
                     min=0.5,
                     step=0.5,
                     on_change=lambda e: _update_launch(state, rail_length_m=e.value),
                 ).classes("w-full")
-                ui.number(
+                launch_inputs["max_time"] = ui.number(
                     label="Tempo Máx. Simulação (s)",
                     value=state.launch_config.max_time_s,
                     min=1.0,
                     step=30.0,
                     on_change=lambda e: _update_launch(state, max_time_s=e.value),
                 ).classes("w-full")
+
+            def _set_dry_mass_override(raw_value: float | int | None) -> None:
+                state.dry_mass_override_kg = (
+                    float(raw_value) if raw_value is not None else None
+                )
+                state.invalidate_simulation_results(clear_ballistics=True)
 
             with ui.grid(columns=5).classes(
                 "w-full gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 mt-2 items-center"
@@ -464,11 +563,7 @@ def render_simulation_page(state: AppState) -> ui.column:
                     value=state.dry_mass_override_kg,
                     min=0.1,
                     step=0.1,
-                    on_change=lambda e: setattr(
-                        state,
-                        "dry_mass_override_kg",
-                        float(e.value) if e.value is not None else None,
-                    ),
+                    on_change=lambda e: _set_dry_mass_override(e.value),
                 ).classes("w-full")
                 mass_override_input.set_visibility(state.mass_mode == "measured")
 
@@ -476,6 +571,8 @@ def render_simulation_page(state: AppState) -> ui.column:
                     mode: MassMode = "measured" if val == "measured" else "calculated"
                     state.mass_mode = mode
                     mass_override_input.set_visibility(mode == "measured")
+                    state.invalidate_simulation_results(clear_ballistics=True)
+                    state.notify()
 
                 ui.select(
                     options=_MASS_MODE_OPTIONS,
@@ -487,6 +584,8 @@ def render_simulation_page(state: AppState) -> ui.column:
                 def _on_fin_mode_change(val: object) -> None:
                     mode: FinGeometryMode = "trapezoidal" if val == "trapezoidal" else "freeform"
                     state.fin_geometry_mode = mode
+                    state.invalidate_simulation_results(clear_ballistics=True)
+                    state.notify()
 
                 ui.select(
                     options=_FIN_MODE_OPTIONS,
@@ -590,6 +689,7 @@ def render_simulation_page(state: AppState) -> ui.column:
 
     def _sync_controls() -> None:
         _sync_buttons()
+        _refresh_mission_label()
         render_results_section.refresh()
 
     async def _on_run_simulation() -> None:
@@ -661,6 +761,8 @@ def _update_launch(
         )
     except ValidationError:
         return
+    state.invalidate_simulation_results(clear_ballistics=True)
+    state.notify()
 
 
 def _set_positive_factor(
@@ -673,6 +775,8 @@ def _set_positive_factor(
     numeric = float(raw_value)
     if math.isfinite(numeric) and numeric > 0.0:
         setattr(state, attr_name, numeric)
+        state.invalidate_simulation_results(clear_ballistics=True)
+        state.notify()
 
 
 __all__ = [

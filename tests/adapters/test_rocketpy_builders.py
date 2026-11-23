@@ -379,12 +379,16 @@ def test_rocket_builder_uses_in_memory_drag_curves_and_supports_scaling_and_prot
     assert db_rocket.power_off_drag(0.5) == pytest.approx(rocket.power_off_drag(0.5) * 0.9)
 
 
-def test_flight_runner_matches_golden_baseline_with_output_selection_and_no_leaks() -> None:
+def test_flight_runner_matches_golden_baseline_with_output_selection_and_no_leaks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     golden = json.loads(GOLDEN_PATH.read_text(encoding="utf-8"))
     expected = golden["rocketpy_baseline_88deg"]["metrics"]
     mission, nc_path = _load_real_mission(site_id="irec_oper", terminate_on_apogee=False)
 
     backend_before = matplotlib.get_backend()
+    sentinel_fig, _ = plt.subplots()
+    sentinel_number = sentinel_fig.number
     figs_before = list(plt.get_fignums())
 
     # Default OutputSelection omits trajectory series and never leaks Flight or MPL objects.
@@ -492,7 +496,32 @@ def test_flight_runner_matches_golden_baseline_with_output_selection_and_no_leak
     )
 
     assert matplotlib.get_backend() == backend_before
+    assert plt.fignum_exists(sentinel_number), "external sentinel figure must survive run_flight"
     assert list(plt.get_fignums()) == figs_before
+
+    # A drawing failure must warn but never discard the completed FlightResult.
+    broken_rocket = build_rocket(mission.rocket)
+    monkeypatch.setattr(
+        broken_rocket,
+        "draw",
+        lambda **kwargs: (_ for _ in ()).throw(RuntimeError("draw boom")),
+    )
+    fast_mission = mission.model_copy(
+        update={"launch": LaunchConfig(terminate_on_apogee=True)}
+    )
+    with pytest.warns(RuntimeWarning, match="diagrama"):
+        fallback_result = execute_flight(
+            broken_rocket,
+            env,
+            fast_mission.launch,
+            output_selection=OutputSelection.none(),
+        )
+    assert fallback_result.rocket_draw_png_b64 is None
+    assert fallback_result.apogee_agl_m > 0.0
+    assert matplotlib.get_backend() == backend_before
+    assert plt.fignum_exists(sentinel_number)
+    assert list(plt.get_fignums()) == figs_before
+    plt.close(sentinel_fig)
 
 
 def test_extract_flight_result_uses_effective_rail_lengths_and_handles_no_impact_stub() -> None:

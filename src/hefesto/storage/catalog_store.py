@@ -26,6 +26,9 @@ from hefesto.storage.paths import (
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
 
+# Storage cannot import services.asset_service, so the Golden Master id is repeated here.
+_GOLDEN_MASTER_ROCKET_ID = "hefesto_v1"
+
 
 class CatalogStore:
     """Strict Pydantic JSON repository under data/catalog/ with atomic persistence."""
@@ -61,9 +64,22 @@ class CatalogStore:
             raise FileNotFoundError(f"{model_cls.__name__} preset not found: {slug!r}")
         return model_cls.model_validate_json(target.read_text(encoding="utf-8"))
 
-    def _save_model(self, directory: Path, preset_id: str, model: BaseModel) -> Path:
+    def _save_model(
+        self,
+        directory: Path,
+        preset_id: str,
+        model: BaseModel,
+        *,
+        overwrite: bool,
+    ) -> Path:
         slug = self._normalize_id(preset_id)
         target = resolve_safe_relative_path(directory, f"{slug}.json")
+        if target.exists() and not overwrite:
+            raise FileExistsError(
+                f"{type(model).__name__} preset '{slug}' already exists at "
+                f"'{target.relative_to(self.paths.repo_root).as_posix()}'; "
+                "pass overwrite=True to replace it."
+            )
         payload = model.model_dump_json(indent=2) + "\n"
         return atomic_write_text(target, payload)
 
@@ -73,9 +89,22 @@ class CatalogStore:
     def load_rocket(self, preset_id: str) -> RocketPreset:
         return self._load_model(self.paths.rockets_catalog_dir, preset_id, RocketPreset)
 
-    def save_rocket(self, preset: RocketPreset, preset_id: str | None = None) -> Path:
+    def save_rocket(
+        self,
+        preset: RocketPreset,
+        preset_id: str | None = None,
+        *,
+        overwrite: bool = False,
+    ) -> Path:
         resolved_id = preset.name if preset_id is None else preset_id
-        return self._save_model(self.paths.rockets_catalog_dir, resolved_id, preset)
+        if self._normalize_id(resolved_id) == _GOLDEN_MASTER_ROCKET_ID:
+            raise ValueError(
+                f"Não é permitido sobrescrever o preset Golden Master "
+                f"'{_GOLDEN_MASTER_ROCKET_ID}'."
+            )
+        return self._save_model(
+            self.paths.rockets_catalog_dir, resolved_id, preset, overwrite=overwrite
+        )
 
     def list_motors(self) -> tuple[str, ...]:
         return self._list_section(self.paths.motors_catalog_dir)
@@ -83,9 +112,17 @@ class CatalogStore:
     def load_motor(self, preset_id: str) -> MotorPreset:
         return self._load_model(self.paths.motors_catalog_dir, preset_id, MotorPreset)
 
-    def save_motor(self, preset: MotorPreset, preset_id: str | None = None) -> Path:
+    def save_motor(
+        self,
+        preset: MotorPreset,
+        preset_id: str | None = None,
+        *,
+        overwrite: bool = False,
+    ) -> Path:
         resolved_id = preset.name if preset_id is None else preset_id
-        return self._save_model(self.paths.motors_catalog_dir, resolved_id, preset)
+        return self._save_model(
+            self.paths.motors_catalog_dir, resolved_id, preset, overwrite=overwrite
+        )
 
     def list_sites(self) -> tuple[str, ...]:
         return self._list_section(self.paths.sites_catalog_dir)
@@ -95,7 +132,9 @@ class CatalogStore:
 
     def save_site(self, preset: EnvironmentSpec, preset_id: str | None = None) -> Path:
         resolved_id = preset.name if preset_id is None else preset_id
-        return self._save_model(self.paths.sites_catalog_dir, resolved_id, preset)
+        return self._save_model(
+            self.paths.sites_catalog_dir, resolved_id, preset, overwrite=True
+        )
 
     def list_limits(self) -> tuple[str, ...]:
         return self._list_section(self.paths.limits_catalog_dir)
@@ -104,7 +143,9 @@ class CatalogStore:
         return self._load_model(self.paths.limits_catalog_dir, preset_id, SafetyLimits)
 
     def save_limits(self, limits: SafetyLimits, preset_id: str = "default") -> Path:
-        return self._save_model(self.paths.limits_catalog_dir, preset_id, limits)
+        return self._save_model(
+            self.paths.limits_catalog_dir, preset_id, limits, overwrite=True
+        )
 
     def list_missions(self) -> tuple[str, ...]:
         return self._list_section(self.paths.missions_catalog_dir)
@@ -112,9 +153,17 @@ class CatalogStore:
     def load_mission(self, preset_id: str) -> MissionPreset:
         return self._load_model(self.paths.missions_catalog_dir, preset_id, MissionPreset)
 
-    def save_mission(self, preset: MissionPreset, preset_id: str | None = None) -> Path:
+    def save_mission(
+        self,
+        preset: MissionPreset,
+        preset_id: str | None = None,
+        *,
+        overwrite: bool = False,
+    ) -> Path:
         resolved_id = preset.name if preset_id is None else preset_id
-        return self._save_model(self.paths.missions_catalog_dir, resolved_id, preset)
+        return self._save_model(
+            self.paths.missions_catalog_dir, resolved_id, preset, overwrite=overwrite
+        )
 
     def overview(self) -> CatalogOverview:
         """Return a CatalogOverview DTO summarizing available raw assets and JSON presets."""

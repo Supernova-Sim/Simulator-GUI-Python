@@ -12,7 +12,12 @@ from hefesto.domain import (
     MotorCasingSpec,
     MotorSpec,
 )
-from hefesto.physics.constants import ALUMINUM_DENSITY_KG_M3, MOTOR_COORDINATE_SYSTEM
+from hefesto.physics.constants import (
+    ALUMINUM_DENSITY_KG_M3,
+    DEFAULT_MIN_CASE_SAFETY_FACTOR,
+    DEFAULT_TARGET_CASE_SAFETY_FACTOR,
+    MOTOR_COORDINATE_SYSTEM,
+)
 from hefesto.physics.geometry import (
     EffectiveGrainGeometry,
     derive_effective_grain_geometry,
@@ -62,8 +67,10 @@ def compute_minimum_casing_wall_thickness_m(
     max_chamber_pressure_pa: float,
     inner_radius_m: float,
     yield_strength_pa: float,
-    target_safety_factor: float = 1.5,
+    target_safety_factor: float = DEFAULT_TARGET_CASE_SAFETY_FACTOR,
     step_m: float = 0.0001,
+    *,
+    min_safety_factor: float = DEFAULT_MIN_CASE_SAFETY_FACTOR,
 ) -> float:
     """Return the thinnest wall rounding up to step_m that reaches the target safety factor."""
     pressure = _require_positive_finite(max_chamber_pressure_pa, "max_chamber_pressure_pa")
@@ -71,9 +78,11 @@ def compute_minimum_casing_wall_thickness_m(
     yield_strength = _require_positive_finite(yield_strength_pa, "yield_strength_pa")
     step = _require_positive_finite(step_m, "step_m")
     target = _require_positive_finite(target_safety_factor, "target_safety_factor")
-    if target < 1.0:
+    min_target = _require_positive_finite(min_safety_factor, "min_safety_factor")
+    if target < min_target:
         raise GeometryValidationError(
-            f"target_safety_factor must be >= 1.0, got {target_safety_factor!r}"
+            f"target_safety_factor ({target_safety_factor!r}) must be >= "
+            f"min_case_safety_factor ({min_target!r})"
         )
     # Same thin-wall hoop law as compute_case_hoop_stress_pa: sigma = P0*r_i/t, FS = yield/sigma.
     ideal_wall_m = target * pressure * inner_radius / yield_strength

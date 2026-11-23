@@ -30,6 +30,9 @@ def render_motor_import_dialog(
             "O arquivo é validado, salvo em data/assets/motors/ e selecionado no foguete ativo."
         ).classes("text-xs text-slate-600")
         save_switch = ui.switch("Salvar também no catálogo (data/catalog/motors/)", value=True)
+        overwrite_switch = ui.switch(
+            "Sobrescrever preset de motor existente (destrutivo)", value=False
+        )
         status_label = ui.label("Nenhum arquivo .ric enviado nesta sessão.").classes(
             "text-xs text-slate-500"
         )
@@ -41,7 +44,17 @@ def render_motor_import_dialog(
                     event.file.name,
                     raw,
                     save_to_catalog=bool(save_switch.value),
+                    overwrite=bool(overwrite_switch.value),
                 )
+            except FileExistsError as exc:
+                status_label.set_text(
+                    f"Preset já existe: marque 'Sobrescrever' para confirmar. {exc}"
+                )
+                ui.notify(
+                    "Motor não importado: o preset já existe. Confirme a sobrescrita.",
+                    type="warning",
+                )
+                return
             except (ValueError, OSError) as exc:
                 status_label.set_text(f"Importação rejeitada: {exc}")
                 ui.notify(f"Motor .ric rejeitado: {exc}", type="negative")

@@ -5,8 +5,9 @@ The four additive terms are normalized by the reference area ``A_ref = pi * R_re
 1. skin friction  - turbulent Prandtl-Schlichting coefficient bounded by the surface
    roughness, Hoerner compressibility correction and body/fin form factors;
 2. pressure       - nose profile/fineness plus a calibrated compressible rise;
-3. base           - ``(0.12 + 0.13 M^2)`` subsonic / ``0.25 / M`` supersonic, attenuated
-   on the powered phase by the nozzle plume area;
+3. base           - ``(0.12 + 0.13 M^2)`` subsonic / ``0.25 / M`` supersonic, with the
+   powered phase relieved by the nozzle *exit* area times an explicit empirical
+   efficiency (OpenRocket's powered Cd already embeds most of that relief);
 4. protuberances  - rail buttons/launch lugs frontal area immersed in the boundary layer
    plus fin-root/fuselage interference.
 
@@ -57,6 +58,10 @@ _BASE_DRAG_SUBSONIC_SLOPE: Final[float] = 0.13
 _BASE_DRAG_SUPERSONIC_COEFFICIENT: Final[float] = 0.25
 # Jet blockage assumed when the motor carries no nozzle geometry (central grain, ~5% of base).
 DEFAULT_PLUME_AREA_FRACTION: Final[float] = 0.05
+# Empirical fraction of the full exit-area plume relief retained by the OpenRocket
+# powered-phase convention: OpenRocket's powered Cd already embeds most of the base-drag
+# reduction, so applying the full physical relief would double count it.
+PLUME_RELIEF_EFFICIENCY: Final[float] = 0.19
 
 # Nose pressure drag at incompressible conditions, referenced to A_ref.
 _NOSE_PRESSURE_CD: Final[dict[NoseConeKind, float]] = {
@@ -324,13 +329,18 @@ def base_drag_coefficient(rocket: RocketSpec, mach: float) -> float:
 
 
 def plume_area_fraction(rocket: RocketSpec) -> float:
-    """Return the nozzle-plume blockage fraction A_nozzle/A_base of the power-on base drag."""
+    """Return the nozzle-exit blockage fraction A_exit/A_base of the power-on base drag."""
     base_area = base_area_m2(rocket)
     nozzle = rocket.motor.nozzle
-    nozzle_area = math.pi * nozzle.throat_radius_m**2 if nozzle is not None else 0.0
-    if nozzle_area <= 0.0 or base_area <= 0.0:
+    exit_area = math.pi * nozzle.exit_radius_m**2 if nozzle is not None else 0.0
+    if exit_area <= 0.0 or base_area <= 0.0:
         return DEFAULT_PLUME_AREA_FRACTION
-    return min(1.0, nozzle_area / base_area)
+    return min(1.0, exit_area / base_area)
+
+
+def plume_relief_fraction(rocket: RocketSpec) -> float:
+    """Return the empirical base-drag relief fraction applied while the motor burns."""
+    return plume_area_fraction(rocket) * PLUME_RELIEF_EFFICIENCY
 
 
 def compute_analytical_drag_curves(
@@ -349,7 +359,7 @@ def compute_analytical_drag_curves(
             raise ValueError(f"mach_grid must strictly increase at [{index}]: {previous} -> {mach}")
         previous = mach
 
-    plume = plume_area_fraction(rocket)
+    plume = plume_relief_fraction(rocket)
     cd_power_off: list[float] = []
     cd_power_on: list[float] = []
     for mach in grid:
@@ -369,6 +379,7 @@ def compute_analytical_drag_curves(
 __all__ = [
     "DEFAULT_MACH_GRID",
     "DEFAULT_PLUME_AREA_FRACTION",
+    "PLUME_RELIEF_EFFICIENCY",
     "REFERENCE_DENSITY_KG_M3",
     "REFERENCE_SOUND_SPEED_M_S",
     "REFERENCE_VISCOSITY_PA_S",
@@ -377,6 +388,7 @@ __all__ = [
     "body_tubes",
     "compute_analytical_drag_curves",
     "plume_area_fraction",
+    "plume_relief_fraction",
     "pressure_drag_cd",
     "reference_area_m2",
     "skin_friction_drag_cd",

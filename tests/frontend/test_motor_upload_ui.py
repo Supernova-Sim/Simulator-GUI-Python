@@ -98,7 +98,35 @@ def test_simulation_page_lists_ric_motors_and_offers_upload(tmp_path: Path) -> N
         uploads = [el for el in client.elements.values() if isinstance(el, ui.upload)]
         assert len(uploads) == 1
         assert ".ric" in str(uploads[0].props.get("accept"))
+        switches = [
+            getattr(el, "text", "")
+            for el in client.elements.values()
+            if isinstance(el, ui.switch)
+        ]
+        assert any("Sobrescrever preset de motor existente" in text for text in switches)
     client.delete()
 
     assert not (REPO_ROOT / ".nicegui").exists()
     assert not (root / "data" / "runs").exists()
+
+
+def test_state_motor_import_requires_explicit_overwrite(tmp_path: Path) -> None:
+    root = _seed_isolated_workspace(tmp_path)
+    state = create_app_state(repo_root=str(root), initialize=True)
+    state.import_motor_ric("motor_guard.ric", RIC_SOURCE.read_bytes())
+
+    asset_path = root / "data" / "assets" / "motors" / "motor_guard.ric"
+    preset_path = root / "data" / "catalog" / "motors" / "motor_guard.json"
+    asset_before = asset_path.read_bytes()
+    preset_before = preset_path.read_bytes()
+
+    with pytest.raises(FileExistsError, match="motor_guard"):
+        state.import_motor_ric("motor_guard.ric", RIC_SOURCE.read_bytes())
+    assert asset_path.read_bytes() == asset_before
+    assert preset_path.read_bytes() == preset_before
+
+    preset = state.import_motor_ric(
+        "motor_guard.ric", RIC_SOURCE.read_bytes(), overwrite=True
+    )
+    assert preset.name == "motor_guard"
+    assert asset_path.read_bytes() == asset_before
