@@ -15,6 +15,7 @@ from hefesto.domain import (
     MotorCasingSpec,
     MotorSpec,
     NozzleSpec,
+    SafetyCriterion,
 )
 from hefesto.physics.constants import ALUMINUM_DENSITY_KG_M3
 from hefesto.physics.geometry import hollow_cylinder_volume_m3
@@ -22,10 +23,12 @@ from hefesto.physics.inertia import compute_motor_casing_dry_inertia_kg_m2
 from hefesto.physics.propulsion import (
     PreparedSolidMotor,
     compute_casing_shell_mass_kg,
+    compute_minimum_casing_wall_thickness_m,
     prepare_solid_motor,
     recalculate_casing_dry_properties,
     resize_motor_casing,
 )
+from hefesto.physics.safety import evaluate_safety_metrics
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 GOLDEN_PATH = REPO_ROOT / "tests" / "golden" / "hefesto_baseline.json"
@@ -360,3 +363,124 @@ def test_resize_motor_casing_modes_and_invariants() -> None:
     assert res_man.casing.dry_mass_kg == base.dry_mass_kg
     assert res_man.casing.center_of_dry_mass_m == base.center_of_dry_mass_m
     assert res_man.casing.dry_inertia_kg_m2 == base.dry_inertia_kg_m2
+
+
+def test_minimum_casing_wall_thickness_meets_target_safety_factor() -> None:
+    pressure_pa = 5_000_000.0
+    inner_radius_m = 0.05395
+    yield_pa = 145_000_000.0
+    target_fs = 1.5
+
+    wall_m = compute_minimum_casing_wall_thickness_m(
+        pressure_pa, inner_radius_m, yield_pa, target_fs
+    )
+    # Ideal t = FS*P0*r_i/yield = 2.7905 mm rounds up to the 0.1 mm grid.
+    assert wall_m == pytest.approx(0.0028, rel=1e-12)
+    steps = wall_m / 0.0001
+    assert abs(steps - round(steps)) < 1e-9
+
+    prepared = prepare_solid_motor(_medusa_motor(casing=_medusa_casing(wall_thickness_m=wall_m)))
+    report = evaluate_safety_metrics(
+        peak_chamber_pressure_pa=pressure_pa,
+        peak_kn=100.0,
+        peak_mass_flux_kg_m2_s=100.0,
+        grains=_medusa_grains(),
+        throat_radius_m=0.017,
+        casing=prepared.casing,
+    )
+    fs_check = next(
+        check for check in report.checks if check.criterion == SafetyCriterion.CASE_SAFETY_FACTOR
+    )
+    assert fs_check.value is not None
+    assert fs_check.value >= target_fs
+    assert prepared.casing.wall_thickness_m == wall_m
+
+    # Coarser grid still rounds up; a lower target never asks for a thicker wall.
+    coarse_m = compute_minimum_casing_wall_thickness_m(
+        pressure_pa, inner_radius_m, yield_pa, target_fs, step_m=0.001
+    )
+    assert coarse_m == pytest.approx(0.003, rel=1e-12)
+    assert yield_pa * coarse_m / (pressure_pa * inner_radius_m) >= target_fs
+    relaxed_m = compute_minimum_casing_wall_thickness_m(
+        pressure_pa, inner_radius_m, yield_pa, 1.0
+    )
+    assert relaxed_m < wall_m
+
+    with pytest.raises(GeometryValidationError, match="max_chamber_pressure_pa"):
+        compute_minimum_casing_wall_thickness_m(0.0, inner_radius_m, yield_pa)
+    with pytest.raises(GeometryValidationError, match="inner_radius_m"):
+        compute_minimum_casing_wall_thickness_m(pressure_pa, -0.01, yield_pa)
+    with pytest.raises(GeometryValidationError, match="yield_strength_pa"):
+        compute_minimum_casing_wall_thickness_m(pressure_pa, inner_radius_m, 0.0)
+    with pytest.raises(GeometryValidationError, match="step_m"):
+        compute_minimum_casing_wall_thickness_m(
+            pressure_pa, inner_radius_m, yield_pa, step_m=0.0
+        )
+    with pytest.raises(GeometryValidationError, match=">= 1.0"):
+        compute_minimum_casing_wall_thickness_m(
+            pressure_pa, inner_radius_m, yield_pa, target_safety_factor=0.9
+        )
+
+
+def test_resize_motor_casing_fixed_hardware_mass_updates_mass_cg_and_inertia() -> None:
+    base = _medusa_casing()
+    rho = 2700.0
+    r_in = base.inner_radius_m
+    thickness_m = base.wall_thickness_m
+    length_m = base.length_m
+    tube_mass_kg = compute_casing_shell_mass_kg(r_in, thickness_m, length_m, rho)
+    hardware_mass_kg = base.dry_mass_kg - tube_mass_kg
+    assert hardware_mass_kg > 0.0
+
+    # Omitting fixed_hardware_mass_kg preserves the current dry mass exactly.
+    default = resize_motor_casing(base, length_m, material_density_kg_m3=rho)
+    assert default.casing == base
+    assert default.delta_mass_kg == 0.0
+    assert default.estimated_fixed_hardware_mass_kg == pytest.approx(
+        hardware_mass_kg, rel=1e-12
+    )
+
+    for extra_kg in (2.0, 4.0):
+        resized = resize_motor_casing(
+            base,
+            length_m,
+            material_density_kg_m3=rho,
+            fixed_hardware_mass_kg=hardware_mass_kg + extra_kg,
+        )
+        expected_mass_kg = base.dry_mass_kg + extra_kg
+        assert resized.delta_mass_kg == pytest.approx(extra_kg, rel=1e-12)
+        assert resized.estimated_fixed_hardware_mass_kg == pytest.approx(
+            hardware_mass_kg + extra_kg, rel=1e-12
+        )
+        assert resized.casing.dry_mass_kg == pytest.approx(expected_mass_kg, rel=1e-12)
+        assert resized.casing.dry_inertia_kg_m2 == pytest.approx(
+            compute_motor_casing_dry_inertia_kg_m2(
+                expected_mass_kg, r_in, thickness_m, length_m
+            ),
+            rel=1e-12,
+        )
+        assert resized.casing.dry_inertia_kg_m2[0] > base.dry_inertia_kg_m2[0]
+        # Hardware sits at the casing mid-length for this preset, so the dry CG stays put.
+        assert resized.casing.center_of_dry_mass_m == pytest.approx(
+            base.center_of_dry_mass_m, rel=1e-9
+        )
+
+    # Length and hardware edits compose: dry mass = new shell + new hardware.
+    new_length_m = 1.30
+    combined = resize_motor_casing(
+        base,
+        new_length_m,
+        material_density_kg_m3=rho,
+        fixed_hardware_mass_kg=hardware_mass_kg + 2.0,
+    )
+    new_shell_mass_kg = compute_casing_shell_mass_kg(r_in, thickness_m, new_length_m, rho)
+    assert combined.casing.length_m == pytest.approx(new_length_m)
+    assert combined.casing.dry_mass_kg == pytest.approx(
+        new_shell_mass_kg + hardware_mass_kg + 2.0, rel=1e-12
+    )
+    assert combined.casing.center_of_dry_mass_m == pytest.approx(new_length_m / 2.0, rel=1e-9)
+
+    with pytest.raises(ValueError, match="fixed_hardware_mass_kg"):
+        resize_motor_casing(base, length_m, fixed_hardware_mass_kg=-1.0)
+    with pytest.raises(ValueError, match="fixed_hardware_mass_kg"):
+        resize_motor_casing(base, length_m, fixed_hardware_mass_kg=float("nan"))

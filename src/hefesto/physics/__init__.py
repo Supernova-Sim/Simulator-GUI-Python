@@ -73,6 +73,7 @@ from hefesto.physics.inertia import (
 from hefesto.physics.propulsion import (
     PreparedSolidMotor,
     compute_casing_shell_mass_kg,
+    compute_minimum_casing_wall_thickness_m,
     prepare_solid_motor,
     recalculate_casing_dry_properties,
     resize_motor_casing,
@@ -165,6 +166,7 @@ __all__ = [
     "compute_center_of_mass_m",
     "compute_grain_stack_cg_m",
     "compute_grain_stack_length",
+    "compute_minimum_casing_wall_thickness_m",
     "compute_motor_casing_dry_inertia_kg_m2",
     "compute_polygon_properties",
     "compute_steiner_inertia_kg_m2",

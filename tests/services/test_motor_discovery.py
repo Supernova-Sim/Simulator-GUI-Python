@@ -44,6 +44,39 @@ def test_discovery_lists_ric_assets_without_catalog_preset(tmp_path: Path) -> No
     assert "medusa_knsb_a" in overview.motor_presets
 
 
+def test_discovery_inherits_calibrated_casing_from_identical_catalog_asset(
+    tmp_path: Path,
+) -> None:
+    root = _seed_isolated_workspace(tmp_path)
+
+    assets = {asset.preset_id: asset for asset in discover_ric_motors(root)}
+    assert assets["m1001voltas"].warnings == ()
+
+    inherited = load_motor_preset("m1001voltas", repo_root=root)
+    template = load_motor_preset("medusa_knsb_a", repo_root=root)
+
+    assert inherited.casing == template.casing
+    assert inherited.grain_separation_m == template.grain_separation_m
+    assert inherited.nozzle_position_m == template.nozzle_position_m
+
+
+def test_new_ric_gets_synthesized_casing_with_warning(tmp_path: Path) -> None:
+    root = _seed_isolated_workspace(tmp_path)
+    edited = RIC_SOURCE.read_text(encoding="utf-8").replace("length: 0.16", "length: 0.15")
+    (root / "data" / "assets" / "motors" / "inesperado.ric").write_text(
+        edited, encoding="utf-8"
+    )
+
+    assets = {asset.preset_id: asset for asset in discover_ric_motors(root)}
+    assert assets["inesperado"].warnings
+    assert "sintetizada" in assets["inesperado"].warnings[0]
+
+    synthesized = load_motor_preset("inesperado", repo_root=root)
+    template = load_motor_preset("medusa_knsb_a", repo_root=root)
+    assert synthesized.casing.dry_mass_kg < template.casing.dry_mass_kg
+    assert synthesized.casing.wall_thickness_m == pytest.approx(0.002)
+
+
 def test_discovery_uses_persistent_cache_instead_of_reconverting(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

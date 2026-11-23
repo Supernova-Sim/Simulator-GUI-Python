@@ -34,7 +34,9 @@ def test_state_import_motor_ric_selects_motor_and_recalculates(tmp_path: Path) -
     rocket = state.ensure_working_rocket()
     assert rocket.motor.name == "motor_upload"
     assert rocket.motor.motor_asset == "motor_upload.ric"
-    assert rocket.motor.casing.dry_mass_kg != before.motor.casing.dry_mass_kg
+    # The uploaded .ric is byte-identical to the catalog medusa asset, so its calibrated
+    # casing is inherited instead of synthesizing a bare aluminium tube.
+    assert rocket.motor.casing == before.motor.casing
     structure = summarize_rocket_structure(rocket)
     assert structure.center_of_mass_m == pytest.approx(rocket.center_of_mass_without_motor_m)
     assert state.has_unsaved_rocket_changes is True

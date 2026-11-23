@@ -28,6 +28,7 @@ from hefesto.domain import (
     MotorOverride,
     MotorOverrideOption,
     MotorPreset,
+    MotorSpec,
     OutputSelection,
     RocketSpec,
     RunSummary,
@@ -43,9 +44,11 @@ from hefesto.services import (
     DEFAULT_SITE_ID,
     ServiceAlert,
     SimulationServiceError,
+    auto_size_rocket_motor_casing,
     build_execution_audit_report,
     compose_simulation_config,
     delete_run_snapshot,
+    estimate_motor_casing_fixed_hardware_mass_kg,
     get_catalog_overview,
     import_openmotor_ric,
     import_rasaero_drag_csv,
@@ -96,6 +99,7 @@ class AppState:
     casing_scaling_mode: CasingScalingMode = "tubular_delta"
     casing_material_preset: str = "aluminum_6061_t6"
     casing_density_kg_m3: float = 2700.0
+    casing_target_safety_factor: float = 1.5
     last_casing_resize_result: CasingResizeResult | None = None
     selected_flight_metrics: tuple[str, ...] = DEFAULT_FLIGHT_METRIC_KEYS
     selected_ballistics_metrics: tuple[str, ...] = DEFAULT_BALLISTICS_METRIC_KEYS
@@ -407,10 +411,28 @@ class AppState:
         self.notify()
 
     def load_motor_into_session(self, motor_id: str) -> None:
-        """Select a catalog motor for simulation and reset active motor overrides."""
-        self.selected_motor_id = motor_id
+        """Select a catalog motor, rebind it into the active rocket, and reset overrides.
+
+        Rebinding is what makes the casing edits target the selected motor; without it the
+        dropdown only changed selected_motor_id while the rocket kept the previous motor.
+        """
+        cleaned_id = motor_id.strip()
+        rocket = self.ensure_working_rocket()
+        rebound_motor: MotorSpec | None = None
+        if cleaned_id:
+            rebound_motor = load_motor_spec(cleaned_id, repo_root=self.repo_root)
+        if rebound_motor is not None:
+            self.working_rocket_spec = recalculate_rocket_structure(
+                rocket.model_copy(update={"motor": rebound_motor})
+            )
+            self.has_unsaved_rocket_changes = True
+        self.selected_motor_id = cleaned_id or None
         self.motor_overrides = ()
-        self.status_message = f"Motor selecionado para simulação: '{motor_id}'."
+        self.status_message = (
+            f"Motor selecionado para simulação: '{cleaned_id}'."
+            if cleaned_id
+            else "Motor atual do foguete mantido."
+        )
         self.clear_error()
         self.notify()
 
@@ -458,6 +480,8 @@ class AppState:
         motor_position_m: float | None = None,
         grain_separation_m: float | None = None,
         internal_clearance_m: float | None = None,
+        wall_thickness_m: float | None = None,
+        fixed_hardware_mass_kg: float | None = None,
     ) -> CasingResizeResult:
         """Resize motor casing and update mass/CG/inertia on working_rocket_spec."""
         rocket = self.ensure_working_rocket()
@@ -478,6 +502,8 @@ class AppState:
             motor_position_m=motor_position_m,
             grain_separation_m=grain_separation_m,
             internal_clearance_m=internal_clearance_m,
+            wall_thickness_m=wall_thickness_m,
+            fixed_hardware_mass_kg=fixed_hardware_mass_kg,
         )
         self.casing_scaling_mode = resolved_mode
         self.casing_density_kg_m3 = resolved_density
@@ -487,6 +513,37 @@ class AppState:
         self.clear_error()
         self.notify()
         return resize_result
+
+    def fixed_hardware_mass_kg(self) -> float:
+        """Return the closures/nozzle mass implied by the active motor dry mass."""
+        casing = self.ensure_working_rocket().motor.casing
+        return estimate_motor_casing_fixed_hardware_mass_kg(
+            casing,
+            material_density_kg_m3=self.casing_density_kg_m3,
+        )
+
+    def auto_size_motor_casing_wall(
+        self,
+        target_safety_factor: float | None = None,
+    ) -> RocketSpec:
+        """Auto-size the casing wall to the thinnest wall meeting target FS at peak P0."""
+        target = (
+            self.casing_target_safety_factor
+            if target_safety_factor is None
+            else float(target_safety_factor)
+        )
+        updated_rocket = auto_size_rocket_motor_casing(
+            self.ensure_working_rocket(),
+            target,
+            repo_root=Path(self.repo_root) if self.repo_root is not None else None,
+        )
+        self.casing_target_safety_factor = target
+        self.last_casing_resize_result = None
+        self.working_rocket_spec = updated_rocket
+        self.has_unsaved_rocket_changes = True
+        self.clear_error()
+        self.notify()
+        return updated_rocket
 
     def restore_motor_casing_from_preset(self) -> RocketSpec:
         """Restore motor casing, grain separation, and motor position from catalog presets."""
@@ -657,18 +714,20 @@ class AppState:
             self.notify()
 
     def run_motor_check(self) -> tuple[BallisticsResult, SafetyReport] | None:
-        """Execute standalone OpenMotor ballistics and non-blocking 5-criteria safety check."""
+        """Execute ballistics and the 5-criteria check on the active rocket's motor casing."""
         self.is_running = True
         self.clear_error()
         self.status_message = "Executando balística interna do motor..."
         self.notify()
 
-        motor_id = self.selected_motor_id or DEFAULT_MOTOR_ID
+        rocket = self.ensure_working_rocket()
+        motor_id = rocket.motor.name or self.selected_motor_id or DEFAULT_MOTOR_ID
         try:
             ballistics, safety = run_ballistics_check(
                 motor_id=motor_id,
                 overrides=self.motor_overrides,
                 limits_id=self.selected_limits_id,
+                casing=rocket.motor.casing,
                 repo_root=self.repo_root,
             )
             self.ballistics_preview = ballistics

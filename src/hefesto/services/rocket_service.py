@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from bisect import bisect_right
 from collections.abc import Sequence
 from pathlib import Path
@@ -17,6 +18,7 @@ from hefesto.domain import (
     FinGeometryMode,
     FinSetSpec,
     MassMode,
+    MotorCasingSpec,
     MotorSpec,
     RocketComponent,
     RocketPreset,
@@ -28,7 +30,10 @@ from hefesto.physics import (
     ComponentMassProperties,
     StructureSummary,
     compute_analytical_drag_curves,
+    compute_casing_shell_mass_kg,
+    compute_minimum_casing_wall_thickness_m,
     derive_rocket_structure,
+    recalculate_casing_dry_properties,
     resize_motor_casing,
 )
 from hefesto.services.asset_service import (
@@ -37,7 +42,7 @@ from hefesto.services.asset_service import (
     resolve_asset_path,
     resolve_paths,
 )
-from hefesto.services.motor_service import load_motor_spec
+from hefesto.services.motor_service import load_motor_spec, run_motor_ballistics_for_preset
 from hefesto.storage import CatalogStore
 
 CASING_MATERIAL_DENSITY_PRESETS: dict[str, float] = {
@@ -67,6 +72,8 @@ def update_rocket_motor_casing_length(
     motor_position_m: float | None = None,
     grain_separation_m: float | None = None,
     internal_clearance_m: float | None = None,
+    wall_thickness_m: float | None = None,
+    fixed_hardware_mass_kg: float | None = None,
 ) -> tuple[RocketSpec, CasingResizeResult]:
     """Update motor casing length/clearance/spacing/position and recalculate rocket structure."""
     resolved_density = (
@@ -85,12 +92,26 @@ def update_rocket_motor_casing_length(
                 f"carcaça ({new_length_m:.4f} m)."
             )
         base_casing = base_casing.model_copy(update={"internal_clearance_m": clearance_val})
+    if wall_thickness_m is not None:
+        thickness_val = float(wall_thickness_m)
+        if not math.isfinite(thickness_val) or thickness_val <= 0.0:
+            raise ValueError(
+                f"Espessura da parede deve ser finita e > 0 m, obtido {thickness_val!r}"
+            )
+        if thickness_val != base_casing.wall_thickness_m:
+            # Δ tube at fixed hardware: dry mass follows the shell while closures stay put.
+            base_casing = recalculate_casing_dry_properties(
+                base_casing.model_copy(update={"wall_thickness_m": thickness_val}),
+                base_casing=base_casing,
+                case_density_kg_m3=resolved_density,
+            )
 
     resize_result = resize_motor_casing(
         base_casing,
         new_length_m,
         mode=mode,
         material_density_kg_m3=resolved_density,
+        fixed_hardware_mass_kg=fixed_hardware_mass_kg,
     )
 
     motor_updates: dict[str, object] = {"casing": resize_result.casing}
@@ -119,6 +140,46 @@ def update_rocket_motor_casing_length(
 
     recalculated = recalculate_rocket_structure(rocket.model_copy(update=rocket_updates))
     return recalculated, resize_result
+
+
+def estimate_motor_casing_fixed_hardware_mass_kg(
+    casing: MotorCasingSpec,
+    *,
+    material_density_kg_m3: float,
+) -> float:
+    """Return the closures/nozzle mass implied by dry_mass_kg minus the cylindrical shell."""
+    tube_mass_kg = compute_casing_shell_mass_kg(
+        casing.inner_radius_m,
+        casing.wall_thickness_m,
+        casing.length_m,
+        material_density_kg_m3,
+    )
+    return casing.dry_mass_kg - tube_mass_kg
+
+
+def auto_size_rocket_motor_casing(
+    rocket: RocketSpec,
+    target_safety_factor: float = 1.5,
+    *,
+    repo_root: Path | None = None,
+) -> RocketSpec:
+    """Size the casing wall to the thinnest value meeting target FS at the active peak P0."""
+    casing = rocket.motor.casing
+    ballistics = run_motor_ballistics_for_preset(rocket.motor.name, repo_root=repo_root)
+    min_wall_m = compute_minimum_casing_wall_thickness_m(
+        ballistics.peak_chamber_pressure_pa,
+        casing.inner_radius_m,
+        casing.yield_strength_pa,
+        target_safety_factor,
+    )
+    updated_rocket, _ = update_rocket_motor_casing_length(
+        rocket,
+        casing.length_m,
+        mode="tubular_delta",
+        material_density_kg_m3=casing.material_density_kg_m3,
+        wall_thickness_m=min_wall_m,
+    )
+    return updated_rocket
 
 
 # Analytical sources need a RocketSpec before the geometry model can run.
@@ -487,8 +548,10 @@ def rocket_preset_from_spec(
 __all__ = [
     "CASING_MATERIAL_DENSITY_PRESETS",
     "CASING_MATERIAL_LABELS",
+    "auto_size_rocket_motor_casing",
     "build_rocket_spec",
     "calculate_rocket_dry_mass_kg",
+    "estimate_motor_casing_fixed_hardware_mass_kg",
     "import_rasaero_drag_csv",
     "interpolate_drag_curve",
     "list_rasaero_csv_angles",

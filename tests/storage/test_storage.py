@@ -469,12 +469,15 @@ def test_repository_catalog_presets_exist_and_reference_only_relative_assets() -
     } <= set(overview.environment_presets)
     assert "default" in catalog_store.list_limits()
 
-    # Check every rocket preset has valid relative drag assets and references an existing motor
+    # Check every rocket preset has valid relative drag assets and references an existing
+    # motor: either a catalog preset or an auto-discovered .ric asset (both selectable).
     for rocket_id in overview.rocket_presets:
         rocket = catalog_store.load_rocket(rocket_id)
         assert asset_store.resolve_asset(AssetCategory.DRAG, rocket.power_off_drag_asset).is_file()
         assert asset_store.resolve_asset(AssetCategory.DRAG, rocket.power_on_drag_asset).is_file()
-        assert rocket.motor_preset_name in overview.motor_presets
+        assert rocket.motor_preset_name in overview.motor_presets or asset_store.asset_exists(
+            AssetCategory.MOTORS, f"{rocket.motor_preset_name}.ric"
+        )
 
     # Check every motor preset resolves all declared relative motor/thrust assets
     for motor_id in overview.motor_presets:

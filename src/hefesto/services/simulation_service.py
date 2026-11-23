@@ -15,6 +15,7 @@ from hefesto.domain import (
     LaunchConfig,
     MassMode,
     MissionSpec,
+    MotorCasingSpec,
     MotorOverride,
     OutputSelection,
     RocketSpec,
@@ -237,15 +238,22 @@ def run_ballistics_check(
     overrides: tuple[MotorOverride, ...] = (),
     *,
     limits_id: str = DEFAULT_LIMITS_ID,
+    casing: MotorCasingSpec | None = None,
     repo_root: Path | str | None = None,
 ) -> tuple[BallisticsResult, SafetyReport]:
-    """Run OpenMotor .ric ballistics for a motor preset and evaluate SafetyReport."""
+    """Run OpenMotor .ric ballistics and evaluate SafetyReport on the active casing.
+
+    casing carries the session's edited casing (GUI); None falls back to the catalog preset.
+    """
     ballistics = run_motor_ballistics_for_preset(motor_id, overrides, repo_root=repo_root)
-    motor_spec = load_motor_spec(
-        motor_id, overrides=overrides, simulate_ric=True, repo_root=repo_root
-    )
+    resolved_casing = casing
+    if resolved_casing is None:
+        motor_spec = load_motor_spec(
+            motor_id, overrides=overrides, simulate_ric=True, repo_root=repo_root
+        )
+        resolved_casing = motor_spec.casing
     limits = load_limits_preset(limits_id, repo_root=repo_root)
-    safety = evaluate_safety(ballistics, motor_spec.casing, limits=limits, motor=motor_spec)
+    safety = evaluate_safety(ballistics, resolved_casing, limits=limits)
     return ballistics, safety
 
 

@@ -23,10 +23,12 @@ from hefesto.domain import (
     DragSource,
     FinComponent,
     FinGeometryMode,
+    GeometryValidationError,
     NoseConeKind,
     OrkImportSummary,
     ParachuteSpec,
     PointMassComponent,
+    SafetyCriterion,
     SurfaceFinish,
     TubeComponent,
 )
@@ -34,6 +36,7 @@ from hefesto.services import (
     CASING_MATERIAL_DENSITY_PRESETS,
     CASING_MATERIAL_LABELS,
     DEFAULT_MOTOR_ID,
+    SimulationServiceError,
     import_and_save_ork_rocket,
     list_ork_assets,
     preview_ork_import,
@@ -84,6 +87,14 @@ def _parse_shape_points(raw: str) -> tuple[tuple[float, float], ...]:
     if len(pairs) < 3:
         raise ValueError("Informe pelo menos 3 pontos para o polígono das aletas.")
     return tuple(pairs)
+
+
+def _set_target_safety_factor(state: AppState, raw_value: float | int | None) -> None:
+    if raw_value is None:
+        return
+    numeric = float(raw_value)
+    if numeric >= 1.0:
+        state.casing_target_safety_factor = numeric
 
 
 def render_config_page(state: AppState) -> ui.column:
@@ -593,6 +604,7 @@ def render_config_page(state: AppState) -> ui.column:
     def render_motor_casing_section() -> None:
         rocket = state.ensure_working_rocket()
         casing = rocket.motor.casing
+        hardware_mass_kg = state.fixed_hardware_mass_kg()
 
         with ui.card().classes("w-full p-4 shadow-sm"):
             with ui.row().classes("w-full items-center justify-between flex-wrap gap-2 mb-3"):
@@ -624,6 +636,22 @@ def render_config_page(state: AppState) -> ui.column:
                     min=0.01,
                     step=0.01,
                     format="%.4f",
+                ).classes("w-full")
+
+                wall_in = ui.number(
+                    label="Espessura da parede (mm)",
+                    value=casing.wall_thickness_m * 1000.0,
+                    min=0.2,
+                    step=0.1,
+                    format="%.2f",
+                ).classes("w-full")
+
+                hardware_in = ui.number(
+                    label="Hardware fixo / fechamentos (kg)",
+                    value=hardware_mass_kg,
+                    min=0.0,
+                    step=0.1,
+                    format="%.3f",
                 ).classes("w-full")
 
                 mode_select = ui.select(
@@ -758,6 +786,16 @@ def render_config_page(state: AppState) -> ui.column:
                         if motor_pos_in.value is not None
                         else rocket.motor_position_m
                     )
+                    wall_val_m = float(
+                        wall_in.value
+                        if wall_in.value is not None
+                        else casing.wall_thickness_m * 1000.0
+                    ) / 1000.0
+                    hardware_val_kg = float(
+                        hardware_in.value
+                        if hardware_in.value is not None
+                        else hardware_mass_kg
+                    )
                     state.apply_motor_casing_update(
                         new_length_m=new_len,
                         mode=selected_mode,
@@ -765,10 +803,12 @@ def render_config_page(state: AppState) -> ui.column:
                         motor_position_m=motor_pos_val,
                         grain_separation_m=grain_sep_val,
                         internal_clearance_m=clearance_val,
+                        wall_thickness_m=wall_val_m,
+                        fixed_hardware_mass_kg=hardware_val_kg,
                     )
                     render_structure_summary_card.refresh()
                     _render_casing_feedback.refresh()
-                except (ValidationError, ValueError) as exc:
+                except (GeometryValidationError, ValidationError, ValueError) as exc:
                     ui.notify(f"Erro na carcaça do motor: {exc}", type="negative")
 
             def _on_material_change(new_mat: str) -> None:
@@ -782,12 +822,73 @@ def render_config_page(state: AppState) -> ui.column:
             material_select.on_value_change(lambda e: _on_material_change(str(e.value)))
             mode_select.on_value_change(lambda _: _apply_casing_changes())
             length_in.on_value_change(lambda _: _apply_casing_changes())
+            wall_in.on_value_change(lambda _: _apply_casing_changes())
+            hardware_in.on_value_change(lambda _: _apply_casing_changes())
             density_in.on_value_change(lambda _: _apply_casing_changes())
             clearance_in.on_value_change(lambda _: _apply_casing_changes())
             grain_sep_in.on_value_change(lambda _: _apply_casing_changes())
             motor_pos_in.on_value_change(lambda _: _apply_casing_changes())
 
             _render_casing_feedback()
+
+            def _on_auto_size_wall() -> None:
+                try:
+                    target_fs = float(fs_in.value or state.casing_target_safety_factor)
+                    updated = state.auto_size_motor_casing_wall(target_fs)
+                    wall_in.value = updated.motor.casing.wall_thickness_m * 1000.0
+                    hardware_in.value = state.fixed_hardware_mass_kg()
+                    state.run_motor_check()
+                except (
+                    FileNotFoundError,
+                    GeometryValidationError,
+                    SimulationServiceError,
+                    ValueError,
+                ) as exc:
+                    ui.notify(f"Falha no dimensionamento: {exc}", type="negative")
+                    return
+                render_structure_summary_card.refresh()
+                _render_casing_feedback.refresh()
+                wall_mm = updated.motor.casing.wall_thickness_m * 1000.0
+                if state.last_error:
+                    ui.notify(
+                        f"Parede {wall_mm:.1f} mm aplicada, mas o motor check falhou: "
+                        f"{state.last_error}",
+                        type="warning",
+                    )
+                    return
+                fs_check = next(
+                    (
+                        check
+                        for check in (state.safety_preview.checks if state.safety_preview else ())
+                        if check.criterion == SafetyCriterion.CASE_SAFETY_FACTOR
+                    ),
+                    None,
+                )
+                fs_text = (
+                    f"{fs_check.value:.2f}"
+                    if fs_check is not None and fs_check.value is not None
+                    else "N/D"
+                )
+                ui.notify(
+                    f"Parede mínima: {wall_mm:.1f} mm · FS {fs_text} · "
+                    f"massa seca do motor {updated.motor.casing.dry_mass_kg:.3f} kg",
+                    type="positive",
+                )
+
+            with ui.row().classes("w-full items-center gap-3 mt-3 flex-wrap"):
+                fs_in = ui.number(
+                    label="FS Alvo",
+                    value=state.casing_target_safety_factor,
+                    min=1.0,
+                    step=0.1,
+                    format="%.2f",
+                    on_change=lambda e: _set_target_safety_factor(state, e.value),
+                ).classes("w-40")
+                ui.button(
+                    "Dimensionar parede mínima",
+                    icon="straighten",
+                    on_click=_on_auto_size_wall,
+                ).props("outline size=sm color=primary")
 
     @ui.refreshable
     def render_aerodynamics_section() -> None:

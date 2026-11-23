@@ -169,13 +169,15 @@ async def execute_motor_check_async(
     state.status_message = "Executando balística interna do motor..."
     state.notify()
 
-    motor_id = state.selected_motor_id or DEFAULT_MOTOR_ID
+    rocket = state.ensure_working_rocket()
+    motor_id = rocket.motor.name or state.selected_motor_id or DEFAULT_MOTOR_ID
     try:
         ballistics, safety = await run.cpu_bound(
             run_ballistics_check,
             motor_id,
             state.motor_overrides,
             limits_id=state.selected_limits_id,
+            casing=rocket.motor.casing,
             repo_root=state.repo_root,
         )
         state.ballistics_preview = ballistics
@@ -325,14 +327,18 @@ def render_simulation_page(state: AppState) -> ui.column:
 
     @ui.refreshable
     def render_motor_picker() -> None:
+        def _on_motor_change(value: object) -> None:
+            try:
+                state.load_motor_into_session(str(value) if value else "")
+            except (FileNotFoundError, SimulationServiceError, ValueError) as exc:
+                ui.notify(f"Falha ao carregar motor: {exc}", type="negative")
+
         with ui.column().classes("w-full gap-1"):
             ui.select(
                 options=state.selectable_motor_options(),
                 value=state.selected_motor_id or "",
                 label="Motor",
-                on_change=lambda e: setattr(
-                    state, "selected_motor_id", str(e.value) if e.value else None
-                ),
+                on_change=lambda e: _on_motor_change(e.value),
             ).classes("w-full")
             ui.button(
                 "Importar motor (.ric)",

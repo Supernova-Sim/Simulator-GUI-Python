@@ -814,3 +814,124 @@ def test_ork_parity_mission_runs_on_isa_without_touching_the_era5_netcdf() -> No
     # Analytical Cd(Mach) drives the flight: within 4.5% of OpenRocket's 3393.406 m AGL.
     assert 3393.406064 * 0.955 < flight.apogee_agl_m < 3393.406064 * 1.045
     assert flight.rail_exit_velocity_ms > 25.0
+
+
+def test_casing_wall_thickness_and_fixed_hardware_update_dry_mass(tmp_path: Path) -> None:
+    from hefesto.physics import compute_casing_shell_mass_kg
+    from hefesto.services import (
+        estimate_motor_casing_fixed_hardware_mass_kg,
+        update_rocket_motor_casing_length,
+    )
+
+    root = _seed_isolated_workspace(tmp_path)
+    base_rocket = load_rocket_spec(DEFAULT_ROCKET_ID, repo_root=root)
+    casing = base_rocket.motor.casing
+    hardware_mass_kg = estimate_motor_casing_fixed_hardware_mass_kg(
+        casing, material_density_kg_m3=2700.0
+    )
+    assert hardware_mass_kg > 0.0
+
+    # 2.0 mm wall keeps the fixed hardware mass while shrinking the cylindrical shell.
+    thinner_rocket, thinner_res = update_rocket_motor_casing_length(
+        base_rocket,
+        casing.length_m,
+        wall_thickness_m=0.002,
+        material_density_kg_m3=2700.0,
+    )
+    thin_casing = thinner_rocket.motor.casing
+    expected_shell_kg = compute_casing_shell_mass_kg(
+        casing.inner_radius_m, 0.002, casing.length_m, 2700.0
+    )
+    assert thin_casing.wall_thickness_m == pytest.approx(0.002)
+    assert thin_casing.inner_radius_m == pytest.approx(casing.inner_radius_m)
+    assert thin_casing.length_m == pytest.approx(casing.length_m)
+    assert thin_casing.dry_mass_kg == pytest.approx(expected_shell_kg + hardware_mass_kg)
+    assert thin_casing.dry_mass_kg < casing.dry_mass_kg
+    assert thinner_res.estimated_fixed_hardware_mass_kg == pytest.approx(hardware_mass_kg)
+
+    # +2 kg of closures/nozzle lands directly on dry mass and dry inertia.
+    heavier_rocket, heavier_res = update_rocket_motor_casing_length(
+        thinner_rocket,
+        thin_casing.length_m,
+        wall_thickness_m=0.002,
+        material_density_kg_m3=2700.0,
+        fixed_hardware_mass_kg=hardware_mass_kg + 2.0,
+    )
+    heavier_casing = heavier_rocket.motor.casing
+    assert heavier_casing.dry_mass_kg == pytest.approx(thin_casing.dry_mass_kg + 2.0)
+    assert heavier_res.estimated_fixed_hardware_mass_kg == pytest.approx(
+        hardware_mass_kg + 2.0
+    )
+    assert heavier_casing.dry_inertia_kg_m2[0] > thin_casing.dry_inertia_kg_m2[0]
+    assert 0.0 < heavier_casing.center_of_dry_mass_m < heavier_casing.length_m
+    assert heavier_rocket.center_of_mass_without_motor_m > 0.0
+
+
+def test_auto_size_rocket_motor_casing_meets_target_safety_factor(tmp_path: Path) -> None:
+    from hefesto.physics import (
+        compute_case_hoop_stress_pa,
+        compute_minimum_casing_wall_thickness_m,
+    )
+    from hefesto.services import auto_size_rocket_motor_casing, run_motor_ballistics_for_preset
+
+    root = _seed_isolated_workspace(tmp_path)
+    base_rocket = load_rocket_spec(DEFAULT_ROCKET_ID, repo_root=root)
+    base_casing = base_rocket.motor.casing
+    ballistics = run_motor_ballistics_for_preset(base_rocket.motor.name, repo_root=root)
+    expected_wall_m = compute_minimum_casing_wall_thickness_m(
+        ballistics.peak_chamber_pressure_pa,
+        base_casing.inner_radius_m,
+        base_casing.yield_strength_pa,
+        1.5,
+    )
+
+    sized_rocket = auto_size_rocket_motor_casing(base_rocket, 1.5, repo_root=root)
+    sized_casing = sized_rocket.motor.casing
+    assert sized_casing.wall_thickness_m == pytest.approx(expected_wall_m)
+    assert sized_casing.wall_thickness_m < base_casing.wall_thickness_m
+    assert sized_casing.length_m == pytest.approx(base_casing.length_m)
+
+    hoop_stress_pa = compute_case_hoop_stress_pa(
+        ballistics.peak_chamber_pressure_pa,
+        sized_casing.inner_radius_m,
+        sized_casing.wall_thickness_m,
+    )
+    assert hoop_stress_pa is not None
+    assert sized_casing.yield_strength_pa / hoop_stress_pa >= 1.5
+    assert sized_casing.dry_mass_kg < base_casing.dry_mass_kg
+    assert sized_rocket.center_of_mass_without_motor_m > 0.0
+    assert sized_rocket.inertia_kg_m2[0] > 0.0
+
+
+def test_run_ballistics_check_prefers_active_casing_over_preset(tmp_path: Path) -> None:
+    root = _seed_isolated_workspace(tmp_path)
+    preset_casing = load_motor_preset(DEFAULT_MOTOR_ID, repo_root=root).casing
+    active_casing = preset_casing.model_copy(update={"wall_thickness_m": 0.002})
+
+    ballistics, safety = run_ballistics_check(
+        DEFAULT_MOTOR_ID,
+        limits_id=DEFAULT_LIMITS_ID,
+        casing=active_casing,
+        repo_root=root,
+    )
+    expected_hoop_pa = (
+        ballistics.peak_chamber_pressure_pa
+        * active_casing.inner_radius_m
+        / active_casing.wall_thickness_m
+    )
+    assert safety.hoop_stress_pa == pytest.approx(expected_hoop_pa)
+    fs_check = next(
+        check for check in safety.checks if check.criterion == SafetyCriterion.CASE_SAFETY_FACTOR
+    )
+    assert fs_check.value == pytest.approx(active_casing.yield_strength_pa / expected_hoop_pa)
+
+    _, preset_safety = run_ballistics_check(
+        DEFAULT_MOTOR_ID, limits_id=DEFAULT_LIMITS_ID, repo_root=root
+    )
+    preset_hoop_pa = (
+        ballistics.peak_chamber_pressure_pa
+        * preset_casing.inner_radius_m
+        / preset_casing.wall_thickness_m
+    )
+    assert preset_safety.hoop_stress_pa == pytest.approx(preset_hoop_pa)
+    assert safety.hoop_stress_pa > preset_safety.hoop_stress_pa

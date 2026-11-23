@@ -925,6 +925,21 @@ def test_config_page_motor_casing_update_and_restore(tmp_path: Path) -> None:
     assert resize_res.delta_mass_kg > 0.0
     assert state.has_unsaved_rocket_changes is True
 
+    hardware_before_kg = state.fixed_hardware_mass_kg()
+    edits_res = state.apply_motor_casing_update(
+        new_length_m=orig_casing.length_m + 0.15,
+        wall_thickness_m=0.002,
+        fixed_hardware_mass_kg=hardware_before_kg + 2.0,
+        material_density_kg_m3=2700.0,
+    )
+    edited_casing = state.ensure_working_rocket().motor.casing
+    assert edited_casing.wall_thickness_m == pytest.approx(0.002)
+    assert edits_res.estimated_fixed_hardware_mass_kg == pytest.approx(hardware_before_kg + 2.0)
+    assert edited_casing.dry_mass_kg == pytest.approx(
+        edits_res.estimated_tube_mass_kg + hardware_before_kg + 2.0
+    )
+    assert edited_casing.dry_mass_kg > updated_rocket.motor.casing.dry_mass_kg
+
     cfg_page = page("/smoke-config-casing")
     with Client(cfg_page) as client:
         render_config_page(state)
@@ -934,8 +949,147 @@ def test_config_page_motor_casing_update_and_restore(tmp_path: Path) -> None:
             if isinstance(el, ui.label)
         ]
         assert any("Carcaça e Massa do Motor" in txt for txt in labels)
+        numbers_by_label = {
+            str(el.props.get("label")): el
+            for el in client.elements.values()
+            if isinstance(el, ui.number)
+        }
+        assert numbers_by_label["Espessura da parede (mm)"].value == pytest.approx(2.0)
+        assert numbers_by_label["Hardware fixo / fechamentos (kg)"].value == pytest.approx(
+            hardware_before_kg + 2.0
+        )
+        assert numbers_by_label["FS Alvo"].value == pytest.approx(1.5)
+        buttons = [
+            el
+            for el in client.elements.values()
+            if isinstance(el, ui.button) and el.text == "Dimensionar parede mínima"
+        ]
+        assert len(buttons) == 1
     client.delete()
 
     restored = state.restore_motor_casing_from_preset()
     assert restored.motor.casing.length_m == pytest.approx(orig_casing.length_m)
     assert restored.motor.casing.dry_mass_kg == pytest.approx(orig_casing.dry_mass_kg)
+    assert restored.motor.casing.wall_thickness_m == pytest.approx(orig_casing.wall_thickness_m)
+    assert state.fixed_hardware_mass_kg() == pytest.approx(hardware_before_kg)
+
+
+def test_state_auto_size_casing_wall_and_motor_check(tmp_path: Path) -> None:
+    """Auto-sizing shrinks the wall to the FS target and the motor check reports it."""
+    from frontend.pages.config_page import render_config_page
+    from hefesto.domain import SafetyCriterion
+    from hefesto.physics import (
+        compute_case_hoop_stress_pa,
+        compute_minimum_casing_wall_thickness_m,
+    )
+    from hefesto.services import run_motor_ballistics_for_preset
+
+    shutil.copytree(REPO_ROOT / "data" / "assets", tmp_path / "data" / "assets")
+    shutil.copytree(REPO_ROOT / "data" / "catalog", tmp_path / "data" / "catalog")
+    state = create_app_state(repo_root=str(tmp_path), initialize=True)
+    base_rocket = state.ensure_working_rocket()
+    base_casing = base_rocket.motor.casing
+    ballistics = run_motor_ballistics_for_preset(base_rocket.motor.name, repo_root=tmp_path)
+    expected_wall_m = compute_minimum_casing_wall_thickness_m(
+        ballistics.peak_chamber_pressure_pa,
+        base_casing.inner_radius_m,
+        base_casing.yield_strength_pa,
+        1.5,
+    )
+
+    state.casing_target_safety_factor = 1.5
+    sized_rocket = state.auto_size_motor_casing_wall()
+    sized_casing = sized_rocket.motor.casing
+    assert sized_casing.wall_thickness_m == pytest.approx(expected_wall_m)
+    assert sized_casing.wall_thickness_m < base_casing.wall_thickness_m
+    assert sized_casing.dry_mass_kg < base_casing.dry_mass_kg
+    assert state.has_unsaved_rocket_changes is True
+
+    motor_check = state.run_motor_check()
+    assert motor_check is not None
+    _, safety = motor_check
+    fs_check = next(
+        chk for chk in safety.checks if chk.criterion == SafetyCriterion.CASE_SAFETY_FACTOR
+    )
+    hoop_stress_pa = compute_case_hoop_stress_pa(
+        ballistics.peak_chamber_pressure_pa,
+        sized_casing.inner_radius_m,
+        sized_casing.wall_thickness_m,
+    )
+    assert hoop_stress_pa is not None
+    assert safety.hoop_stress_pa == pytest.approx(hoop_stress_pa)
+    assert fs_check.value == pytest.approx(sized_casing.yield_strength_pa / hoop_stress_pa)
+    assert fs_check.value >= 1.5
+
+    page_obj = page("/smoke-config-autosize")
+    with Client(page_obj) as client:
+        render_config_page(state)
+        numbers_by_label = {
+            str(el.props.get("label")): el
+            for el in client.elements.values()
+            if isinstance(el, ui.number)
+        }
+        assert numbers_by_label["Espessura da parede (mm)"].value == pytest.approx(
+            expected_wall_m * 1000.0
+        )
+        assert numbers_by_label["FS Alvo"].value == pytest.approx(1.5)
+        assert numbers_by_label["Hardware fixo / fechamentos (kg)"].value == pytest.approx(
+            state.fixed_hardware_mass_kg()
+        )
+    client.delete()
+
+
+def test_state_motor_selection_binds_ric_motor_and_casing_edits_reach_check(
+    tmp_path: Path,
+) -> None:
+    """A .ric-only motor selected in the GUI owns the casing edits and the motor check."""
+    from hefesto.physics import compute_case_hoop_stress_pa
+    from hefesto.services import resolve_motor_for_simulation
+
+    shutil.copytree(REPO_ROOT / "data" / "assets", tmp_path / "data" / "assets")
+    shutil.copytree(REPO_ROOT / "data" / "catalog", tmp_path / "data" / "catalog")
+    state = create_app_state(repo_root=str(tmp_path), initialize=True)
+    assert state.ensure_working_rocket().motor.name == "medusa_knsb_a"
+
+    state.load_motor_into_session("m1001voltas")
+    bound_casing = state.ensure_working_rocket().motor.casing
+    assert state.selected_motor_id == "m1001voltas"
+    assert state.ensure_working_rocket().motor.name == "m1001voltas"
+    assert state.ensure_working_rocket().motor.motor_asset == "m1001voltas.ric"
+
+    hardware_kg = state.fixed_hardware_mass_kg()
+    state.apply_motor_casing_update(
+        new_length_m=bound_casing.length_m,
+        wall_thickness_m=0.002,
+        fixed_hardware_mass_kg=hardware_kg + 2.0,
+    )
+    edited_casing = state.ensure_working_rocket().motor.casing
+    assert edited_casing.wall_thickness_m == pytest.approx(0.002)
+    assert edited_casing.dry_mass_kg > bound_casing.dry_mass_kg
+
+    cfg = state.compose_config()
+    assert cfg.mission.rocket.motor.name == "m1001voltas"
+    assert cfg.mission.rocket.motor.casing.wall_thickness_m == pytest.approx(0.002)
+    assert cfg.mission.rocket.motor.casing.dry_mass_kg == pytest.approx(
+        edited_casing.dry_mass_kg
+    )
+
+    resolved_motor, _ = resolve_motor_for_simulation(cfg.mission.rocket.motor, repo_root=tmp_path)
+    assert resolved_motor.casing.wall_thickness_m == pytest.approx(0.002)
+    assert resolved_motor.casing.dry_mass_kg == pytest.approx(edited_casing.dry_mass_kg)
+
+    motor_check = state.run_motor_check()
+    assert motor_check is not None
+    ballistics, safety = motor_check
+    assert ballistics.motor_name == "m1001voltas"
+    expected_hoop_pa = compute_case_hoop_stress_pa(
+        ballistics.peak_chamber_pressure_pa,
+        edited_casing.inner_radius_m,
+        edited_casing.wall_thickness_m,
+    )
+    assert expected_hoop_pa is not None
+    assert safety.hoop_stress_pa == pytest.approx(expected_hoop_pa)
+    fs_check = next(
+        check for check in safety.checks if check.criterion == SafetyCriterion.CASE_SAFETY_FACTOR
+    )
+    assert fs_check.value == pytest.approx(edited_casing.yield_strength_pa / expected_hoop_pa)
