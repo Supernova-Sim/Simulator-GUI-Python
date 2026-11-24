@@ -18,6 +18,7 @@ from frontend.components import (
 )
 from frontend.state import AppState
 from hefesto.domain import (
+    FIN_MATERIAL_SHEAR_MODULUS_PA,
     AssetCategory,
     CasingScalingMode,
     DragSource,
@@ -466,6 +467,47 @@ def render_config_page(state: AppState) -> ui.column:
                     step=0.01,
                 ).classes("w-full")
 
+                material_options: dict[str, str] = {
+                    "": "Não especificado (Flutter N/A)",
+                    **{
+                        k: f"{k} ({v / 1e9:.1f} GPa)"
+                        for k, v in FIN_MATERIAL_SHEAR_MODULUS_PA.items()
+                    },
+                    "Customizado": "Customizado",
+                }
+                initial_material = (
+                    fins.material_name
+                    if fins.material_name in material_options
+                    else ("Customizado" if fins.shear_modulus_pa is not None else "")
+                )
+                fin_material_sel = ui.select(
+                    options=material_options,
+                    value=initial_material,
+                    label="Material da Aleta (Fin Flutter)",
+                ).classes("w-full")
+                fin_shear_gpa_in = ui.number(
+                    label="Módulo Cisalhamento G (GPa)",
+                    value=(
+                        round(fins.shear_modulus_pa / 1e9, 4)
+                        if fins.shear_modulus_pa is not None
+                        else None
+                    ),
+                    min=0.01,
+                    step=0.1,
+                    format="%.3f",
+                ).classes("w-full")
+
+                def _on_fin_material_change(val: object) -> None:
+                    mat_key = str(val) if val else ""
+                    if mat_key in FIN_MATERIAL_SHEAR_MODULUS_PA:
+                        fin_shear_gpa_in.value = round(
+                            FIN_MATERIAL_SHEAR_MODULUS_PA[mat_key] / 1e9, 4
+                        )
+                    elif mat_key == "":
+                        fin_shear_gpa_in.value = None
+
+                fin_material_sel.on_value_change(lambda e: _on_fin_material_change(e.value))
+
             points_in = ui.input(
                 label="Pontos Freeform (x, y; ... em metros)",
                 value=_format_shape_points(fins.shape_points_m),
@@ -482,6 +524,14 @@ def render_config_page(state: AppState) -> ui.column:
                         if mode == "trapezoidal"
                         else _parse_shape_points(points_in.value or "")
                     )
+                    chosen_mat = str(fin_material_sel.value) if fin_material_sel.value else ""
+                    shear_gpa = fin_shear_gpa_in.value
+                    shear_pa = (
+                        float(shear_gpa) * 1e9
+                        if shear_gpa is not None and float(shear_gpa) > 0.0
+                        else None
+                    )
+                    resolved_thickness = float(fin_thick_in.value or 0.004)
                     new_fins = fins.model_copy(
                         update={
                             "count": int(fin_count_in.value or 4),
@@ -498,12 +548,15 @@ def render_config_page(state: AppState) -> ui.column:
                             "sweep_length_m": (
                                 float(sweep_in.value) if sweep_in.value is not None else None
                             ),
+                            "thickness_m": resolved_thickness,
+                            "shear_modulus_pa": shear_pa,
+                            "material_name": chosen_mat if chosen_mat else None,
                         }
                     )
                     updated = sync_rocket_fins(
                         state.ensure_working_rocket(),
                         new_fins,
-                        thickness_m=float(fin_thick_in.value or 0.004),
+                        thickness_m=resolved_thickness,
                         density_kg_m3=float(fin_dens_in.value or 2700.0),
                         fin_geometry_mode=mode,
                     )

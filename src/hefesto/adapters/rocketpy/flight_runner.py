@@ -21,7 +21,10 @@ from hefesto.domain import (
     MassMode,
     MissionSpec,
     OutputSelection,
+    ParachuteDeployTelemetry,
 )
+
+_STANDARD_GRAVITY_M_S2 = 9.80665
 
 
 def _extract_series(source_obj: Any, *, label: str) -> tuple[tuple[float, float], ...]:
@@ -97,6 +100,56 @@ def _optional_finite_float(value: Any) -> float | None:
     return numeric if math.isfinite(numeric) else None
 
 
+def _safe_call_float(obj: Any, attr_name: str, arg: float) -> float | None:
+    fn = getattr(obj, attr_name, None)
+    if not callable(fn):
+        return None
+    try:
+        return _optional_finite_float(fn(arg))
+    except (AttributeError, TypeError, ValueError, ZeroDivisionError):
+        return None
+
+
+def _extract_parachute_events(
+    flight: Flight,
+    elevation_m: float,
+) -> tuple[ParachuteDeployTelemetry, ...]:
+    raw_events = getattr(flight, "parachute_events", None)
+    if not raw_events:
+        return ()
+    t_final = _optional_finite_float(getattr(flight, "t_final", None))
+    extracted: list[ParachuteDeployTelemetry] = []
+    for item in raw_events:
+        try:
+            trigger_time_s = float(item[0])
+            parachute = item[1]
+            lag_s = float(getattr(parachute, "lag", 0.0) or 0.0)
+            deploy_t = trigger_time_s + max(0.0, lag_s)
+            if t_final is not None:
+                deploy_t = min(deploy_t, t_final)
+            alt_agl = _safe_call_float(flight, "altitude", deploy_t)
+            speed_ms = _safe_call_float(flight, "speed", deploy_t)
+            cd_s = _optional_finite_float(getattr(parachute, "cd_s", None))
+            if alt_agl is None or speed_ms is None or cd_s is None or cd_s <= 0.0:
+                continue
+            density = _safe_call_float(flight.env, "density", alt_agl + elevation_m)
+            if density is None or density <= 0.0:
+                continue
+            name = str(getattr(parachute, "name", "Parachute") or "Parachute")
+            extracted.append(
+                ParachuteDeployTelemetry(
+                    name=name,
+                    cd_s=cd_s,
+                    deploy_altitude_agl_m=alt_agl,
+                    deploy_speed_ms=abs(speed_ms),
+                    deploy_air_density_kg_m3=density,
+                )
+            )
+        except (IndexError, KeyError, TypeError, ValueError):
+            continue
+    return tuple(extracted)
+
+
 def extract_flight_result(
     flight: Flight,
     *,
@@ -155,12 +208,85 @@ def extract_flight_result(
 
     apogee_msl_m = float(flight.apogee)
     elevation_m = float(flight.env.elevation)
+    apogee_time_s = float(flight.apogee_time)
+    flight_time_s = float(flight.t_final)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        max_dynamic_pressure_pa = _optional_finite_float(
+            getattr(flight, "max_dynamic_pressure", None)
+        )
+        max_accel_ms2 = _optional_finite_float(getattr(flight, "max_acceleration", None))
+        max_axial_acceleration_g = (
+            abs(max_accel_ms2) / _STANDARD_GRAVITY_M_S2 if max_accel_ms2 is not None else None
+        )
+        apogee_horizontal_speed_ms = _safe_call_float(flight, "horizontal_speed", apogee_time_s)
+        if apogee_horizontal_speed_ms is None:
+            apogee_horizontal_speed_ms = _optional_finite_float(
+                getattr(flight, "apogee_freestream_speed", None)
+            )
+        if apogee_horizontal_speed_ms is not None:
+            apogee_horizontal_speed_ms = abs(apogee_horizontal_speed_ms)
+
+        burn_out_time_s = _optional_finite_float(
+            getattr(getattr(flight.rocket, "motor", None), "burn_out_time", None)
+        )
+        burnout_tilt_deg: float | None = None
+        if burn_out_time_s is not None:
+            elev_deg = _safe_call_float(
+                flight, "attitude_angle", min(burn_out_time_s, flight_time_s)
+            )
+            if elev_deg is not None:
+                burnout_tilt_deg = abs(90.0 - elev_deg)
+
+        out_of_rail_static_margin_calibers = _optional_finite_float(
+            getattr(flight, "out_of_rail_stability_margin", None)
+        )
+
+        max_speed_time_s = _optional_finite_float(getattr(flight, "max_speed_time", None))
+        max_speed_altitude_asl_m: float | None = None
+        max_speed_ambient_pressure_pa: float | None = None
+        max_speed_sound_speed_ms: float | None = None
+        if max_speed_time_s is not None:
+            alt_agl_vmax = _safe_call_float(flight, "altitude", max_speed_time_s)
+            if alt_agl_vmax is not None:
+                max_speed_altitude_asl_m = alt_agl_vmax + elevation_m
+                max_speed_ambient_pressure_pa = _safe_call_float(
+                    flight.env, "pressure", max_speed_altitude_asl_m
+                )
+                max_speed_sound_speed_ms = _safe_call_float(
+                    flight.env, "speed_of_sound", max_speed_altitude_asl_m
+                )
+
+        rail_time_s = _optional_finite_float(getattr(flight, "out_of_rail_time", None))
+        rail_alt_msl = elevation_m
+        if rail_time_s is not None:
+            rail_alt_agl = _safe_call_float(flight, "altitude", rail_time_s)
+            if rail_alt_agl is not None:
+                rail_alt_msl = rail_alt_agl + elevation_m
+        wx_rail = _safe_call_float(flight.env, "wind_velocity_x", rail_alt_msl)
+        wy_rail = _safe_call_float(flight.env, "wind_velocity_y", rail_alt_msl)
+        rail_exit_wind_speed_ms = (
+            math.hypot(wx_rail, wy_rail) if wx_rail is not None and wy_rail is not None else None
+        )
+
+        parachute_deploy_events = _extract_parachute_events(flight, elevation_m)
+
+        total_impact_speed_ms: float | None = None
+        if has_impact:
+            vx_imp = _safe_call_float(flight, "vx", flight_time_s)
+            vy_imp = _safe_call_float(flight, "vy", flight_time_s)
+            vz_imp = _safe_call_float(flight, "vz", flight_time_s)
+            if vx_imp is not None and vy_imp is not None and vz_imp is not None:
+                total_impact_speed_ms = math.hypot(vx_imp, vy_imp, vz_imp)
+            else:
+                total_impact_speed_ms = landing_velocity_ms
 
     return FlightResult(
         apogee_agl_m=apogee_msl_m - elevation_m,
         apogee_msl_m=apogee_msl_m,
-        apogee_time_s=float(flight.apogee_time),
-        flight_time_s=float(flight.t_final),
+        apogee_time_s=apogee_time_s,
+        flight_time_s=flight_time_s,
         max_speed_ms=float(flight.max_speed),
         max_mach=float(flight.max_mach_number),
         rail_exit_velocity_ms=float(flight.out_of_rail_velocity),
@@ -170,6 +296,17 @@ def extract_flight_result(
         dry_mass_kg=float(flight.rocket.mass),
         landing_velocity_ms=landing_velocity_ms,
         impact_distance_m=impact_distance_m,
+        max_dynamic_pressure_pa=max_dynamic_pressure_pa,
+        max_axial_acceleration_g=max_axial_acceleration_g,
+        apogee_horizontal_speed_ms=apogee_horizontal_speed_ms,
+        burnout_tilt_deg=burnout_tilt_deg,
+        out_of_rail_static_margin_calibers=out_of_rail_static_margin_calibers,
+        max_speed_altitude_asl_m=max_speed_altitude_asl_m,
+        max_speed_ambient_pressure_pa=max_speed_ambient_pressure_pa,
+        max_speed_sound_speed_ms=max_speed_sound_speed_ms,
+        rail_exit_wind_speed_ms=rail_exit_wind_speed_ms,
+        parachute_deploy_events=parachute_deploy_events,
+        total_impact_speed_ms=total_impact_speed_ms,
         x_series=x_series,
         y_series=y_series,
         altitude_agl_series=altitude_series,

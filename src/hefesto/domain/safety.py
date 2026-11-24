@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Final
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -90,7 +91,99 @@ class SafetyReport(BaseModel):
         return all(check.passed for check in self.checks)
 
 
+class FlightSafetyStatus(StrEnum):
+    """Traffic-light evaluation status for a flight safety envelope check."""
+
+    PASS = "PASS"
+    WARN = "WARN"
+    FAIL = "FAIL"
+    NOT_EVALUATED = "NOT_EVALUATED"
+
+
+# Reference shear modulus G (Pa) for common amateur rocketry fin materials.
+FIN_MATERIAL_SHEAR_MODULUS_PA: Final[dict[str, float]] = {
+    "Fibra de Vidro G10": 4.1e9,
+    "Fibra de Carbono": 5.0e9,
+    "Alumínio 6061-T6": 26.0e9,
+    "Compensado Aeronáutico": 0.6e9,
+}
+
+
+class FlightSafetyLimits(BaseModel):
+    """Configurable engineering thresholds for the Flight Safety Envelope."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    min_flutter_safety_factor_fail: float = Field(default=1.25, gt=0.0)
+    min_flutter_safety_factor_warn: float = Field(default=1.50, gt=0.0)
+    min_static_margin_fail_calibers: float = 1.0
+    min_static_margin_warn_calibers: float = 1.5
+    max_static_margin_warn_calibers: float = 3.5
+    max_apogee_horizontal_speed_warn_ms: float = Field(default=25.0, gt=0.0)
+    max_apogee_horizontal_speed_fail_ms: float = Field(default=40.0, gt=0.0)
+    max_burnout_tilt_warn_deg: float = Field(default=25.0, gt=0.0)
+    max_burnout_tilt_fail_deg: float = Field(default=40.0, gt=0.0)
+    min_twr_fail: float = Field(default=4.0, gt=0.0)
+    min_twr_warn: float = Field(default=5.0, gt=0.0)
+    min_rail_exit_velocity_fail_ms: float = Field(default=15.0, gt=0.0)
+    min_rail_exit_velocity_warn_ms: float = Field(default=20.0, gt=0.0)
+    max_rail_aoa_pass_deg: float = Field(default=12.0, gt=0.0)
+    max_rail_aoa_warn_deg: float = Field(default=20.0, gt=0.0)
+    max_axial_accel_warn_g: float = Field(default=15.0, gt=0.0)
+    max_axial_accel_fail_g: float = Field(default=25.0, gt=0.0)
+    parachute_opening_factor_cx: float = Field(default=1.3, gt=0.0)
+    max_parachute_shock_warn_g: float = Field(default=15.0, gt=0.0)
+    max_parachute_shock_fail_g: float = Field(default=25.0, gt=0.0)
+    max_parachute_deploy_speed_warn_ms: float = Field(default=35.0, gt=0.0)
+    max_parachute_deploy_speed_fail_ms: float = Field(default=60.0, gt=0.0)
+    max_impact_speed_pass_ms: float = Field(default=7.5, gt=0.0)
+    max_impact_speed_warn_ms: float = Field(default=10.0, gt=0.0)
+
+
+class FlightSafetyCheck(BaseModel):
+    """Single flight safety envelope check with status, measured value, and guidance."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    key: str
+    category: str
+    name: str
+    status: FlightSafetyStatus
+    value: float | None = None
+    unit: str = ""
+    reference_limit: str = ""
+    detail: str = ""
+    recommendation: str = ""
+
+    @field_validator("key", "category", "name")
+    @classmethod
+    def _validate_texts(cls, value: str) -> str:
+        return require_non_empty_text(value, "flight safety check text")
+
+
+class FlightSafetyReport(BaseModel):
+    """Aggregated Flight Safety Envelope report for a 6-DOF simulation run."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    limits: FlightSafetyLimits
+    checks: tuple[FlightSafetyCheck, ...]
+    overall_status: FlightSafetyStatus
+    fin_flutter_velocity_ms: float | None = None
+    fin_flutter_safety_factor: float | None = None
+    max_q_kpa: float | None = None
+    twr: float | None = None
+    rail_aoa_deg: float | None = None
+    max_parachute_shock_n: float | None = None
+    max_parachute_shock_g: float | None = None
+
+
 __all__ = [
+    "FIN_MATERIAL_SHEAR_MODULUS_PA",
+    "FlightSafetyCheck",
+    "FlightSafetyLimits",
+    "FlightSafetyReport",
+    "FlightSafetyStatus",
     "SafetyCheck",
     "SafetyCriterion",
     "SafetyLimits",

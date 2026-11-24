@@ -16,6 +16,7 @@ from frontend.components import (
     render_ballistics_metrics_cards,
     render_execution_audit_panel,
     render_flight_metrics_cards,
+    render_flight_safety_panel,
     render_metric_selector,
     render_motor_import_dialog,
     render_motor_overrides_editor,
@@ -37,6 +38,7 @@ from hefesto.services import (
     DEFAULT_MOTOR_ID,
     ServiceAlert,
     SimulationServiceError,
+    evaluate_simulation_flight_safety,
     list_limits,
     run_ballistics_check,
     run_deterministic,
@@ -296,6 +298,12 @@ def render_simulation_page(state: AppState) -> ui.column:
                     ).classes("text-sm font-medium text-amber-900")
 
         render_safety_panel(state.safety_preview)
+        flight_safety_report = (
+            evaluate_simulation_flight_safety(state.current_result)
+            if state.current_result is not None
+            else None
+        )
+        render_flight_safety_panel(flight_safety_report)
 
         def _on_flight_metrics_change(keys: tuple[str, ...]) -> None:
             state.selected_flight_metrics = keys

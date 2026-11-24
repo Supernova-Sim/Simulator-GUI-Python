@@ -16,6 +16,11 @@ from hefesto.domain import (
     SafetyReport,
 )
 from hefesto.physics.constants import PA_PER_MPA
+from hefesto.physics.flight_safety import (
+    DEFAULT_FLIGHT_SAFETY_LIMITS,
+    compute_fin_flutter_velocity_ms,
+    evaluate_flight_safety,
+)
 
 DEFAULT_SAFETY_LIMITS = SafetyLimits()
 
@@ -309,6 +314,7 @@ def evaluate_motor_safety(
 
 
 __all__ = [
+    "DEFAULT_FLIGHT_SAFETY_LIMITS",
     "DEFAULT_SAFETY_LIMITS",
     "check_case_safety_factor",
     "check_peak_chamber_pressure",
@@ -317,6 +323,8 @@ __all__ = [
     "check_port_to_throat_ratio",
     "compute_aft_port_to_throat_ratio",
     "compute_case_hoop_stress_pa",
+    "compute_fin_flutter_velocity_ms",
+    "evaluate_flight_safety",
     "evaluate_motor_safety",
     "evaluate_safety_metrics",
 ]

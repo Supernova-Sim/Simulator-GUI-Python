@@ -81,6 +81,7 @@ from hefesto.physics.propulsion import (
     resize_motor_casing,
 )
 from hefesto.physics.safety import (
+    DEFAULT_FLIGHT_SAFETY_LIMITS,
     DEFAULT_SAFETY_LIMITS,
     check_case_safety_factor,
     check_peak_chamber_pressure,
@@ -89,6 +90,8 @@ from hefesto.physics.safety import (
     check_port_to_throat_ratio,
     compute_aft_port_to_throat_ratio,
     compute_case_hoop_stress_pa,
+    compute_fin_flutter_velocity_ms,
+    evaluate_flight_safety,
     evaluate_motor_safety,
     evaluate_safety_metrics,
 )
@@ -133,6 +136,7 @@ __all__ = [
     "DEFAULT_CASE_YIELD_STRENGTH_PA",
     "DEFAULT_DERIVATIVE_STEP_M",
     "DEFAULT_FIN_THICKNESS_M",
+    "DEFAULT_FLIGHT_SAFETY_LIMITS",
     "DEFAULT_MAX_CHAMBER_PRESSURE_PA",
     "DEFAULT_MAX_KN",
     "DEFAULT_MAX_MASS_FLUX_KG_M2_S",
@@ -168,6 +172,7 @@ __all__ = [
     "compute_case_hoop_stress_pa",
     "compute_casing_shell_mass_kg",
     "compute_center_of_mass_m",
+    "compute_fin_flutter_velocity_ms",
     "compute_grain_stack_cg_m",
     "compute_grain_stack_length",
     "compute_minimum_casing_wall_thickness_m",
@@ -183,6 +188,7 @@ __all__ = [
     "derive_point_mass_properties",
     "derive_rocket_structure",
     "derive_tube_properties",
+    "evaluate_flight_safety",
     "evaluate_motor_safety",
     "evaluate_safety_metrics",
     "fin_set_inertia_kg_m2",

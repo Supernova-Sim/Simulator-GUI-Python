@@ -543,6 +543,8 @@ def sync_rocket_fins(
             0.0 if fins.sweep_length_m is None else float(fins.sweep_length_m),
         )
         resolved_fins = fins.model_copy(update={"shape_points_m": points})
+    if thickness_m is not None and resolved_fins.thickness_m != thickness_m:
+        resolved_fins = resolved_fins.model_copy(update={"thickness_m": thickness_m})
 
     updated_components: list[RocketComponent] = []
     for comp in rocket.components:

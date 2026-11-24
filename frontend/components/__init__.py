@@ -15,6 +15,11 @@ from frontend.components.aerodynamics_panel import (
     render_aerodynamics_panel,
 )
 from frontend.components.execution_audit_panel import render_execution_audit_panel
+from frontend.components.flight_safety_panel import (
+    FlightSafetyRowView,
+    build_flight_safety_rows,
+    render_flight_safety_panel,
+)
 from frontend.components.metrics_cards import (
     BALLISTICS_METRIC_CATALOG,
     DEFAULT_BALLISTICS_METRIC_KEYS,
@@ -71,6 +76,7 @@ __all__ = [
     "SURFACE_FINISH_OPTIONS",
     "AerodynamicsView",
     "DragSummaryRow",
+    "FlightSafetyRowView",
     "MetricCardItem",
     "MetricCatalogEntry",
     "MetricTone",
@@ -81,6 +87,7 @@ __all__ = [
     "build_drag_curve_figure",
     "build_drag_summary_rows",
     "build_flight_metric_items",
+    "build_flight_safety_rows",
     "build_kinematics_figure",
     "build_propulsion_figure",
     "build_safety_rows",
@@ -95,6 +102,7 @@ __all__ = [
     "render_ballistics_metrics_cards",
     "render_execution_audit_panel",
     "render_flight_metrics_cards",
+    "render_flight_safety_panel",
     "render_kinematics_chart",
     "render_metric_card",
     "render_metric_selector",

@@ -103,6 +103,16 @@ class FinSetSpec(BaseModel):
     tip_chord_m: float | None = Field(default=None, ge=0.0)
     span_m: float | None = Field(default=None, gt=0.0)
     sweep_length_m: float | None = None
+    thickness_m: float | None = Field(default=None, gt=0.0)
+    shear_modulus_pa: float | None = Field(default=None, gt=0.0)
+    material_name: str | None = None
+
+    @field_validator("material_name")
+    @classmethod
+    def _validate_material_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return require_non_empty_text(value, "material_name")
 
     @field_validator("name")
     @classmethod

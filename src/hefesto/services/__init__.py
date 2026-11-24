@@ -95,6 +95,7 @@ from hefesto.services.run_service import (
     load_run_snapshot,
     save_run_snapshot,
 )
+from hefesto.services.safety_service import evaluate_simulation_flight_safety
 from hefesto.services.simulation_service import (
     build_mission_from_preset,
     build_mission_from_selection,
@@ -128,6 +129,7 @@ __all__ = [
     "discover_ric_motors",
     "estimate_motor_casing_fixed_hardware_mass_kg",
     "evaluate_safety",
+    "evaluate_simulation_flight_safety",
     "get_catalog_overview",
     "import_and_save_ork_rocket",
     "import_openmotor_ric",

@@ -101,6 +101,23 @@ class BallisticsResult(BaseModel):
         return _validate_optional_series(value, "kn")
 
 
+class ParachuteDeployTelemetry(BaseModel):
+    """Observed deployment telemetry for a single parachute event."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    name: str
+    cd_s: float = Field(gt=0.0)
+    deploy_altitude_agl_m: float
+    deploy_speed_ms: float = Field(ge=0.0)
+    deploy_air_density_kg_m3: float = Field(gt=0.0)
+
+    @field_validator("name")
+    @classmethod
+    def _validate_name(cls, value: str) -> str:
+        return require_non_empty_text(value, "name")
+
+
 class FlightResult(BaseModel):
     """6-DOF RocketPy trajectory summary metrics and optional time-series curves."""
 
@@ -119,6 +136,17 @@ class FlightResult(BaseModel):
     dry_mass_kg: float = Field(gt=0.0)
     landing_velocity_ms: float | None = Field(default=None, ge=0.0)
     impact_distance_m: float | None = Field(default=None, ge=0.0)
+    max_dynamic_pressure_pa: float | None = Field(default=None, ge=0.0)
+    max_axial_acceleration_g: float | None = Field(default=None, ge=0.0)
+    apogee_horizontal_speed_ms: float | None = Field(default=None, ge=0.0)
+    burnout_tilt_deg: float | None = Field(default=None, ge=0.0)
+    out_of_rail_static_margin_calibers: float | None = None
+    max_speed_altitude_asl_m: float | None = None
+    max_speed_ambient_pressure_pa: float | None = Field(default=None, gt=0.0)
+    max_speed_sound_speed_ms: float | None = Field(default=None, gt=0.0)
+    rail_exit_wind_speed_ms: float | None = Field(default=None, ge=0.0)
+    parachute_deploy_events: tuple[ParachuteDeployTelemetry, ...] = ()
+    total_impact_speed_ms: float | None = Field(default=None, ge=0.0)
     x_series: tuple[tuple[float, float], ...] = ()
     y_series: tuple[tuple[float, float], ...] = ()
     altitude_agl_series: tuple[tuple[float, float], ...] = ()
